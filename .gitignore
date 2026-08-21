@@ -1,0 +1,27 @@
+# Entornos Virtuales
+venv/
+env/
+Lib/
+Scripts/
+
+# Variables de Entorno / Secretos
+.env
+*.env
+
+# Archivos de Caché y Compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+
+# Bases de datos locales
+*.sqlite3
+
+# Configuraciones del Editor (VS Code, etc)
+.vscode/
+.idea/
+
+# Archivos del Sistema Operativo
+.DS_Store
+Thumbs.db
