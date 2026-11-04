@@ -1,0 +1,23 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md"],
+  "permission": {
+    "edit": "allow",
+    "bash": {
+      "*": "ask",
+      "uv *": "allow",
+      "just *": "allow",
+      "pytest*": "allow",
+      "ruff*": "allow",
+      "mypy*": "allow",
+      "lint-imports*": "allow",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git add*": "allow",
+      "git commit*": "ask",
+      "git push*": "deny",
+      "alembic downgrade*": "ask",
+      "rm -rf*": "deny"
+    }
+  }
+}
