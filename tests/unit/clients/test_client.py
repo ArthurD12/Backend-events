@@ -98,3 +98,39 @@ def test_hu04_desactivar_conserva_el_cliente() -> None:
 
     client.activate()
     assert client.active is True
+
+
+def test_hu04_corrige_documento_con_motivo_y_devuelve_el_anterior() -> None:
+    client = _register(document_number="44125896")
+
+    previous = client.correct_document(
+        document_type=DocumentType.DNI,
+        document_number="44125869",
+        reason="Error de digitación",
+    )
+
+    assert previous.number == "44125896"
+    assert client.document.number == "44125869"
+
+
+def test_hu04_corregir_documento_exige_motivo() -> None:
+    client = _register()
+
+    with pytest.raises(ClientValidationError) as error:
+        client.correct_document(
+            document_type=DocumentType.DNI, document_number="44125869", reason="  "
+        )
+
+    assert error.value.code == "client.correction_reason_required"
+    assert client.document.number == "44125896"
+
+
+def test_hu04_correccion_invalida_conserva_el_documento_anterior() -> None:
+    client = _register()
+
+    with pytest.raises(ClientValidationError):
+        client.correct_document(
+            document_type=DocumentType.RUC, document_number="123", reason="x"
+        )
+
+    assert client.document.number == "44125896"

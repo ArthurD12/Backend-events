@@ -84,11 +84,31 @@ class Client:
         email: str | None = None,
         address: str | None = None,
     ) -> None:
-        """Actualiza los datos de contacto. El documento no cambia: es la identidad del cliente."""
+        """Actualiza los datos de contacto. El documento se corrige con `correct_document`."""
         self.name = _clean_name(name)
         self.phone = _clean_phone(phone)
         self.email = _clean_email(email)
         self.address = _clean_optional(address)
+
+    def correct_document(
+        self,
+        *,
+        document_type: DocumentType,
+        document_number: str,
+        reason: str,
+    ) -> Document:
+        """Corrige un documento mal registrado y devuelve el anterior para la auditoría (RN03).
+
+        Que el nuevo documento no pertenezca a otro cliente se verifica en la capa de aplicación.
+        """
+        if not reason.strip():
+            raise ClientValidationError(
+                "client.correction_reason_required",
+                "Indica el motivo de la corrección.",
+            )
+        previous = self.document
+        self.document = Document(document_type, document_number.strip())
+        return previous
 
     def deactivate(self) -> None:
         """Desactiva sin eliminar: sus cotizaciones y eventos se conservan (RN02)."""
