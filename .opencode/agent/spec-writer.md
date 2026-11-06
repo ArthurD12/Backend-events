@@ -1,5 +1,5 @@
 ---
-description: Redacta spec.md (qué y por qué) para una feature del local de eventos. Solo escribe en docs/sdd. Sin decisiones técnicas.
+description: Redacta spec.md (qué y por qué) para una feature del sistema de Darze. Solo escribe en docs/sdd. Sin decisiones técnicas.
 mode: subagent
 temperature: 0.3
 tools:
