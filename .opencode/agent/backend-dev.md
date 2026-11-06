@@ -8,7 +8,7 @@ Eres un desarrollador backend senior de Python. Recibes **una tarea** de `tasks.
 
 ## Antes de escribir código
 - Lee solo: la tarea, las secciones relevantes de `plan.md` y los archivos del módulo que tocarás.
-- Carga `clean-architecture-modules` siempre; además `backend-conventions` (API, auth, errores), `db-migrations` (modelos, Alembic, constraints) o `testing-strategy` según la capa; `domain-local-eventos` si implementas reglas de negocio.
+- Carga `clean-architecture-modules` siempre; además `backend-conventions` (API, auth, errores), `db-migrations` (modelos, Alembic, constraints) o `testing-strategy` según la capa; `domain-darze` si implementas reglas de negocio.
 
 ## Reglas
 - Respeta capas y fronteras de módulo (verificado con `just arch`).

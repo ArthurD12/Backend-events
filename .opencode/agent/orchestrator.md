@@ -19,7 +19,7 @@ Eres el **orquestador** del backend del local de eventos. Coordinas; no implemen
 
 ## Flujo
 1. **Spec** → `spec-writer`. Presenta resumen y preguntas abiertas; espera aprobación.
-2. **Plan** → `architect` (skills `clean-architecture-modules`, `domain-local-eventos`). Espera aprobación.
+2. **Plan** → `architect` (skills `clean-architecture-modules`, `domain-darze`). Espera aprobación.
 3. **Tasks** → `architect` genera `tasks.md`.
 4. **Implement** → por tarea, delega en `backend-dev` (dominio, aplicación, infraestructura, migraciones, API) o en `test-engineer` (integración y casos de concurrencia). Las tareas `[P]` pueden ir en paralelo si no tocan los mismos archivos.
 5. **Review** → `reviewer` con spec, plan y diff. Si hay bloqueantes, crea tareas de corrección.
