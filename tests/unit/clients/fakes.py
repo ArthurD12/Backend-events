@@ -4,7 +4,6 @@ import re
 from uuid import UUID
 
 from local_eventos.modules.clients.domain.client import Client, Document
-
 from local_eventos.modules.clients.domain.document_correction import DocumentCorrection
 
 
