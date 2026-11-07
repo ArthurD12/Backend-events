@@ -84,11 +84,18 @@ class Client:
         email: str | None = None,
         address: str | None = None,
     ) -> None:
-        """Actualiza los datos de contacto. El documento se corrige con `correct_document`."""
-        self.name = _clean_name(name)
-        self.phone = _clean_phone(phone)
-        self.email = _clean_email(email)
-        self.address = _clean_optional(address)
+        """Actualiza los datos de contacto. El documento se corrige con `correct_document`.
+
+        Valida todo antes de asignar: si un dato es inválido, el cliente no cambia.
+        """
+        new_name = _clean_name(name)
+        new_phone = _clean_phone(phone)
+        new_email = _clean_email(email)
+        new_address = _clean_optional(address)
+        self.name = new_name
+        self.phone = new_phone
+        self.email = new_email
+        self.address = new_address
 
     def correct_document(
         self,
