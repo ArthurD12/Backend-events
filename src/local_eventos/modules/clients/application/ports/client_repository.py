@@ -13,3 +13,13 @@ class ClientRepository(Protocol):
 
     async def add(self, client: Client) -> None: ...
     async def update(self, client: Client) -> None: ...
+
+    async def search(
+        self, text: str, *, include_inactive: bool, limit: int
+    ) -> list[Client]:
+        """Clientes cuyo nombre, documento o teléfono contienen `text`, ordenados por nombre.
+
+        Sin distinguir mayúsculas. Los espacios y guiones del texto se ignoran al comparar
+        el teléfono. Un texto vacío devuelve todos los clientes.
+        """
+        ...
