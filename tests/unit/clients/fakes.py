@@ -5,10 +5,13 @@ from uuid import UUID
 
 from local_eventos.modules.clients.domain.client import Client, Document
 
+from local_eventos.modules.clients.domain.document_correction import DocumentCorrection
+
 
 class InMemoryClientRepository:
     def __init__(self) -> None:
         self.clients: dict[UUID, Client] = {}
+        self.corrections: list[DocumentCorrection] = []
 
     async def get(self, client_id: UUID) -> Client | None:
         return self.clients.get(client_id)
@@ -38,3 +41,6 @@ class InMemoryClientRepository:
             )
         ]
         return sorted(found, key=lambda c: c.name.lower())[:limit]
+
+    async def add_document_correction(self, correction: DocumentCorrection) -> None:
+        self.corrections.append(correction)

@@ -5,6 +5,8 @@ from uuid import UUID
 
 from local_eventos.modules.clients.domain.client import Client, Document
 
+from local_eventos.modules.clients.domain.document_correction import DocumentCorrection
+
 
 class ClientRepository(Protocol):
     async def get(self, client_id: UUID) -> Client | None: ...
@@ -23,3 +25,5 @@ class ClientRepository(Protocol):
         el teléfono. Un texto vacío devuelve todos los clientes.
         """
         ...
+
+    async def add_document_correction(self, correction: DocumentCorrection) -> None: ...

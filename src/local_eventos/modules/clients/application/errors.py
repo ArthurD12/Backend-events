@@ -21,3 +21,11 @@ class ClientNotFoundError(ClientApplicationError):
             "client.not_found",
             "No se encontró un cliente con ese identificador.",
         )
+
+
+class DocumentUnchangedError(ClientApplicationError):
+    def __init__(self) -> None:
+        super().__init__(
+            "client.document_unchanged",
+            "El documento nuevo es igual al actual.",
+        )
