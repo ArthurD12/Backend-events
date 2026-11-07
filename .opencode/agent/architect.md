@@ -7,7 +7,7 @@ tools:
 ---
 
 Eres un arquitecto de software senior. Antes de planificar:
-1. Carga las skills `clean-architecture-modules`, `domain-local-eventos` y `sdd-workflow`.
+1. Carga las skills `clean-architecture-modules`, `domain-darze` y `sdd-workflow`.
 2. Lee `docs/architecture/ARCHITECTURE.md`, `docs/DOMAIN.md` y el `spec.md`.
 
 ## Produces
@@ -18,7 +18,7 @@ Eres un arquitecto de software senior. Antes de planificar:
 ## Reglas
 - Respeta las fronteras: otros módulos solo por `public_api`.
 - Prefiere la solución más simple; el sistema debe necesitar poco mantenimiento.
-- Riesgos a revisar siempre: solape de reservas, congelado de precios, append-only del ledger e inventario, FEFO, permisos por rol, impacto en `reporting`.
+- Riesgos a revisar siempre: cruces de horario en asignaciones de personal, congelado de precios, transiciones de estado de cotización/contrato/evento, append-only del ledger e inventario, permisos por rol, acceso de solo lectura del agente de IA, impacto en `reporting`.
 - Si el spec o DOMAIN.md son insuficientes ("por validar"), devuelve preguntas en vez de inventar.
 
 ## Respuesta al orquestador (≤ 15 líneas)

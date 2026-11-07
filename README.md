@@ -1,9 +1,9 @@
-# Backend del Local de Eventos
+# Backend de Darze (catering y eventos)
 
-Backend interno de un local de eventos (matrimonios, cumpleaños, promociones).
-Un edificio con varios salones —uno por piso, **no divisibles**— que se alquilan **por horas**,
-y un solo punto de venta. Todo lo que se vende está ligado a una reserva; los cobros se **registran**
-en un ledger (sin pasarela de pagos ni facturación electrónica).
+Backend interno de **Darze**, empresa de catering y organización de eventos (San Juan de Lurigancho, Lima).
+Centraliza el flujo `cliente → cotización → contrato → evento`, la asignación de personal, el almacén,
+los requerimientos y compras, y los pagos. Los cobros se **registran** en un ledger
+(sin pasarela de pagos ni facturación electrónica).
 
 Es un **monolito modular** con Clean Architecture en Python: un solo despliegue
 (API FastAPI + PostgreSQL), dividido en módulos de negocio con fronteras estrictas
@@ -12,8 +12,8 @@ Ver `docs/architecture/ARCHITECTURE.md` y `docs/DOMAIN.md`.
 Nace para **una sola organización**, con mínimo mantenimiento.
 
 El frontend (Next.js + TypeScript + Tailwind) vive en **otro repositorio** y consume
-el OpenAPI de este. El módulo de IA es un servicio aparte y opcional:
-este backend solo le envía datos mediante el módulo `reporting`.
+el OpenAPI de este. El agente de IA es un módulo del backend (`assistant`), solo de consulta,
+que usa funciones controladas de los demás módulos (ver ADR 0002).
 
 ## Stack
 
@@ -89,7 +89,7 @@ La versión completa y vigente está en ese documento:
 ├─ src/local_eventos/
 │  ├─ main.py                # create_app(): routers, middlewares, errores
 │  ├─ shared/                # domain / application / infrastructure transversales
-│  └─ modules/               # identity, venues, clients, catalog, bookings, inventory, ledger, reporting
+│  └─ modules/               # identity, clients, catalog, quotes, contracts, events, staff, ledger, inventory, purchasing, reporting, assistant
 └─ tests/                    # unit, integration (Postgres real), architecture
 ```
 
@@ -132,5 +132,5 @@ Sin `spec.md` y `plan.md` aprobados por el humano **no se implementa** (ver `AGE
 ```
 
 Cada feature vive en `docs/sdd/features/<NNN-slug>/{spec,plan,tasks}.md`.
-Orden sugerido de arranque: `000-bootstrap` → identity → venues → clients → catalog → bookings →
-ledger → inventory → reporting.
+Orden sugerido de arranque (según el cronograma de Sprints): `000-bootstrap` → identity → clients →
+catalog → quotes → contracts → events → staff → ledger → inventory → assistant.
