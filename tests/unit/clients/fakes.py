@@ -17,3 +17,6 @@ class InMemoryClientRepository:
 
     async def add(self, client: Client) -> None:
         self.clients[client.id] = client
+
+    async def update(self, client: Client) -> None:
+        self.clients[client.id] = client
