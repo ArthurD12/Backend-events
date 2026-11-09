@@ -21,3 +21,19 @@ class DuplicateCategoryNameError(CatalogApplicationError):
             "catalog.category_name_duplicated",
             "Ya existe una categoría con ese nombre.",
         )
+
+
+class CategoryInactiveError(CatalogApplicationError):
+    def __init__(self) -> None:
+        super().__init__(
+            "catalog.category_inactive",
+            "La categoría está desactivada: no se le pueden agregar servicios.",
+        )
+
+
+class ServiceNotFoundError(CatalogApplicationError):
+    def __init__(self) -> None:
+        super().__init__(
+            "catalog.service_not_found",
+            "No se encontró un servicio con ese identificador.",
+        )
