@@ -30,9 +30,7 @@ async def _repository() -> InMemoryClientRepository:
     return repository
 
 
-async def _names(
-    repository: InMemoryClientRepository, query: SearchClientsQuery
-) -> list[str]:
+async def _names(repository: InMemoryClientRepository, query: SearchClientsQuery) -> list[str]:
     return [client.name for client in await SearchClients(repository)(query)]
 
 
@@ -40,9 +38,7 @@ async def _names(
 async def test_hu04_busca_por_parte_del_nombre_sin_importar_mayusculas() -> None:
     repository = await _repository()
 
-    assert await _names(repository, SearchClientsQuery(text="quispe")) == [
-        "Familia Quispe Mamani"
-    ]
+    assert await _names(repository, SearchClientsQuery(text="quispe")) == ["Familia Quispe Mamani"]
 
 
 @pytest.mark.asyncio
@@ -58,9 +54,7 @@ async def test_hu04_busca_por_documento() -> None:
 async def test_hu04_busca_por_telefono_aunque_se_escriba_con_espacios() -> None:
     repository = await _repository()
 
-    assert await _names(repository, SearchClientsQuery(text="987 654")) == [
-        "Familia Quispe Mamani"
-    ]
+    assert await _names(repository, SearchClientsQuery(text="987 654")) == ["Familia Quispe Mamani"]
 
 
 @pytest.mark.asyncio
@@ -77,9 +71,7 @@ async def test_hu04_texto_vacio_lista_todos_ordenados_por_nombre() -> None:
 @pytest.mark.asyncio
 async def test_hu04_excluye_inactivos_salvo_que_se_pidan() -> None:
     repository = await _repository()
-    inactive = next(
-        c for c in repository.clients.values() if c.name.startswith("Colegio")
-    )
+    inactive = next(c for c in repository.clients.values() if c.name.startswith("Colegio"))
     inactive.deactivate()
 
     assert "Colegio San Martín" not in await _names(repository, SearchClientsQuery())

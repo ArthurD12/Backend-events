@@ -1,0 +1,57 @@
+[importlinter]
+root_package = local_eventos
+include_external_packages = True
+
+[importlinter:contract:capas]
+name = Capas dentro de cada modulo: presentation -> application -> domain
+type = layers
+layers =
+    presentation
+    application
+    domain
+containers =
+    local_eventos.modules.identity
+    local_eventos.modules.commercial
+    local_eventos.modules.catalog
+    local_eventos.modules.staff
+    local_eventos.modules.ledger
+    local_eventos.modules.inventory
+    local_eventos.modules.purchasing
+    local_eventos.modules.reporting
+    local_eventos.modules.assistant
+
+[importlinter:contract:dominio-puro]
+name = El dominio no depende de frameworks
+type = forbidden
+source_modules =
+    local_eventos.modules.identity.domain
+    local_eventos.modules.commercial.domain
+    local_eventos.modules.catalog.domain
+    local_eventos.modules.staff.domain
+    local_eventos.modules.ledger.domain
+    local_eventos.modules.inventory.domain
+    local_eventos.modules.purchasing.domain
+    local_eventos.modules.reporting.domain
+    local_eventos.modules.assistant.domain
+forbidden_modules =
+    fastapi
+    sqlalchemy
+    pydantic
+allow_indirect_imports = True
+
+[importlinter:contract:modulos-independientes]
+name = Los modulos solo se usan entre si por su public_api
+type = independence
+modules =
+    local_eventos.modules.identity
+    local_eventos.modules.commercial
+    local_eventos.modules.catalog
+    local_eventos.modules.staff
+    local_eventos.modules.ledger
+    local_eventos.modules.inventory
+    local_eventos.modules.purchasing
+    local_eventos.modules.reporting
+    local_eventos.modules.assistant
+ignore_imports =
+    local_eventos.modules.** -> local_eventos.modules.*.public_api
+unmatched_ignore_imports_alerting = none

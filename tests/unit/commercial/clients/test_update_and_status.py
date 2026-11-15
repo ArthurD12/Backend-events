@@ -69,9 +69,7 @@ async def test_hu04_actualizacion_invalida_no_cambia_el_cliente() -> None:
 
     with pytest.raises(ClientValidationError):
         await UpdateClientContact(repository)(
-            UpdateClientContactCommand(
-                client_id=client.id, name="Familia Quispe", phone="12"
-            )
+            UpdateClientContactCommand(client_id=client.id, name="Familia Quispe", phone="12")
         )
 
     assert repository.clients[client.id].phone == "987654321"

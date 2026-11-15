@@ -25,3 +25,11 @@ __pycache__/
 # Archivos del Sistema Operativo
 .DS_Store
 Thumbs.db
+# Entorno de uv y cachés de herramientas
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Extensiones del editor
+.qodo/

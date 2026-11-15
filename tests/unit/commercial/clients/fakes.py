@@ -24,9 +24,7 @@ class InMemoryClientRepository:
     async def update(self, client: Client) -> None:
         self.clients[client.id] = client
 
-    async def search(
-        self, text: str, *, include_inactive: bool, limit: int
-    ) -> list[Client]:
+    async def search(self, text: str, *, include_inactive: bool, limit: int) -> list[Client]:
         needle = text.lower()
         phone_needle = re.sub(r"[\s-]", "", text)
         found = [

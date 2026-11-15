@@ -11,9 +11,7 @@ from local_eventos.modules.catalog.application.ports.category_repository import 
 )
 
 
-async def require_active_category(
-    categories: CategoryRepository, category_id: UUID
-) -> None:
+async def require_active_category(categories: CategoryRepository, category_id: UUID) -> None:
     """Un servicio solo puede entrar a una categoría que existe y está activa."""
     category = await categories.get(category_id)
     if category is None:

@@ -30,9 +30,7 @@ class UpdateServiceCommand:
 
 
 class UpdateService:
-    def __init__(
-        self, services: ServiceRepository, categories: CategoryRepository
-    ) -> None:
+    def __init__(self, services: ServiceRepository, categories: CategoryRepository) -> None:
         self._services = services
         self._categories = categories
 

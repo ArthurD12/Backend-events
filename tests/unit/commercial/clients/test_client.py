@@ -129,8 +129,6 @@ def test_hu04_correccion_invalida_conserva_el_documento_anterior() -> None:
     client = _register()
 
     with pytest.raises(ClientValidationError):
-        client.correct_document(
-            document_type=DocumentType.RUC, document_number="123", reason="x"
-        )
+        client.correct_document(document_type=DocumentType.RUC, document_number="123", reason="x")
 
     assert client.document.number == "44125896"

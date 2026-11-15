@@ -15,9 +15,7 @@ from local_eventos.modules.commercial.domain.clients.client import (
 from .fakes import InMemoryClientRepository
 
 
-def _command(
-    document_number: str = "44125896", phone: str = "987654321"
-) -> RegisterClientCommand:
+def _command(document_number: str = "44125896", phone: str = "987654321") -> RegisterClientCommand:
     return RegisterClientCommand(
         name="Familia Quispe Mamani",
         document_type=DocumentType.DNI,

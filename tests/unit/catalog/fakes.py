@@ -15,9 +15,7 @@ class InMemoryCategoryRepository:
 
     async def get_by_name(self, name: str) -> Category | None:
         wanted = name.lower()
-        return next(
-            (c for c in self.categories.values() if c.name.lower() == wanted), None
-        )
+        return next((c for c in self.categories.values() if c.name.lower() == wanted), None)
 
     async def add(self, category: Category) -> None:
         self.categories[category.id] = category

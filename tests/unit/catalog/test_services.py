@@ -78,9 +78,7 @@ class Catalog:
                 name=service.name,
                 category_id=category_id or service.category_id,
                 price_unit=service.price_unit,
-                reference_price_cents=(
-                    service.reference_price_cents if price is None else price
-                ),
+                reference_price_cents=(service.reference_price_cents if price is None else price),
             )
         )
 

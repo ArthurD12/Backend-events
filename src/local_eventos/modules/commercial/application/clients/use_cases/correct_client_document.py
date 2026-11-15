@@ -31,9 +31,7 @@ def _utc_now() -> datetime:
 
 
 class CorrectClientDocument:
-    def __init__(
-        self, clients: ClientRepository, now: Callable[[], datetime] = _utc_now
-    ) -> None:
+    def __init__(self, clients: ClientRepository, now: Callable[[], datetime] = _utc_now) -> None:
         self._clients = clients
         self._now = now
 
