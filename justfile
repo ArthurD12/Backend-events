@@ -23,6 +23,10 @@ arch:
 test:
     uv run pytest
 
+# Incluye las pruebas de integración (necesita Docker en ejecución)
+test-all:
+    uv run pytest -m ""
+
 check: lint types arch test
 
 dev:

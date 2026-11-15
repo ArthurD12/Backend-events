@@ -48,4 +48,5 @@ packages = ["local_eventos"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+addopts = "-m 'not integration'"
 markers = ["integration: necesita Docker (PostgreSQL real con Testcontainers)"]
