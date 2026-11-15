@@ -89,7 +89,7 @@ La versión completa y vigente está en ese documento:
 ├─ src/local_eventos/
 │  ├─ main.py                # create_app(): routers, middlewares, errores
 │  ├─ shared/                # domain / application / infrastructure transversales
-│  └─ modules/               # identity, clients, catalog, quotes, contracts, events, staff, ledger, inventory, purchasing, reporting, assistant
+│  └─ modules/               # identity, commercial, catalog, staff, ledger, inventory, purchasing, reporting, assistant
 └─ tests/                    # unit, integration (Postgres real), architecture
 ```
 
@@ -132,5 +132,5 @@ Sin `spec.md` y `plan.md` aprobados por el humano **no se implementa** (ver `AGE
 ```
 
 Cada feature vive en `docs/sdd/features/<NNN-slug>/{spec,plan,tasks}.md`.
-Orden sugerido de arranque (según el cronograma de Sprints): `000-bootstrap` → identity → clients →
-catalog → quotes → contracts → events → staff → ledger → inventory → assistant.
+Orden sugerido de arranque (según el cronograma de Sprints): `000-bootstrap` → identity → commercial (clientes) →
+catalog → commercial (cotizaciones, contratos, eventos) → staff → ledger → inventory → assistant.

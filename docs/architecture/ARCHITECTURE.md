@@ -27,11 +27,8 @@ Un solo despliegue (API FastAPI + PostgreSQL), dividido en **módulos de negocio
 │  │  └─ infrastructure/     # db (engine/session), config, logging, security, outbox
 │  └─ modules/
 │     ├─ identity/           # usuarios, roles, permisos, auth, historial de accesos
-│     ├─ clients/            # clientes (documento único) e historial comercial
+│     ├─ commercial/         # clientes, cotizaciones, contratos y eventos (ADR 0003)
 │     ├─ catalog/            # catálogo de servicios y precios referenciales
-│     ├─ quotes/             # cotizaciones: borrador → enviada → aceptada/rechazada/vencida
-│     ├─ contracts/          # contrato desde cotización aceptada, firma, adelanto pactado
-│     ├─ events/             # eventos: planificación, estados, calendario, ficha consolidada
 │     ├─ staff/              # trabajadores, disponibilidad, asignaciones sin cruces
 │     ├─ ledger/             # pagos, ingresos, egresos, saldos (append-only)
 │     ├─ inventory/          # productos, lotes, movimientos, requerimientos por evento
@@ -68,10 +65,10 @@ infrastructure ─► application ─► domain     (implementa los puertos)
 - Los routers no contienen lógica de negocio; traducen HTTP ⇄ caso de uso.
 
 ## 4. Comunicación entre módulos
-1. **Consulta síncrona** por `public_api` (p. ej. `contracts` pide a `quotes` los datos de una cotización aceptada; `assistant` consulta a `events` o `ledger` mediante funciones de solo lectura).
+1. **Consulta síncrona** por `public_api` (p. ej. `commercial` pide a `catalog` el precio de un servicio; `assistant` consulta a `commercial` o `ledger` mediante funciones de solo lectura). Dentro de `commercial`, los submódulos se usan directamente (ADR 0003).
 2. **Eventos de dominio en proceso** (p. ej. `QuoteAccepted`, `ContractSigned`, `EventFinished`) despachados dentro de la misma transacción. Sin broker externo.
 3. **Prohibido:** importar capas internas de otro módulo, joins SQL entre tablas de módulos distintos, FKs entre módulos.
-4. **Datos:** prefijo de tablas por módulo (`quotes_*`, `inventory_*`, `ledger_*`).
+4. **Datos:** prefijo de tablas por módulo (`commercial_*`, `inventory_*`, `ledger_*`).
 5. **Excepción controlada:** el esquema `reporting` expone **vistas estables** de solo lectura para el dashboard y los reportes; es el único lugar donde se cruzan datos de varios módulos.
 
 ## 5. Reglas verificables (automatizadas con import-linter)
@@ -100,11 +97,8 @@ name = Los módulos solo se usan por su public_api
 type = independence
 modules =
     local_eventos.modules.identity
-    local_eventos.modules.clients
+    local_eventos.modules.commercial
     local_eventos.modules.catalog
-    local_eventos.modules.quotes
-    local_eventos.modules.contracts
-    local_eventos.modules.events
     local_eventos.modules.staff
     local_eventos.modules.ledger
     local_eventos.modules.inventory
