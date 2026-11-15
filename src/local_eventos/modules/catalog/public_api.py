@@ -1,6 +1,6 @@
 """Superficie pública del módulo catalog: única vía de uso por otros módulos.
 
-Otro módulo (por ejemplo, quotes) importa solo desde aquí, nunca desde domain,
+Otro módulo (por ejemplo, commercial) importa solo desde aquí, nunca desde domain,
 application o infrastructure de catalog (AGENTS.md, regla 3).
 """
 
