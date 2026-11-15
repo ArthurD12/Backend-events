@@ -21,15 +21,13 @@ Python 3.12+ · FastAPI · Pydantic v2 · SQLAlchemy 2.0 async (asyncpg) · Alem
 uv · ruff · mypy (strict) · pytest (+ Testcontainers) · import-linter · structlog + Sentry ·
 Docker + GitHub Actions. **Sin** Redis, Celery ni Kafka.
 
-Las versiones concretas las fija `uv.lock` / `pyproject` cuando exista —se verifica en 000-bootstrap—;
-este README no fija versiones.
+Las versiones concretas las fijan `pyproject.toml` y `uv.lock`; este README no fija versiones.
 
 Detalle, justificación y comandos de instalación de cada tecnología: `docs/architecture/STACK.md`.
 
 ## Requisitos previos
 
-- Python 3.12 o superior
-- `uv` (entorno, dependencias y lockfile)
+- `uv` (instala Python 3.12, el entorno, las dependencias y el lockfile)
 - `just` (atajos de comandos)
 - Docker + Docker Compose (PostgreSQL local y tests de integración)
 - Un clon de este repositorio
@@ -38,13 +36,10 @@ Guía paso a paso desde cero: [`docs/INSTALACION.md`](docs/INSTALACION.md).
 
 ## Instalación
 
-> **se verifica en 000-bootstrap**: `pyproject.toml`, `docker-compose.yml` y `.env.example` aún no existen;
-> los pasos que dependen de ellos se marcan en `docs/INSTALACION.md`.
-
 ```bash
-cp .env.example .env        # se verifica en 000-bootstrap
-docker compose up -d db     # o: just up
+cp .env.example .env        # Windows: copy .env.example .env (y cambia la clave)
 just install                # uv sync
+just up                     # docker compose up -d db
 just migrate                # alembic upgrade head
 ```
 
@@ -54,13 +49,14 @@ just migrate                # alembic upgrade head
 just dev   # uv run fastapi dev src/local_eventos/main.py
 ```
 
-> **se verifica en 000-bootstrap**: la app runnable aún no existe.
+Comprueba http://localhost:8000/health (`ok`), http://localhost:8000/ready (`ready`) y http://localhost:8000/docs.
 
 ## Cómo correr tests y calidad
 
 ```bash
-just test     # pytest
-just check    # ruff + mypy + lint-imports + pytest
+just test     # pruebas unitarias (sin Docker)
+just test-all # unitarias + integración con PostgreSQL real (necesita Docker)
+just check    # ruff + mypy + lint-imports + pruebas unitarias
 just lint     # ruff check + formato
 just types    # mypy strict
 just arch     # import-linter

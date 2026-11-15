@@ -1,7 +1,7 @@
 # Plan: Proyecto ejecutable (bootstrap)
 
 - **Spec**: ./spec.md
-- **Estado**: borrador
+- **Estado**: aprobado (implementado el 15/11/2026)
 
 ## 1. Módulos y fronteras
 - No cambia ningún módulo de negocio. Se crea la base compartida:
