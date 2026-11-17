@@ -3,6 +3,7 @@
 import re
 from uuid import UUID
 
+from local_eventos.modules.commercial.application.clients.search_text import normalize
 from local_eventos.modules.commercial.domain.clients.client import Client, Document
 from local_eventos.modules.commercial.domain.clients.document_correction import DocumentCorrection
 
@@ -25,14 +26,14 @@ class InMemoryClientRepository:
         self.clients[client.id] = client
 
     async def search(self, text: str, *, include_inactive: bool, limit: int) -> list[Client]:
-        needle = text.lower()
+        needle = normalize(text)
         phone_needle = re.sub(r"[\s-]", "", text)
         found = [
             c
             for c in self.clients.values()
             if (include_inactive or c.active)
             and (
-                needle in c.name.lower()
+                needle in normalize(c.name)
                 or needle in c.document.number
                 or (phone_needle != "" and phone_needle in c.phone)
             )

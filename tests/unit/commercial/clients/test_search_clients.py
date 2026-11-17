@@ -94,3 +94,10 @@ async def test_hu04_limita_la_cantidad_de_resultados() -> None:
         )
 
     assert len(await SearchClients(repository)(SearchClientsQuery())) == MAX_RESULTS
+
+
+@pytest.mark.asyncio
+async def test_hu04_busca_sin_distinguir_tildes() -> None:
+    repository = await _repository()
+
+    assert await _names(repository, SearchClientsQuery(text="san martin")) == ["Colegio San Martín"]

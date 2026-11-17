@@ -18,8 +18,8 @@ class ClientRepository(Protocol):
     async def search(self, text: str, *, include_inactive: bool, limit: int) -> list[Client]:
         """Clientes cuyo nombre, documento o teléfono contienen `text`, ordenados por nombre.
 
-        Sin distinguir mayúsculas. Los espacios y guiones del texto se ignoran al comparar
-        el teléfono. Un texto vacío devuelve todos los clientes.
+        Sin distinguir mayúsculas ni tildes (`search_text.normalize`). Al comparar el teléfono
+        se ignoran los espacios y guiones del texto. Un texto vacío devuelve todos los clientes.
         """
         ...
 
