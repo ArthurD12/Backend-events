@@ -11,11 +11,10 @@ from alembic import context
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
+# Cada módulo con tablas se importa aquí para que Alembic las vea al generar migraciones.
+from local_eventos.modules.commercial.infrastructure import orm_models  # noqa: F401
 from local_eventos.shared.infrastructure.config import Settings
 from local_eventos.shared.infrastructure.orm import Base
-
-# Cuando un módulo tenga modelos ORM, se importan aquí para que Alembic los vea, p. ej.:
-# from local_eventos.modules.commercial.infrastructure import orm_models  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

@@ -12,7 +12,8 @@ NAMING_CONVENTION = {
     "ix": "ix_%(column_0_label)s",
     "uq": "uq_%(table_name)s_%(column_0_name)s",
     "ck": "ck_%(table_name)s_%(constraint_name)s",
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    # Sin la tabla destino: PostgreSQL corta los nombres de más de 63 caracteres.
+    "fk": "fk_%(table_name)s_%(column_0_name)s",
     "pk": "pk_%(table_name)s",
 }
 
