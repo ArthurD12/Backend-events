@@ -1,5 +1,7 @@
 # Comandos comunes. Requiere: uv, just, Docker (para tests de integración).
 
+set windows-shell := ["cmd.exe", "/c"]
+
 default:
     @just --list
 
