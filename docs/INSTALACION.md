@@ -104,6 +104,6 @@ Si los dos terminan en verde, la instalación es correcta.
 - **`/ready` responde `not_ready`** → PostgreSQL no está levantado (`just up`) o la clave de `DATABASE_URL` no es la misma que `POSTGRES_PASSWORD` en `.env`.
 - **`Falta POSTGRES_USER en .env`** al ejecutar `just up` → falta el paso 3.
 - **`Field required: database_url`** al ejecutar `just dev` o `just migrate` → falta el paso 3 o se ejecutó fuera de la carpeta del proyecto.
-- **Puerto 5432 ocupado** → hay otro PostgreSQL en la máquina. Cambia `POSTGRES_PORT` y el puerto de `DATABASE_URL` en `.env` (por ejemplo, a 5433).
+- **`just migrate` falla con `connection was closed in the middle of operation`** → hay otro PostgreSQL instalado en Windows usando el mismo puerto. Compruébalo con `netstat -ano | findstr :5433`: si aparecen dos números de proceso distintos, cambia `POSTGRES_PORT` y el puerto de `DATABASE_URL` en `.env` a otro libre (por ejemplo, 5434) y ejecuta `just up` de nuevo.
 - **`error during connect` / `Cannot connect to the Docker daemon`** → Docker Desktop no está abierto.
 - **`just check` dice "Would reformat"** → ejecuta `just fmt` y configura la extensión Ruff en VS Code (paso 1).
