@@ -37,9 +37,6 @@ Docker multi-stage (usuario no root, healthcheck) · docker-compose (API + Postg
 
 ## Por qué se eligió cada tecnología
 
-> **se verifica en 000-bootstrap**: estas justificaciones describen la decisión ya tomada en este
-> documento; la instalación y configuración reales (pyproject, compose, CI) se verifican en 000-bootstrap.
-
 | Tecnología | Por qué |
 |---|---|
 | Python 3.12+ | Lenguaje de la API: tipos estrictos, async nativo y ecosistema maduro para FastAPI. |
@@ -60,11 +57,11 @@ Docker multi-stage (usuario no root, healthcheck) · docker-compose (API + Postg
 **Comandos de instalación** (oficiales, una línea cada uno):
 
 ```bash
-pipx install uv                # entorno, dependencias y lockfile
-uv sync                        # instala lo fijado en uv.lock (o: just install)
-pipx install just              # atajos de comandos (just check, just test, just dev, ...)
-pipx install ruff              # lint y formato (en el repo se ejecuta vía uv run ruff)
-docker compose up -d db        # PostgreSQL local (o: just up) — se verifica en 000-bootstrap
+winget install --id=astral-sh.uv -e   # uv en Windows (Linux/macOS: instalador oficial de astral.sh)
+winget install --id=Casey.Just -e     # just en Windows (Linux/macOS: uv tool install rust-just)
+uv sync                               # instala lo fijado en uv.lock (o: just install)
+docker compose up -d db               # PostgreSQL local (o: just up)
+uv run pytest -m ""                   # pruebas con integración (o: just test-all)
 ```
 
 ## Decidido que NO se usa

@@ -1,5 +1,7 @@
 # Comandos comunes. Requiere: uv, just, Docker (para tests de integración).
 
+set windows-shell := ["cmd.exe", "/c"]
+
 default:
     @just --list
 
@@ -23,6 +25,10 @@ arch:
 test:
     uv run pytest
 
+# Incluye las pruebas de integración (necesita Docker en ejecución)
+test-all:
+    uv run pytest -m ""
+
 check: lint types arch test
 
 dev:
@@ -35,7 +41,7 @@ migration name:
     uv run alembic revision --autogenerate -m "{{name}}"
 
 openapi:
-    uv run python -m local_eventos.tools.export_openapi > openapi.json
+    uv run python -m local_eventos.tools.export_openapi
 
 docs:
     uv run mkdocs serve

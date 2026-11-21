@@ -1,4 +1,4 @@
-# Contribuir al Backend del Local de Eventos
+# Contribuir al Backend de Darze
 
 Guía breve para quien desarrolla en este repositorio. Las reglas permanentes y cortas viven en
 [`AGENTS.md`](../AGENTS.md) — este documento no las repite, solo explica cómo trabajar.
@@ -9,7 +9,7 @@ Nombra cada rama según el tipo de cambio y el tema, en minúsculas y con guione
 
 | Prefijo | Para qué | Ejemplo |
 |---|---|---|
-| `feat/` | Una feature nueva (o un módulo nuevo) | `feat/bookings-reserva` |
+| `feat/` | Una feature nueva (o un módulo nuevo) | `feat/quotes-cotizacion` |
 | `fix/` | Corrección de un defecto | `fix/ledger-reversion` |
 | `chore/` | Tareas de mantenimiento (dependencias, CI, tooling) | `chore/subir-uv` |
 | `docs/` | Solo documentación | `docs/sdd-000-bootstrap` |
@@ -23,7 +23,7 @@ Formato: `tipo(alcance): descripción breve en imperativo`.
 Tipos habituales: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `build`, `ci`.
 
 ```text
-feat(bookings): bloquea rango de horas al reservar
+feat(staff): impide asignaciones con horarios superpuestos
 fix(ledger): revierte cobro con movimiento inverso
 docs(sdd): agrega spec 000-bootstrap
 ```
