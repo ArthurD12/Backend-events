@@ -41,7 +41,7 @@ migration name:
     uv run alembic revision --autogenerate -m "{{name}}"
 
 openapi:
-    uv run python -m local_eventos.tools.export_openapi > openapi.json
+    uv run python -m local_eventos.tools.export_openapi
 
 docs:
     uv run mkdocs serve

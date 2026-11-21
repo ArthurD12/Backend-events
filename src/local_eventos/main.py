@@ -7,13 +7,14 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import async_sessionmaker  # ← NUEVO
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from local_eventos.modules.commercial.presentation import client_router  # ← NUEVO
-from local_eventos.modules.commercial.presentation.errors import (  # ← NUEVO
+from local_eventos.modules.commercial.presentation import client_router
+from local_eventos.modules.commercial.presentation.errors import (
     register_error_handlers as register_commercial_errors,
 )
-from local_eventos.shared.infrastructure.config import Settings
+from local_eventos.shared.infrastructure.config import CorsSettings, Settings
 from local_eventos.shared.infrastructure.db import check_database, create_engine
 from local_eventos.shared.presentation import health
 from local_eventos.shared.presentation.health import ReadinessCheck
@@ -42,14 +43,20 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
             await check_database(engine)
 
         app.state.readiness_check = check
-        app.state.sessions = async_sessionmaker(engine, expire_on_commit=False)  # ← NUEVO
+        app.state.sessions = async_sessionmaker(engine, expire_on_commit=False)
         yield
         await engine.dispose()
 
     app = FastAPI(title=API_TITLE, version=API_VERSION, lifespan=lifespan)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=CorsSettings().cors_origins,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     app.include_router(health.router)
-    app.include_router(client_router.router)  # ← NUEVO
-    register_commercial_errors(app)  # ← NUEVO
+    app.include_router(client_router.router)
+    register_commercial_errors(app)
     return app
 
 

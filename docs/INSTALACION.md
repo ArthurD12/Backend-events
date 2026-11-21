@@ -97,6 +97,8 @@ Si los dos terminan en verde, la instalación es correcta.
 | `just check` | Todo lo que revisa GitHub Actions en cada pull request |
 | `just fmt` | Corrige el formato y el orden de los imports |
 | `just migration "<nombre>"` | Genera una migración a partir de los modelos ORM |
+
+| `just openapi` | Actualiza `openapi.json` (el contrato con el frontend) después de cambiar la API |
 | `docker compose down` | Apaga PostgreSQL (los datos se conservan) |
 
 ## Problemas frecuentes
