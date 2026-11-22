@@ -145,3 +145,17 @@ def test_ca08_5_filtra_por_fecha_del_evento(api: TestClient, setup: dict[str, st
 
     assert inside["total"] >= 3
     assert outside["total"] == 0
+
+
+def test_ca09_descarga_el_pdf_con_los_datos_de_la_base(
+    api: TestClient, setup: dict[str, str]
+) -> None:
+    quote = api.post("/v1/quotes", json=_body(setup)).json()
+    api.post(f"/v1/quotes/{quote['id']}/status", json={"status": "SENT"})
+
+    response = api.get(f"/v1/quotes/{quote['id']}/pdf")
+
+    assert response.status_code == 200
+    assert response.headers["content-disposition"] == f'attachment; filename="{quote["code"]}.pdf"'
+    assert response.content.startswith(b"%PDF")
+    assert api.get(f"/v1/quotes/{quote['id']}").json()["status"] == "SENT"

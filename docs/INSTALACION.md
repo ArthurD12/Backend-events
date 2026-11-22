@@ -38,11 +38,15 @@ cp .env.example .env        # Linux/macOS
 
 El archivo `.env` está en `.gitignore`: nunca se sube a GitHub.
 
+Para el **PDF de las cotizaciones**, completa en `.env` los datos de Darze (`COMPANY_NAME`, `COMPANY_RUC`, `COMPANY_ADDRESS`, `COMPANY_PHONE`, `COMPANY_EMAIL`). Los que dejes vacíos no se imprimen.
+
 ## 4. Instalar las dependencias
 
 ```bash
 just install    # uv sync: crea .venv e instala las versiones exactas de uv.lock
 ```
+
+Incluye ReportLab, la librería del PDF de cotizaciones: no hace falta instalar nada más en Windows.
 
 ## 5. Levantar PostgreSQL
 

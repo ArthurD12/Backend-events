@@ -12,6 +12,7 @@
 | `alembic` | Migraciones |
 | `pwdlib[argon2]` (o `argon2-cffi`) | Hash de contraseñas |
 | `pyjwt` | Tokens de acceso |
+| `reportlab` | PDF de cotizaciones (ADR 0004). Sin librerías del sistema: funciona igual en Windows y Docker |
 | `structlog` | Logs estructurados |
 | `sentry-sdk[fastapi]` | Errores en producción |
 | `httpx` | Cliente HTTP del conector `reporting` |
@@ -25,6 +26,7 @@
 | `import-linter` | Reglas de arquitectura |
 | `pytest`, `pytest-asyncio`, `pytest-cov` | Tests |
 | `testcontainers[postgres]` | PostgreSQL real en integración |
+| `types-reportlab` | Tipos de ReportLab para que mypy (strict) revise el código del PDF |
 | `hypothesis` | Propiedades (ledger, inventario, solapes) |
 | `pre-commit` | Hooks locales |
 | `just` | Atajos de comandos |

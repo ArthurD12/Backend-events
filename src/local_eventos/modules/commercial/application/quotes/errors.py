@@ -35,3 +35,12 @@ class QuoteServiceInactiveError(QuoteApplicationError):
             "quote.service_inactive",
             f'El servicio "{name}" está desactivado: no se puede agregar a la cotización.',
         )
+
+
+class QuotePdfNotAvailableError(QuoteApplicationError):
+    def __init__(self) -> None:
+        super().__init__(
+            "quote.pdf_not_available",
+            "El PDF solo se descarga de una cotización enviada o aceptada. "
+            "Si está en borrador, márcala como enviada primero.",
+        )

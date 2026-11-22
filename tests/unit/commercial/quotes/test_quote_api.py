@@ -203,3 +203,31 @@ def test_permisos_compras_no_usa_cotizaciones_y_sin_sesion_401(api: Api) -> None
 
     assert (forbidden.status_code, forbidden.json()["code"]) == (403, "auth.forbidden")
     assert anonymous.status_code == 401
+
+
+def test_ca09_pdf_solo_de_enviada_y_sin_cambiar_la_cotizacion(api: Api) -> None:
+    quote_id = api.create().json()["id"]
+    url = f"/v1/quotes/{quote_id}"
+
+    draft = api.client.get(f"{url}/pdf")
+    api.client.post(f"{url}/status", json={"status": "SENT"})
+    before = api.client.get(url).json()
+    pdf = api.client.get(f"{url}/pdf")
+    after = api.client.get(url).json()
+
+    assert (draft.status_code, draft.json()["code"]) == (409, "quote.pdf_not_available")
+    assert pdf.status_code == 200
+    assert pdf.headers["content-type"] == "application/pdf"
+    assert pdf.headers["content-disposition"] == 'attachment; filename="COT-2026-0001.pdf"'
+    assert pdf.content.startswith(b"%PDF")
+    assert after == before
+
+
+def test_ca09_pdf_inexistente_y_sin_permiso(api: Api) -> None:
+    missing = api.client.get("/v1/quotes/00000000-0000-0000-0000-000000000000/pdf")
+    app = api.client.app
+    app.dependency_overrides[get_current_user] = signed_in_as(Role.PURCHASING_MANAGER)  # type: ignore[attr-defined]
+    forbidden = api.client.get("/v1/quotes/00000000-0000-0000-0000-000000000000/pdf")
+
+    assert missing.status_code == 404
+    assert forbidden.status_code == 403
