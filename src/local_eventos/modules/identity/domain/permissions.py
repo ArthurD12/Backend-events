@@ -20,6 +20,7 @@ class Permission(StrEnum):
     CATALOG_READ = "catalog:read"
     CATALOG_MANAGE = "catalog:manage"
     QUOTES_MANAGE = "quotes:manage"
+    DASHBOARD_READ = "dashboard:read"
 
 
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {

@@ -283,6 +283,132 @@
         "title": "ClientOut",
         "type": "object"
       },
+      "DashboardOut": {
+        "properties": {
+          "currency": {
+            "default": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "month": {
+            "description": "AAAA-MM",
+            "title": "Month",
+            "type": "string"
+          },
+          "quotes": {
+            "$ref": "#/components/schemas/DashboardQuotesOut"
+          }
+        },
+        "required": [
+          "month",
+          "quotes"
+        ],
+        "title": "DashboardOut",
+        "type": "object"
+      },
+      "DashboardQuoteOut": {
+        "properties": {
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "guests": {
+            "title": "Guests",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "total_cents": {
+            "title": "Total Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "client_name",
+          "event_type",
+          "event_date",
+          "guests",
+          "total_cents",
+          "status"
+        ],
+        "title": "DashboardQuoteOut",
+        "type": "object"
+      },
+      "DashboardQuotesOut": {
+        "properties": {
+          "accepted_amount_cents": {
+            "title": "Accepted Amount Cents",
+            "type": "integer"
+          },
+          "accepted_in_month": {
+            "description": "Creadas en el mes y hoy aceptadas",
+            "title": "Accepted In Month",
+            "type": "integer"
+          },
+          "created_in_month": {
+            "title": "Created In Month",
+            "type": "integer"
+          },
+          "drafts": {
+            "description": "En borrador y vigentes",
+            "title": "Drafts",
+            "type": "integer"
+          },
+          "recent": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardQuoteOut"
+            },
+            "title": "Recent",
+            "type": "array"
+          },
+          "sent_pending": {
+            "description": "Enviadas, vigentes, esperando respuesta",
+            "title": "Sent Pending",
+            "type": "integer"
+          },
+          "upcoming": {
+            "description": "Aceptadas con evento en los próximos 30 días",
+            "items": {
+              "$ref": "#/components/schemas/DashboardQuoteOut"
+            },
+            "title": "Upcoming",
+            "type": "array"
+          }
+        },
+        "required": [
+          "drafts",
+          "sent_pending",
+          "created_in_month",
+          "accepted_in_month",
+          "accepted_amount_cents",
+          "upcoming",
+          "recent"
+        ],
+        "title": "DashboardQuotesOut",
+        "type": "object"
+      },
       "DocumentType": {
         "enum": [
           "DNI",
@@ -395,7 +521,8 @@
           "clients:manage",
           "catalog:read",
           "catalog:manage",
-          "quotes:manage"
+          "quotes:manage",
+          "dashboard:read"
         ],
         "title": "Permission",
         "type": "string"
@@ -2903,6 +3030,84 @@
         "summary": "Deactivate Client",
         "tags": [
           "clientes"
+        ]
+      }
+    },
+    "/v1/dashboard": {
+      "get": {
+        "description": "Indicadores reales del negocio. Caja y stock se agregan cuando existan sus módulos.",
+        "operationId": "dashboard_get",
+        "parameters": [
+          {
+            "description": "AAAA-MM; por defecto, el actual",
+            "in": "query",
+            "name": "month",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "AAAA-MM; por defecto, el actual",
+              "title": "Month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Dashboard",
+        "tags": [
+          "panel"
         ]
       }
     },

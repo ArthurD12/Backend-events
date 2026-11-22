@@ -51,9 +51,12 @@ class InMemoryQuoteRepository:
             )
             for q in sorted(self.quotes.values(), key=lambda q: q.created_at, reverse=True)
         ]
+        created = {q.id: q.created_at for q in self.quotes.values()}
         found = [
             s
             for s in found
+            if (filters.created_from is None or created[s.id] >= filters.created_from)
+            and (filters.created_to is None or created[s.id] < filters.created_to)
             if (not text or text in s.code.lower() or text in s.client_name.lower())
             and (filters.client_id is None or s.client_id == filters.client_id)
             and (filters.status is None or s.status is filters.status)
@@ -61,6 +64,10 @@ class InMemoryQuoteRepository:
             and (filters.event_date_to is None or s.event_date <= filters.event_date_to)
         ]
         return found[offset : offset + limit], len(found)
+
+    async def total_amount(self, filters: QuoteFilters, *, today: date) -> int:
+        found, _ = await self.search(filters, today=today, limit=10_000, offset=0)
+        return sum(s.total_cents for s in found)
 
 
 class FakeServiceLookup:
