@@ -128,9 +128,12 @@ class QuoteOut(BaseModel):
     currency: str
     notes: str | None
     created_at: datetime
+    contract_id: UUID | None = Field(default=None, description="El contrato de esta cotización")
 
     @classmethod
-    def from_quote(cls, quote: Quote, *, client_name: str, today: date) -> Self:
+    def from_quote(
+        cls, quote: Quote, *, client_name: str, today: date, contract_id: UUID | None = None
+    ) -> Self:
         details = quote.details
         return cls(
             id=quote.id,
@@ -151,6 +154,7 @@ class QuoteOut(BaseModel):
             currency=CURRENCY,
             notes=quote.notes,
             created_at=quote.created_at,
+            contract_id=contract_id,
         )
 
 

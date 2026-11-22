@@ -11,6 +11,9 @@ from local_eventos.modules.catalog.public_api import service_lookup as catalog_s
 from local_eventos.modules.commercial.application.clients.ports.client_repository import (
     ClientRepository,
 )
+from local_eventos.modules.commercial.application.contracts.ports.contract_repository import (
+    ContractRepository,
+)
 from local_eventos.modules.commercial.application.quotes.ports.clock import Clock
 from local_eventos.modules.commercial.application.quotes.ports.document import (
     CompanyProfile,
@@ -24,9 +27,18 @@ from local_eventos.modules.commercial.infrastructure.client_repository import (
 )
 from local_eventos.modules.commercial.infrastructure.clock import LimaClock
 from local_eventos.modules.commercial.infrastructure.company_settings import CompanySettings
+from local_eventos.modules.commercial.infrastructure.contract_repository import (
+    SqlAlchemyContractRepository,
+)
 from local_eventos.modules.commercial.infrastructure.quote_pdf import ReportLabQuoteRenderer
 from local_eventos.modules.commercial.infrastructure.quote_repository import (
     SqlAlchemyQuoteRepository,
+)
+from local_eventos.modules.ledger.public_api import (
+    PaymentRecorder,
+    PaymentsLookup,
+    payment_recorder,
+    payments_lookup,
 )
 
 
@@ -54,3 +66,16 @@ def quote_renderer() -> QuoteDocumentRenderer:
 def company_profile() -> CompanyProfile:
     """Datos de Darze del `.env` (COMPANY_*). Se leen al pedir el documento."""
     return CompanySettings().profile()
+
+
+def contract_repository(session: AsyncSession) -> ContractRepository:
+    return SqlAlchemyContractRepository(session)
+
+
+def payments(session: AsyncSession) -> PaymentRecorder:
+    """Registro de pagos del módulo ledger, por su `public_api` (AGENTS.md, regla 3)."""
+    return payment_recorder(session)
+
+
+def contract_payments(session: AsyncSession) -> PaymentsLookup:
+    return payments_lookup(session)

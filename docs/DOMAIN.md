@@ -84,7 +84,7 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 | Clientes | ✔ | ✔ | – |
 | Cotizaciones y contratos | ✔ | ✔ | – |
 | Eventos, personal y asignaciones | ✔ | ✔ | lectura |
-| Pagos, ingresos y egresos | ✔ | **(por validar)** | – |
+| Pagos, ingresos y egresos | ✔ | ✔ | – |
 | Productos, almacén, requerimientos y compras | ✔ | requerimientos | ✔ |
 | Reportes financieros | ✔ | – | – |
 | Agente de IA | ✔ | ✔ | ✔ |
@@ -92,10 +92,10 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. ej. `quotes:create`), no por nombre de rol. Los registros con operaciones relacionadas no se eliminan: se desactivan (RN02). Correcciones y anulaciones guardan usuario, fecha, hora y motivo (RN03).
 
 ## 10. Preguntas abiertas para el negocio
-1. Política de cancelación y devolución del adelanto.
+1. ~~Política de cancelación y devolución del adelanto.~~ Resuelta: sin reglas automáticas (§11).
 2. **Cotización de promoción:** se cobra el servicio más un precio **por asiento**; cada alumno tiene su mesa (mínimo 4 asientos) y puede pedir sillas extra con costo. Falta definir cómo se cotiza y se paga **por alumno**. Se tratará como una historia aparte, después de HU07.
 3. Método de costeo de insumos.
-4. ¿El encargado de eventos puede registrar pagos?
+4. ~~¿El encargado de eventos puede registrar pagos?~~ Resuelta: sí (§11).
 5. ¿Hay servicios de cortesía (precio S/ 0)? Hoy el sistema los permite.
 
 ## 11. Registro de decisiones
@@ -116,4 +116,7 @@ Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. e
 | 22/11/2026 | Estados de la cotización | Borrador → enviada, aceptada o rechazada; enviada → aceptada, rechazada o borrador; aceptada y rechazada son finales (R-COT-3) | Equipo **(provisional)** |
 | 22/11/2026 | Fecha del evento | Hoy o una fecha futura (R-COT-4); al menos una línea por cotización (R-COT-5) | Equipo **(provisional)** |
 | 22/11/2026 | PDF de la cotización | Solo se descarga una cotización enviada o aceptada; el orden es armar → marcar como enviada → descargar (R-PDF-1) | Equipo **(provisional)** |
+| 22/11/2026 | Cancelación y devolución del adelanto | Sin reglas automáticas: el sistema registra la anulación con su motivo y, si hubo devolución, el monto, el usuario y la fecha (R-CON-3) | Product Owner |
+| 22/11/2026 | ¿Quién registra pagos, firma y adelanto? | Administrador y encargado de eventos (R-CON-4; amplía el actor de HU42) | Product Owner |
+| 22/11/2026 | Firma del contrato | La firma y el pago del adelanto se registran en un solo paso (R-CON-1); el adelanto es mayor que cero (R-CON-2); una cotización tiene un solo contrato (R-CON-5) | Equipo **(provisional)** |
 | 22/11/2026 | Sesión | Termina tras 30 minutos sin actividad; no se puede desactivar al último administrador activo (R-ID-4) | Equipo, según HU01 **(provisional)** |

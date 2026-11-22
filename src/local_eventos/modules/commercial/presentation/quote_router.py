@@ -29,6 +29,7 @@ from local_eventos.modules.commercial.domain.quotes.quote import Quote, QuoteSta
 from local_eventos.modules.commercial.presentation.dependencies import (
     Clients,
     Company,
+    Contracts,
     Quotes,
     Renderer,
     Services,
@@ -70,13 +71,14 @@ async def create_quote(
     quotes: Quotes,
     clients: Clients,
     services: Services,
+    contracts: Contracts,
     clock: Today,
 ) -> QuoteOut:
     """Crea la cotización en borrador, con su código y su total calculado (HU07)."""
     quote = await CreateQuote(quotes, clients, services, clock)(
         body.to_command(), created_by=user.id
     )
-    return await _out(quote, clients, clock.today())
+    return await _out(quote, clients, contracts, clock.today())
 
 
 @router.get("", operation_id="quotes_search")
@@ -109,10 +111,15 @@ async def search_quotes(
 
 @router.get("/{quote_id}", operation_id="quotes_get", responses=_NOT_FOUND)
 async def get_quote(
-    quote_id: UUID, _: SignedIn, quotes: Quotes, clients: Clients, clock: Today
+    quote_id: UUID,
+    _: SignedIn,
+    quotes: Quotes,
+    clients: Clients,
+    contracts: Contracts,
+    clock: Today,
 ) -> QuoteOut:
     """La cotización completa, con sus líneas."""
-    return await _out(await GetQuote(quotes)(quote_id), clients, clock.today())
+    return await _out(await GetQuote(quotes)(quote_id), clients, contracts, clock.today())
 
 
 @router.put(
@@ -131,11 +138,12 @@ async def update_quote(
     quotes: Quotes,
     clients: Clients,
     services: Services,
+    contracts: Contracts,
     clock: Today,
 ) -> QuoteOut:
     """Modifica una cotización en borrador (CA-08.1). Los precios ya congelados se mantienen."""
     quote = await UpdateQuote(quotes, clients, services, clock)(quote_id, body.to_command())
-    return await _out(quote, clients, clock.today())
+    return await _out(quote, clients, contracts, clock.today())
 
 
 @router.post(
@@ -147,11 +155,17 @@ async def update_quote(
     },
 )
 async def change_quote_status(
-    quote_id: UUID, body: QuoteStatusIn, _: SignedIn, quotes: Quotes, clients: Clients, clock: Today
+    quote_id: UUID,
+    body: QuoteStatusIn,
+    _: SignedIn,
+    quotes: Quotes,
+    clients: Clients,
+    contracts: Contracts,
+    clock: Today,
 ) -> QuoteOut:
     """Enviada, aceptada, rechazada o de vuelta a borrador (R-COT-3)."""
     quote = await ChangeQuoteStatus(quotes, clock)(quote_id, QuoteStatus(body.status))
-    return await _out(quote, clients, clock.today())
+    return await _out(quote, clients, contracts, clock.today())
 
 
 @router.get(
@@ -182,6 +196,12 @@ async def quote_pdf(
     )
 
 
-async def _out(quote: Quote, clients: Clients, today: date) -> QuoteOut:
+async def _out(quote: Quote, clients: Clients, contracts: Contracts, today: date) -> QuoteOut:
     client = await clients.get(quote.client_id)
-    return QuoteOut.from_quote(quote, client_name=client.name if client else "", today=today)
+    contract = await contracts.get_by_quote(quote.id)
+    return QuoteOut.from_quote(
+        quote,
+        client_name=client.name if client else "",
+        today=today,
+        contract_id=contract.id if contract else None,
+    )
