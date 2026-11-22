@@ -98,7 +98,7 @@ async def test_hu06_categoria_inexistente() -> None:
     assert error.value.code == "catalog.category_not_found"
 
     with pytest.raises(CategoryNotFoundError):
-        await DeactivateCategory(repository, InMemoryServiceRepository)(uuid4())
+        await DeactivateCategory(repository, InMemoryServiceRepository())(uuid4())
 
 
 @pytest.mark.asyncio
