@@ -134,3 +134,57 @@ class QuoteCounterRow(Base):
 
     year: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
     last: Mapped[int]
+
+
+class ContractRow(Base):
+    """Contrato (HU41–HU42). `quote_id` es único: una cotización, un solo contrato (R-CON-5).
+
+    Un trigger de la migración impide cambiar montos o firma de un contrato firmado o anulado.
+    """
+
+    __tablename__ = "commercial_contracts"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('PENDING_SIGNATURE', 'SIGNED', 'CANCELLED')", name="status_valid"
+        ),
+        CheckConstraint("advance_cents > 0 AND advance_cents <= total_cents", name="advance_valid"),
+        CheckConstraint(
+            "(status = 'SIGNED') <= (signed_on IS NOT NULL AND advance_payment_id IS NOT NULL)",
+            name="signed_has_signature",
+        ),
+        CheckConstraint(
+            "(status = 'CANCELLED') = (cancel_reason IS NOT NULL)", name="cancelled_has_reason"
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(20), unique=True)
+    quote_id: Mapped[UUID] = mapped_column(ForeignKey("commercial_quotes.id"), unique=True)
+    client_id: Mapped[UUID] = mapped_column(ForeignKey("commercial_clients.id"), index=True)
+    event_date: Mapped[date] = mapped_column(Date)
+    total_cents: Mapped[int]
+    advance_cents: Mapped[int]
+    balance_due_date: Mapped[date] = mapped_column(Date)
+    status: Mapped[str] = mapped_column(String(20), index=True)
+    created_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    signed_on: Mapped[date | None] = mapped_column(Date)
+    signer_name: Mapped[str | None] = mapped_column(String(120))
+    advance_payment_id: Mapped[UUID | None]  # pago de `ledger`: sin FK entre módulos
+    signature_recorded_by: Mapped[UUID | None]
+    signature_recorded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cancel_reason: Mapped[str | None] = mapped_column(String(500))
+    refund_cents: Mapped[int | None]
+    refund_payment_id: Mapped[UUID | None]
+    cancel_note: Mapped[str | None] = mapped_column(String(500))
+    cancelled_by: Mapped[UUID | None]
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ContractCounterRow(Base):
+    """Último correlativo usado por año, para el código CON-AAAA-NNNN."""
+
+    __tablename__ = "commercial_contract_counters"
+
+    year: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    last: Mapped[int]

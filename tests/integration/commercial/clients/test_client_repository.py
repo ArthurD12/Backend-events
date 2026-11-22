@@ -50,7 +50,8 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
     async with engine.begin() as connection:
         await connection.execute(
             text(
-                "TRUNCATE commercial_quote_lines, commercial_quotes,"
+                "TRUNCATE commercial_contracts, commercial_contract_counters,"
+                " commercial_quote_lines, commercial_quotes,"
                 " commercial_client_document_corrections, commercial_clients"
             )
         )
