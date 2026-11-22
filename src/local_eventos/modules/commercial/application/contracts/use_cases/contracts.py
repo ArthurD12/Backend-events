@@ -18,12 +18,16 @@ from local_eventos.modules.commercial.application.contracts.ports.contract_repos
     ContractRepository,
     ContractSummary,
 )
+from local_eventos.modules.commercial.application.events.ports.event_repository import (
+    EventRepository,
+)
 from local_eventos.modules.commercial.application.quotes.ports.clock import Clock
 from local_eventos.modules.commercial.application.quotes.ports.quote_repository import (
     QuoteRepository,
 )
 from local_eventos.modules.commercial.domain.contracts.contract import (
     Contract,
+    ContractRuleError,
     check_signature,
     format_contract_code,
 )
@@ -136,14 +140,23 @@ class SignContract:
 
 
 class CancelContract:
-    """Anulación con motivo; si hubo devolución, se registra su monto (R-CON-3)."""
+    """Anulación con motivo; si hubo devolución, se registra su monto (R-CON-3).
+
+    Un contrato que ya se convirtió en evento no se anula aquí (R-EVT-3): el evento se cancela
+    desde su propia pantalla (HU11).
+    """
 
     def __init__(
-        self, contracts: ContractRepository, payments: PaymentRecorder, clock: Clock
+        self,
+        contracts: ContractRepository,
+        payments: PaymentRecorder,
+        clock: Clock,
+        events: EventRepository,
     ) -> None:
         self._contracts = contracts
         self._payments = payments
         self._clock = clock
+        self._events = events
 
     async def __call__(
         self,
@@ -158,6 +171,11 @@ class CancelContract:
         today, now = self._clock.today(), self._clock.now()
         contract = await _get_or_fail(self._contracts, contract_id)
         contract.check_cancellation(reason, refund_cents)
+        if await self._events.get_by_contract(contract.id) is not None:
+            raise ContractRuleError(
+                "contract.has_event",
+                "Este contrato ya es un evento: para anularlo, cancela el evento.",
+            )
         refund_payment_id = None
         if refund_cents is not None:
             how = refund or AdvancePayment(paid_on=today, method=PaymentMethod.CASH)

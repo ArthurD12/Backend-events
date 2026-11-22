@@ -1,4 +1,4 @@
-"""Traduce los errores de clientes y cotizaciones a respuestas HTTP con su `code` estable."""
+"""Traduce los errores del módulo comercial a respuestas HTTP con su `code` estable."""
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -14,6 +14,11 @@ from local_eventos.modules.commercial.application.contracts.errors import (
     ContractNotFoundError,
     ContractQuoteNotFoundError,
 )
+from local_eventos.modules.commercial.application.events.errors import (
+    EventAlreadyExistsError,
+    EventApplicationError,
+    EventNotFoundError,
+)
 from local_eventos.modules.commercial.application.quotes.errors import (
     QuoteApplicationError,
     QuoteClientInactiveError,
@@ -28,6 +33,7 @@ from local_eventos.modules.commercial.domain.contracts.contract import (
     ContractRuleError,
     ContractValidationError,
 )
+from local_eventos.modules.commercial.domain.events.event import EventRuleError
 from local_eventos.modules.commercial.domain.quotes.quote import (
     QuoteRuleError,
     QuoteValidationError,
@@ -107,6 +113,24 @@ async def _contract_application_error(request: Request, error: Exception) -> JSO
     )
 
 
+_EVENT_STATUS = {EventNotFoundError: 404, EventAlreadyExistsError: 409}
+
+
+async def _event_rule_error(request: Request, error: Exception) -> JSONResponse:
+    assert isinstance(error, EventRuleError)
+    return problem_response(
+        status=409, title="Operación no permitida", code=error.code, detail=str(error)
+    )
+
+
+async def _event_application_error(request: Request, error: Exception) -> JSONResponse:
+    assert isinstance(error, EventApplicationError)
+    status = _EVENT_STATUS.get(type(error), 422)
+    return problem_response(
+        status=status, title="Operación no permitida", code=error.code, detail=str(error)
+    )
+
+
 def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(ClientValidationError, _client_validation_error)
     app.add_exception_handler(ClientApplicationError, _client_application_error)
@@ -116,3 +140,5 @@ def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(ContractValidationError, _contract_validation_error)
     app.add_exception_handler(ContractRuleError, _contract_rule_error)
     app.add_exception_handler(ContractApplicationError, _contract_application_error)
+    app.add_exception_handler(EventRuleError, _event_rule_error)
+    app.add_exception_handler(EventApplicationError, _event_application_error)

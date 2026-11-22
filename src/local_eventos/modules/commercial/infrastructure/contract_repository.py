@@ -22,6 +22,7 @@ from local_eventos.modules.commercial.application.contracts.ports.contract_repos
 from local_eventos.modules.commercial.domain.contracts.contract import (
     Cancellation,
     Contract,
+    ContractRuleError,
     ContractStatus,
     Signature,
 )
@@ -63,7 +64,16 @@ class SqlAlchemyContractRepository:
         if row is None:
             raise LookupError(f"El contrato {contract.id} no existe en la base de datos.")
         _copy_to_row(contract, row)
-        await self._session.flush()
+        try:
+            await self._session.flush()
+        except IntegrityError as error:
+            # Alguien convirtió el contrato en evento mientras se anulaba (R-EVT-3).
+            if "R-EVT-3" in str(error.orig):
+                raise ContractRuleError(
+                    "contract.has_event",
+                    "Este contrato ya es un evento: para anularlo, cancela el evento.",
+                ) from error
+            raise
 
     async def next_number(self, year: int) -> int:
         statement = (

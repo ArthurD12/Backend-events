@@ -1,7 +1,7 @@
 # Spec: Convertir el contrato en evento
 
 - **ID**: 006-events
-- **Estado**: borrador (pendiente de aprobación)
+- **Estado**: aprobado (César Suclupe, 22/11/2026)
 - **Módulos afectados**: `commercial` (submódulo `events`), `identity` (consulta de coordinadores y permisos)
 - **Historia**: HU10 (#11), **adaptada a HU42**: el evento nace del contrato firmado con adelanto, no de la cotización (decisión del Product Owner, 22/11/2026).
 

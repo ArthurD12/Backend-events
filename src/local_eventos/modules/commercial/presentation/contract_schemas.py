@@ -97,11 +97,18 @@ class ContractOut(BaseModel):
     signature: SignatureOut | None
     cancellation: CancellationOut | None
     payments: list[PaymentOut]
+    event_id: UUID | None = Field(description="El evento, si el contrato ya se convirtió (HU10)")
     created_at: datetime
 
     @classmethod
     def from_contract(
-        cls, contract: Contract, *, quote_code: str, client_name: str, payments: list[Payment]
+        cls,
+        contract: Contract,
+        *,
+        quote_code: str,
+        client_name: str,
+        payments: list[Payment],
+        event_id: UUID | None = None,
     ) -> Self:
         signature, cancellation = contract.signature, contract.cancellation
         return cls(
@@ -134,6 +141,7 @@ class ContractOut(BaseModel):
             if cancellation
             else None,
             payments=[PaymentOut.from_payment(p) for p in payments],
+            event_id=event_id,
             created_at=contract.created_at,
         )
 

@@ -36,6 +36,7 @@ from local_eventos.modules.ledger.domain.payment import (
     PaymentKind,
     PaymentMethod,
 )
+from tests.unit.commercial.events.fakes import InMemoryEventRepository
 from tests.unit.commercial.quotes.world import World, build_world
 from tests.unit.ledger.fakes import InMemoryPaymentRepository
 
@@ -55,7 +56,10 @@ class Setup:
         return SignContract(self.contracts, RecordPayment(self.payments), self.world.clock)
 
     def cancel(self) -> CancelContract:
-        return CancelContract(self.contracts, RecordPayment(self.payments), self.world.clock)
+        return CancelContract(
+            self.contracts, RecordPayment(self.payments), self.world.clock,
+            InMemoryEventRepository(),
+        )  # fmt: skip
 
     async def accepted_quote(self) -> Quote:
         quote = await self.world.create()(self.world.command(), created_by=uuid4())

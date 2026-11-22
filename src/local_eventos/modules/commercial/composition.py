@@ -14,6 +14,9 @@ from local_eventos.modules.commercial.application.clients.ports.client_repositor
 from local_eventos.modules.commercial.application.contracts.ports.contract_repository import (
     ContractRepository,
 )
+from local_eventos.modules.commercial.application.events.ports.event_repository import (
+    EventRepository,
+)
 from local_eventos.modules.commercial.application.quotes.ports.clock import Clock
 from local_eventos.modules.commercial.application.quotes.ports.document import (
     CompanyProfile,
@@ -30,10 +33,15 @@ from local_eventos.modules.commercial.infrastructure.company_settings import Com
 from local_eventos.modules.commercial.infrastructure.contract_repository import (
     SqlAlchemyContractRepository,
 )
+from local_eventos.modules.commercial.infrastructure.event_repository import (
+    SqlAlchemyEventRepository,
+)
 from local_eventos.modules.commercial.infrastructure.quote_pdf import ReportLabQuoteRenderer
 from local_eventos.modules.commercial.infrastructure.quote_repository import (
     SqlAlchemyQuoteRepository,
 )
+from local_eventos.modules.identity.public_api import CoordinatorLookup
+from local_eventos.modules.identity.public_api import coordinator_lookup as identity_coordinators
 from local_eventos.modules.ledger.public_api import (
     PaymentRecorder,
     PaymentsLookup,
@@ -79,3 +87,12 @@ def payments(session: AsyncSession) -> PaymentRecorder:
 
 def contract_payments(session: AsyncSession) -> PaymentsLookup:
     return payments_lookup(session)
+
+
+def event_repository(session: AsyncSession) -> EventRepository:
+    return SqlAlchemyEventRepository(session)
+
+
+def coordinators(session: AsyncSession) -> CoordinatorLookup:
+    """Quiénes pueden coordinar un evento, por la `public_api` de identity (R-EVT-2)."""
+    return identity_coordinators(session)

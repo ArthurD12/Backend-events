@@ -1,7 +1,7 @@
 # Plan: Convertir el contrato en evento
 
 - **Spec**: ./spec.md
-- **Estado**: borrador (pendiente de aprobación)
+- **Estado**: aprobado (César Suclupe, 22/11/2026)
 
 ## 1. Módulos y fronteras
 - **`commercial`**, submódulo `events` (ADR 0003): lee el contrato y su cotización del mismo módulo. FK `contract_id` (única), `quote_id` y `client_id`.
