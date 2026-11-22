@@ -1,7 +1,7 @@
 # Plan: Inicio de sesión, usuarios e historial de accesos
 
 - **Spec**: ./spec.md
-- **Estado**: borrador (pendiente de aprobación)
+- **Estado**: aprobado (César Suclupe, 22/11/2026)
 
 ## 1. Módulos y fronteras
 - **`identity`**: usuarios, roles, permisos, sesiones e historial de accesos.

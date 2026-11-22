@@ -1,7 +1,7 @@
 # Spec: Inicio de sesión, usuarios e historial de accesos
 
 - **ID**: 001-identity
-- **Estado**: borrador (pendiente de aprobación)
+- **Estado**: aprobado (César Suclupe, 22/11/2026)
 - **Módulos afectados**: `identity` (nuevo contenido); `commercial` y `catalog` (rutas protegidas)
 - **Historias**: HU01 (#2), HU02 (#3), HU03 (#4)
 
