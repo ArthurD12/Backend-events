@@ -1,8 +1,7 @@
 """Casos de uso de cotizaciones con piezas en memoria (HU07, HU08)."""
 
-from dataclasses import dataclass
-from datetime import date, time, timedelta
-from uuid import UUID, uuid4
+from datetime import date, timedelta
+from uuid import uuid4
 
 import pytest
 
@@ -22,81 +21,14 @@ from local_eventos.modules.commercial.application.quotes.use_cases.query_quotes 
     GetQuote,
     SearchQuotes,
 )
-from local_eventos.modules.commercial.application.quotes.use_cases.save_quote import (
-    CreateQuote,
-    QuoteCommand,
-    UpdateQuote,
-)
-from local_eventos.modules.commercial.domain.clients.client import Client, DocumentType
 from local_eventos.modules.commercial.domain.quotes.quote import (
-    EventType,
     LineKind,
     QuoteRuleError,
     QuoteStatus,
     QuoteValidationError,
 )
-from tests.unit.commercial.clients.fakes import InMemoryClientRepository
 
-from .fakes import FakeClock, FakeServiceLookup, InMemoryQuoteRepository
-
-
-@dataclass
-class World:
-    quotes: InMemoryQuoteRepository
-    clients: InMemoryClientRepository
-    catalog: FakeServiceLookup
-    clock: FakeClock
-    client: Client
-    buffet: UUID
-    chairs: UUID
-
-    def create(self) -> CreateQuote:
-        return CreateQuote(self.quotes, self.clients, self.catalog, self.clock)
-
-    def update(self) -> UpdateQuote:
-        return UpdateQuote(self.quotes, self.clients, self.catalog, self.clock)
-
-    def command(self, **changes: object) -> QuoteCommand:
-        data: dict[str, object] = {
-            "client_id": self.client.id,
-            "event_type": EventType.WEDDING,
-            "event_date": date(2026, 12, 19),
-            "start_time": time(20, 0),
-            "end_time": time(3, 0),
-            "venue": "Local Los Jardines",
-            "guests": 100,
-            "lines": [
-                LineInput(kind=LineKind.SERVICE, service_id=self.buffet),
-                LineInput(kind=LineKind.SERVICE, service_id=self.chairs, quantity=100),
-                LineInput(kind=LineKind.EXTRA, description="Movilidad", unit_price_cents=15000),
-            ],
-            **changes,
-        }
-        return QuoteCommand(**data)  # type: ignore[arg-type]
-
-
-async def _client(clients: InMemoryClientRepository, *, active: bool = True) -> Client:
-    client = Client.register(
-        name="Familia Quispe",
-        document_type=DocumentType.DNI,
-        document_number=str(40_000_000 + len(clients.clients)),
-        phone="987654321",
-    )
-    if not active:
-        client.deactivate()
-    await clients.add(client)
-    return client
-
-
-@pytest.fixture
-async def world() -> World:
-    clients = InMemoryClientRepository()
-    client = await _client(clients)
-    catalog = FakeServiceLookup()
-    buffet = catalog.add("Buffet criollo", "PER_PERSON", 4500)
-    chairs = catalog.add("Silla Tiffany", "PER_UNIT", 650)
-    quotes = InMemoryQuoteRepository({client.id: client.name})
-    return World(quotes, clients, catalog, FakeClock(), client, buffet, chairs)
+from .world import World, make_client
 
 
 async def test_ca07_crea_borrador_con_codigo_lineas_congeladas_y_total(world: World) -> None:
@@ -141,7 +73,7 @@ async def test_regla_10_el_precio_de_la_linea_se_puede_negociar(world: World) ->
 
 
 async def test_ca07_1_el_cliente_debe_existir_y_estar_activo(world: World) -> None:
-    inactive = await _client(world.clients, active=False)
+    inactive = await make_client(world.clients, active=False)
 
     with pytest.raises(QuoteClientInactiveError):
         await world.create()(world.command(client_id=inactive.id), created_by=uuid4())

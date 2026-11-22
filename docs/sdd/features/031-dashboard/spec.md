@@ -1,7 +1,7 @@
 # Spec: Panel de indicadores del administrador (primera parte)
 
 - **ID**: 031-dashboard
-- **Estado**: borrador (pendiente de aprobación)
+- **Estado**: aprobado (César Suclupe, 22/11/2026)
 - **Módulos afectados**: `reporting` (nuevo endpoint), `commercial` (consulta de solo lectura vía `public_api`), `identity` (permiso nuevo)
 - **Historia**: HU31 (#32), **parcial**: solo los indicadores que ya tienen datos reales
 

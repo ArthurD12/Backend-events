@@ -1,7 +1,7 @@
 """Puerto del repositorio de cotizaciones: la aplicación lo usa, la infraestructura lo cumple."""
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from typing import Protocol
 from uuid import UUID
 
@@ -15,6 +15,8 @@ class QuoteFilters:
     status: QuoteStatus | None = None  # EXPIRED también se puede buscar
     event_date_from: date | None = None
     event_date_to: date | None = None
+    created_from: datetime | None = None  # incluido
+    created_to: datetime | None = None  # excluido
 
 
 @dataclass(frozen=True)
@@ -48,4 +50,8 @@ class QuoteRepository(Protocol):
         self, filters: QuoteFilters, *, today: date, limit: int, offset: int
     ) -> tuple[list[QuoteSummary], int]:
         """Una página, de la más reciente a la más antigua, y el total que cumple el filtro."""
+        ...
+
+    async def total_amount(self, filters: QuoteFilters, *, today: date) -> int:
+        """Suma de `total_cents` de las cotizaciones que cumplen el filtro."""
         ...

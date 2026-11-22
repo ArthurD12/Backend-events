@@ -1,7 +1,7 @@
 # Plan: Panel de indicadores del administrador (primera parte)
 
 - **Spec**: ./spec.md
-- **Estado**: borrador (pendiente de aprobación)
+- **Estado**: aprobado (César Suclupe, 22/11/2026)
 
 ## 1. Módulos y fronteras
 - **`reporting`** es el único lugar que cruza datos de varios módulos (ARCHITECTURE.md). Expone `GET /v1/dashboard` y arma la respuesta pidiendo a cada módulo sus números por su `public_api`.

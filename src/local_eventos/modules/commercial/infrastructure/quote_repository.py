@@ -118,6 +118,15 @@ class SqlAlchemyQuoteRepository:
         ]
         return items, int(total or 0)
 
+    async def total_amount(self, filters: QuoteFilters, *, today: date) -> int:
+        total = await self._session.scalar(
+            select(func.coalesce(func.sum(QuoteRow.total_cents), 0))
+            .select_from(QuoteRow)
+            .join(ClientRow, ClientRow.id == QuoteRow.client_id)
+            .where(*_conditions(filters, today))
+        )
+        return int(total or 0)
+
     async def _lines(self, quote_id: UUID) -> list[QuoteLine]:
         rows = await self._session.scalars(
             select(QuoteLineRow)
@@ -154,6 +163,10 @@ def _conditions(filters: QuoteFilters, today: date) -> list[ColumnElement[bool]]
         conditions.append(QuoteRow.event_date >= filters.event_date_from)
     if filters.event_date_to is not None:
         conditions.append(QuoteRow.event_date <= filters.event_date_to)
+    if filters.created_from is not None:
+        conditions.append(QuoteRow.created_at >= filters.created_from)
+    if filters.created_to is not None:
+        conditions.append(QuoteRow.created_at < filters.created_to)
     if filters.status is QuoteStatus.EXPIRED:
         conditions.append(and_(QuoteRow.status.in_(_OPEN), QuoteRow.valid_until < today))
     elif filters.status is not None:
