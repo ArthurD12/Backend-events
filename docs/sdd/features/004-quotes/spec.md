@@ -1,7 +1,7 @@
 # Spec: Cotizaciones (elaborar, actualizar y controlar su estado)
 
 - **ID**: 004-quotes
-- **Estado**: borrador (pendiente de aprobación)
+- **Estado**: aprobado (César Suclupe, 22/11/2026)
 - **Módulos afectados**: `commercial` (submódulo `quotes`), `catalog` (solo lectura, vía `public_api`), `identity` (permiso nuevo)
 - **Historias**: HU07 (#8), HU08 (#9)
 

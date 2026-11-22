@@ -1,7 +1,7 @@
 # Plan: Cotizaciones
 
 - **Spec**: ./spec.md
-- **Estado**: borrador (pendiente de aprobación)
+- **Estado**: aprobado (César Suclupe, 22/11/2026)
 
 ## 1. Módulos y fronteras
 - **`commercial`**, submódulo `quotes` en cada capa (ADR 0003): `domain/quotes/`, `application/quotes/`, tablas `commercial_quote*`.
