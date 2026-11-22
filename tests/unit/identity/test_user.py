@@ -80,6 +80,10 @@ def test_r_id_3_permisos_segun_la_tabla_del_dominio() -> None:
     compras = _user(role=Role.PURCHASING_MANAGER)
 
     assert admin.permissions == frozenset(Permission)
-    assert eventos.permissions == {Permission.CLIENTS_MANAGE, Permission.CATALOG_READ}
+    assert eventos.permissions == {
+        Permission.CLIENTS_MANAGE,
+        Permission.CATALOG_READ,
+        Permission.QUOTES_MANAGE,
+    }
     assert compras.permissions == {Permission.CATALOG_READ}
     assert admin.is_active_admin and not eventos.is_active_admin

@@ -19,11 +19,14 @@ class Permission(StrEnum):
     CLIENTS_MANAGE = "clients:manage"
     CATALOG_READ = "catalog:read"
     CATALOG_MANAGE = "catalog:manage"
+    QUOTES_MANAGE = "quotes:manage"
 
 
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
     Role.ADMIN: frozenset(Permission),
-    Role.EVENTS_MANAGER: frozenset({Permission.CLIENTS_MANAGE, Permission.CATALOG_READ}),
+    Role.EVENTS_MANAGER: frozenset(
+        {Permission.CLIENTS_MANAGE, Permission.CATALOG_READ, Permission.QUOTES_MANAGE}
+    ),
     Role.PURCHASING_MANAGER: frozenset({Permission.CATALOG_READ}),
 }
 
