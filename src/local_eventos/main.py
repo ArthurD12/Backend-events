@@ -14,7 +14,11 @@ from local_eventos.modules.catalog.presentation import category_router, service_
 from local_eventos.modules.catalog.presentation.errors import (
     register_error_handlers as register_catalog_errors,
 )
-from local_eventos.modules.commercial.presentation import client_router, quote_router
+from local_eventos.modules.commercial.presentation import (
+    client_router,
+    contract_router,
+    quote_router,
+)
 from local_eventos.modules.commercial.presentation.errors import (
     register_error_handlers as register_commercial_errors,
 )
@@ -25,6 +29,9 @@ from local_eventos.modules.identity.presentation import (
 )
 from local_eventos.modules.identity.presentation.errors import (
     register_error_handlers as register_identity_errors,
+)
+from local_eventos.modules.ledger.presentation.errors import (
+    register_error_handlers as register_ledger_errors,
 )
 from local_eventos.modules.reporting.presentation import dashboard_router
 from local_eventos.shared.infrastructure.config import CorsSettings, Settings
@@ -73,11 +80,13 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     app.include_router(access_log_router.router)
     app.include_router(client_router.router)
     app.include_router(quote_router.router)
+    app.include_router(contract_router.router)
     app.include_router(dashboard_router.router)
     app.include_router(category_router.router)
     app.include_router(service_router.router)
     register_identity_errors(app)
     register_commercial_errors(app)
+    register_ledger_errors(app)
     register_catalog_errors(app)
     return app
 

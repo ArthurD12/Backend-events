@@ -95,6 +95,49 @@
         "title": "AccessResult",
         "type": "string"
       },
+      "CancellationOut": {
+        "properties": {
+          "cancelled_at": {
+            "format": "date-time",
+            "title": "Cancelled At",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "refund_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refund Cents"
+          }
+        },
+        "required": [
+          "reason",
+          "refund_cents",
+          "note",
+          "cancelled_at"
+        ],
+        "title": "CancellationOut",
+        "type": "object"
+      },
       "CategoryIn": {
         "properties": {
           "name": {
@@ -281,6 +324,312 @@
           "active"
         ],
         "title": "ClientOut",
+        "type": "object"
+      },
+      "ContractCancelIn": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "refund": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cómo se devolvió"
+          },
+          "refund_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo si se devolvió dinero",
+            "title": "Refund Cents"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "ContractCancelIn",
+        "type": "object"
+      },
+      "ContractGenerateIn": {
+        "properties": {
+          "advance_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Adelanto pactado. Si se omite: 50 % del total",
+            "title": "Advance Cents"
+          },
+          "quote_id": {
+            "format": "uuid",
+            "title": "Quote Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "quote_id"
+        ],
+        "title": "ContractGenerateIn",
+        "type": "object"
+      },
+      "ContractOut": {
+        "properties": {
+          "advance_cents": {
+            "title": "Advance Cents",
+            "type": "integer"
+          },
+          "balance_cents": {
+            "title": "Balance Cents",
+            "type": "integer"
+          },
+          "balance_due_date": {
+            "format": "date",
+            "title": "Balance Due Date",
+            "type": "string"
+          },
+          "can_become_event": {
+            "description": "Firmado y con adelanto pagado (CA-42.3)",
+            "title": "Can Become Event",
+            "type": "boolean"
+          },
+          "cancellation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CancellationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "client_id": {
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency": {
+            "default": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "payments": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentOut"
+            },
+            "title": "Payments",
+            "type": "array"
+          },
+          "quote_code": {
+            "title": "Quote Code",
+            "type": "string"
+          },
+          "quote_id": {
+            "format": "uuid",
+            "title": "Quote Id",
+            "type": "string"
+          },
+          "signature": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SignatureOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContractStatus"
+          },
+          "total_cents": {
+            "title": "Total Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "quote_id",
+          "quote_code",
+          "client_id",
+          "client_name",
+          "event_date",
+          "total_cents",
+          "advance_cents",
+          "balance_cents",
+          "balance_due_date",
+          "status",
+          "can_become_event",
+          "signature",
+          "cancellation",
+          "payments",
+          "created_at"
+        ],
+        "title": "ContractOut",
+        "type": "object"
+      },
+      "ContractPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ContractSummaryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "ContractPageOut",
+        "type": "object"
+      },
+      "ContractSignIn": {
+        "properties": {
+          "advance": {
+            "$ref": "#/components/schemas/PaymentIn",
+            "description": "El pago del adelanto pactado (R-CON-1)"
+          },
+          "signed_on": {
+            "format": "date",
+            "title": "Signed On",
+            "type": "string"
+          },
+          "signer_name": {
+            "title": "Signer Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "signed_on",
+          "signer_name",
+          "advance"
+        ],
+        "title": "ContractSignIn",
+        "type": "object"
+      },
+      "ContractStatus": {
+        "enum": [
+          "PENDING_SIGNATURE",
+          "SIGNED",
+          "CANCELLED"
+        ],
+        "title": "ContractStatus",
+        "type": "string"
+      },
+      "ContractSummaryOut": {
+        "properties": {
+          "advance_cents": {
+            "title": "Advance Cents",
+            "type": "integer"
+          },
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "quote_id": {
+            "format": "uuid",
+            "title": "Quote Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContractStatus"
+          },
+          "total_cents": {
+            "title": "Total Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "quote_id",
+          "client_name",
+          "event_date",
+          "total_cents",
+          "advance_cents",
+          "status"
+        ],
+        "title": "ContractSummaryOut",
         "type": "object"
       },
       "DashboardOut": {
@@ -512,6 +861,99 @@
           "permissions"
         ],
         "title": "MeOut",
+        "type": "object"
+      },
+      "PaymentIn": {
+        "properties": {
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "paid_on": {
+            "format": "date",
+            "title": "Paid On",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "N.º de operación, voucher, etc.",
+            "title": "Reference"
+          }
+        },
+        "required": [
+          "paid_on",
+          "method"
+        ],
+        "title": "PaymentIn",
+        "type": "object"
+      },
+      "PaymentKind": {
+        "enum": [
+          "ADVANCE",
+          "REFUND"
+        ],
+        "title": "PaymentKind",
+        "type": "string"
+      },
+      "PaymentMethod": {
+        "enum": [
+          "CASH",
+          "TRANSFER",
+          "CARD",
+          "YAPE_PLIN"
+        ],
+        "title": "PaymentMethod",
+        "type": "string"
+      },
+      "PaymentOut": {
+        "properties": {
+          "amount_cents": {
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PaymentKind"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "paid_on": {
+            "format": "date",
+            "title": "Paid On",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "amount_cents",
+          "method",
+          "reference",
+          "paid_on"
+        ],
+        "title": "PaymentOut",
         "type": "object"
       },
       "Permission": {
@@ -788,6 +1230,19 @@
           "code": {
             "title": "Code",
             "type": "string"
+          },
+          "contract_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "El contrato de esta cotización",
+            "title": "Contract Id"
           },
           "created_at": {
             "format": "date-time",
@@ -1126,6 +1581,31 @@
           "active"
         ],
         "title": "ServiceOut",
+        "type": "object"
+      },
+      "SignatureOut": {
+        "properties": {
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "signed_on": {
+            "format": "date",
+            "title": "Signed On",
+            "type": "string"
+          },
+          "signer_name": {
+            "title": "Signer Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "signed_on",
+          "signer_name",
+          "recorded_at"
+        ],
+        "title": "SignatureOut",
         "type": "object"
       },
       "TokenOut": {
@@ -3032,6 +3512,477 @@
         "summary": "Deactivate Client",
         "tags": [
           "clientes"
+        ]
+      }
+    },
+    "/v1/contracts": {
+      "get": {
+        "operationId": "contracts_search",
+        "parameters": [
+          {
+            "description": "Parte del código o del nombre del cliente",
+            "in": "query",
+            "name": "text",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Parte del código o del nombre del cliente",
+              "title": "Text",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ContractStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search Contracts",
+        "tags": [
+          "contratos"
+        ]
+      },
+      "post": {
+        "description": "Genera el contrato de una cotización aceptada, pendiente de firma (HU41).",
+        "operationId": "contracts_generate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractGenerateIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`contract.quote_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`contract.quote_not_accepted`, `contract.already_exists`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`contract.advance_invalid`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Generate Contract",
+        "tags": [
+          "contratos"
+        ]
+      }
+    },
+    "/v1/contracts/{contract_id}": {
+      "get": {
+        "description": "El contrato con su firma, su anulación y sus pagos.",
+        "operationId": "contracts_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contract_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Contract Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`contract.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Contract",
+        "tags": [
+          "contratos"
+        ]
+      }
+    },
+    "/v1/contracts/{contract_id}/cancel": {
+      "post": {
+        "description": "Anula con motivo; si hubo devolución, se registra su monto (R-CON-3).",
+        "operationId": "contracts_cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contract_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Contract Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractCancelIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`contract.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`contract.already_cancelled`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`contract.reason_required`, etc."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Contract",
+        "tags": [
+          "contratos"
+        ]
+      }
+    },
+    "/v1/contracts/{contract_id}/sign": {
+      "post": {
+        "description": "Registra la firma y el pago del adelanto en un solo paso (HU42, R-CON-1).",
+        "operationId": "contracts_sign",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contract_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Contract Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractSignIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`contract.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`contract.not_pending`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`contract.signer_required`, `payment.*`, etc."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Sign Contract",
+        "tags": [
+          "contratos"
         ]
       }
     },

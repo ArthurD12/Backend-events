@@ -8,6 +8,12 @@ from local_eventos.modules.commercial.application.clients.errors import (
     ClientNotFoundError,
     DuplicateDocumentError,
 )
+from local_eventos.modules.commercial.application.contracts.errors import (
+    ContractAlreadyExistsError,
+    ContractApplicationError,
+    ContractNotFoundError,
+    ContractQuoteNotFoundError,
+)
 from local_eventos.modules.commercial.application.quotes.errors import (
     QuoteApplicationError,
     QuoteClientInactiveError,
@@ -18,6 +24,10 @@ from local_eventos.modules.commercial.application.quotes.errors import (
     QuoteServiceNotFoundError,
 )
 from local_eventos.modules.commercial.domain.clients.client import ClientValidationError
+from local_eventos.modules.commercial.domain.contracts.contract import (
+    ContractRuleError,
+    ContractValidationError,
+)
 from local_eventos.modules.commercial.domain.quotes.quote import (
     QuoteRuleError,
     QuoteValidationError,
@@ -70,9 +80,39 @@ async def _quote_application_error(request: Request, error: Exception) -> JSONRe
     )
 
 
+_CONTRACT_STATUS = {
+    ContractNotFoundError: 404,
+    ContractQuoteNotFoundError: 404,
+    ContractAlreadyExistsError: 409,
+}
+
+
+async def _contract_validation_error(request: Request, error: Exception) -> JSONResponse:
+    assert isinstance(error, ContractValidationError)
+    return problem_response(status=422, title="Dato inválido", code=error.code, detail=str(error))
+
+
+async def _contract_rule_error(request: Request, error: Exception) -> JSONResponse:
+    assert isinstance(error, ContractRuleError)
+    return problem_response(
+        status=409, title="Operación no permitida", code=error.code, detail=str(error)
+    )
+
+
+async def _contract_application_error(request: Request, error: Exception) -> JSONResponse:
+    assert isinstance(error, ContractApplicationError)
+    status = _CONTRACT_STATUS.get(type(error), 422)
+    return problem_response(
+        status=status, title="Operación no permitida", code=error.code, detail=str(error)
+    )
+
+
 def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(ClientValidationError, _client_validation_error)
     app.add_exception_handler(ClientApplicationError, _client_application_error)
     app.add_exception_handler(QuoteValidationError, _quote_validation_error)
     app.add_exception_handler(QuoteRuleError, _quote_rule_error)
     app.add_exception_handler(QuoteApplicationError, _quote_application_error)
+    app.add_exception_handler(ContractValidationError, _contract_validation_error)
+    app.add_exception_handler(ContractRuleError, _contract_rule_error)
+    app.add_exception_handler(ContractApplicationError, _contract_application_error)

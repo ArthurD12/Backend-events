@@ -3,6 +3,7 @@
 from dataclasses import replace
 from uuid import UUID
 
+from local_eventos.modules.commercial.application.clients.search_text import normalize
 from local_eventos.modules.commercial.application.contracts.errors import (
     ContractAlreadyExistsError,
 )
@@ -41,7 +42,7 @@ class InMemoryContractRepository:
     async def search(
         self, filters: ContractFilters, *, limit: int, offset: int
     ) -> tuple[list[ContractSummary], int]:
-        text = filters.text.lower()
+        text = normalize(filters.text)
         found = [
             ContractSummary(
                 id=c.id,
@@ -58,7 +59,7 @@ class InMemoryContractRepository:
         found = [
             s
             for s in found
-            if (not text or text in s.code.lower() or text in s.client_name.lower())
+            if (not text or text in s.code.lower() or text in normalize(s.client_name))
             and (filters.status is None or s.status is filters.status)
         ]
         return found[offset : offset + limit], len(found)

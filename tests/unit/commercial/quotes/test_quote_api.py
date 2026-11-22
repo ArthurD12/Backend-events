@@ -14,6 +14,7 @@ from local_eventos.modules.commercial.presentation import dependencies as deps
 from local_eventos.modules.identity.domain.permissions import Role
 from local_eventos.modules.identity.public_api import get_current_user
 from tests.unit.commercial.clients.fakes import InMemoryClientRepository
+from tests.unit.commercial.contracts.fakes import InMemoryContractRepository
 from tests.unit.current_user import signed_in_as
 
 from .fakes import FakeClock, FakeServiceLookup, InMemoryQuoteRepository
@@ -78,12 +79,18 @@ def api() -> Iterator[Api]:
     async def catalog_dep() -> FakeServiceLookup:
         return catalog
 
+    contracts = InMemoryContractRepository()
+
+    async def contracts_dep() -> InMemoryContractRepository:
+        return contracts
+
     app = create_app(readiness_check=_no_database)
     app.dependency_overrides.update(
         {
             deps.get_quote_repository: quotes_dep,
             deps.get_client_repository: clients_dep,
             deps.get_service_lookup: catalog_dep,
+            deps.get_contract_repository: contracts_dep,
             deps.get_clock: lambda: clock,
             get_current_user: signed_in_as(Role.EVENTS_MANAGER),
         }
