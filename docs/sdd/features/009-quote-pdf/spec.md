@@ -1,7 +1,7 @@
 # Spec: Cotización en PDF
 
 - **ID**: 009-quote-pdf
-- **Estado**: borrador (pendiente de aprobación)
+- **Estado**: aprobado con el cambio de R-PDF-1 (César Suclupe, 22/11/2026)
 - **Módulos afectados**: `commercial` (cotizaciones)
 - **Historia**: HU09 (#10)
 
@@ -20,10 +20,11 @@ La cotización ya se arma en el sistema, pero al cliente hay que entregarle un d
 - **CA-09.3**: La información coincide con la cotización registrada: los montos salen de la cotización guardada, no se recalculan con el catálogo actual.
 - **CA-09.4**: Se descarga como archivo `COT-AAAA-NNNN.pdf` y se puede imprimir.
 - **CA-09.5**: Generar el PDF no cambia el estado ni ningún dato de la cotización.
+- **CA-09.6**: Solo se descarga una cotización **enviada** o **aceptada**. En borrador, rechazada o vencida responde `quote.pdf_not_available` (409), y en la pantalla el botón aparece deshabilitado con su motivo.
 
 ## 5. Reglas
 - Precios en soles, sin IGV aparte (DOMAIN.md §4, regla 9): el PDF lo dice.
-- Una cotización en **borrador** se puede descargar, pero el PDF lleva la marca **"BORRADOR"**, para que no se entregue por error una propuesta sin terminar. Una **vencida** lleva **"VENCIDA"**.
+- **R-PDF-1** *(decidido por el equipo el 22/11/2026, provisional)*: solo se descarga una cotización **enviada** o **aceptada**, para que nunca se entregue un borrador, una rechazada ni una vencida. El orden de trabajo es: armar → **marcar como enviada** → descargar el PDF y entregarlo.
 - Los datos de Darze que no estén configurados no se imprimen: nunca se inventan.
 
 ## 6. Fuera de alcance
@@ -38,4 +39,5 @@ La cotización ya se arma en el sistema, pero al cliente hay que entregarle un d
 ## 8. Preguntas abiertas
 - [x] ¿Librería? → ReportLab (César, 22/11/2026).
 - [x] ¿Dónde se configuran los datos de Darze? → `.env` por ahora (César, 22/11/2026).
+- [x] ¿Se descargan borradores? → No: solo enviadas o aceptadas (César, 22/11/2026).
 - [ ] Datos reales de Darze (RUC, dirección, teléfono, correo) para cargarlos en el `.env` de la instalación.

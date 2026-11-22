@@ -1,6 +1,6 @@
 # ADR 0004 — PDF de cotizaciones con ReportLab
 
-- **Estado:** propuesta (pendiente de aprobación)
+- **Estado:** aceptada por el equipo (22/11/2026)
 - **Contexto:** ADR 0001 dejó fuera la generación de PDF ("no requerido"). HU09 (#10) la exige: la cotización se entrega al cliente en un PDF que coincide con lo registrado. La regla 11 de AGENTS.md pide un ADR para cualquier dependencia nueva.
 
 ## Decisiones
