@@ -12,6 +12,10 @@ from local_eventos.modules.commercial.application.clients.ports.client_repositor
     ClientRepository,
 )
 from local_eventos.modules.commercial.application.quotes.ports.clock import Clock
+from local_eventos.modules.commercial.application.quotes.ports.document import (
+    CompanyProfile,
+    QuoteDocumentRenderer,
+)
 from local_eventos.modules.commercial.application.quotes.ports.quote_repository import (
     QuoteRepository,
 )
@@ -19,6 +23,8 @@ from local_eventos.modules.commercial.infrastructure.client_repository import (
     SqlAlchemyClientRepository,
 )
 from local_eventos.modules.commercial.infrastructure.clock import LimaClock
+from local_eventos.modules.commercial.infrastructure.company_settings import CompanySettings
+from local_eventos.modules.commercial.infrastructure.quote_pdf import ReportLabQuoteRenderer
 from local_eventos.modules.commercial.infrastructure.quote_repository import (
     SqlAlchemyQuoteRepository,
 )
@@ -39,3 +45,12 @@ def service_lookup(session: AsyncSession) -> ServiceLookup:
 
 def clock() -> Clock:
     return LimaClock()
+
+
+def quote_renderer() -> QuoteDocumentRenderer:
+    return ReportLabQuoteRenderer()
+
+
+def company_profile() -> CompanyProfile:
+    """Datos de Darze del `.env` (COMPANY_*). Se leen al pedir el documento."""
+    return CompanySettings().profile()

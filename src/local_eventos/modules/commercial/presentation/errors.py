@@ -13,6 +13,7 @@ from local_eventos.modules.commercial.application.quotes.errors import (
     QuoteClientInactiveError,
     QuoteClientNotFoundError,
     QuoteNotFoundError,
+    QuotePdfNotAvailableError,
     QuoteServiceInactiveError,
     QuoteServiceNotFoundError,
 )
@@ -45,6 +46,7 @@ _QUOTE_STATUS = {
     QuoteServiceNotFoundError: 404,
     QuoteClientInactiveError: 409,
     QuoteServiceInactiveError: 409,
+    QuotePdfNotAvailableError: 409,
 }
 
 

@@ -7,7 +7,7 @@ from datetime import date
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 
 from local_eventos.modules.commercial.application.quotes.ports.quote_repository import (
     QuoteFilters,
@@ -18,6 +18,9 @@ from local_eventos.modules.commercial.application.quotes.use_cases.query_quotes 
     GetQuote,
     SearchQuotes,
 )
+from local_eventos.modules.commercial.application.quotes.use_cases.quote_document import (
+    GetQuoteDocument,
+)
 from local_eventos.modules.commercial.application.quotes.use_cases.save_quote import (
     CreateQuote,
     UpdateQuote,
@@ -25,7 +28,9 @@ from local_eventos.modules.commercial.application.quotes.use_cases.save_quote im
 from local_eventos.modules.commercial.domain.quotes.quote import Quote, QuoteStatus
 from local_eventos.modules.commercial.presentation.dependencies import (
     Clients,
+    Company,
     Quotes,
+    Renderer,
     Services,
     Today,
 )
@@ -147,6 +152,34 @@ async def change_quote_status(
     """Enviada, aceptada, rechazada o de vuelta a borrador (R-COT-3)."""
     quote = await ChangeQuoteStatus(quotes, clock)(quote_id, QuoteStatus(body.status))
     return await _out(quote, clients, clock.today())
+
+
+@router.get(
+    "/{quote_id}/pdf",
+    operation_id="quotes_pdf",
+    response_class=Response,
+    responses={
+        200: {"content": {"application/pdf": {}}, "description": "El PDF de la cotización"},
+        **_NOT_FOUND,
+        409: {"model": Problem, "description": "`quote.pdf_not_available`"},
+    },
+)
+async def quote_pdf(
+    quote_id: UUID,
+    _: SignedIn,
+    quotes: Quotes,
+    clients: Clients,
+    renderer: Renderer,
+    company: Company,
+    clock: Today,
+) -> Response:
+    """Descarga la cotización en PDF (HU09). Solo enviada o aceptada; no la modifica."""
+    filename, content = await GetQuoteDocument(quotes, clients, renderer, company, clock)(quote_id)
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 async def _out(quote: Quote, clients: Clients, today: date) -> QuoteOut:

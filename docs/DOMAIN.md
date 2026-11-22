@@ -115,4 +115,5 @@ Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. e
 | 22/11/2026 | Cotización enviada | Para cambiarla se devuelve a borrador (R-COT-2) | Equipo **(provisional)** |
 | 22/11/2026 | Estados de la cotización | Borrador → enviada, aceptada o rechazada; enviada → aceptada, rechazada o borrador; aceptada y rechazada son finales (R-COT-3) | Equipo **(provisional)** |
 | 22/11/2026 | Fecha del evento | Hoy o una fecha futura (R-COT-4); al menos una línea por cotización (R-COT-5) | Equipo **(provisional)** |
+| 22/11/2026 | PDF de la cotización | Solo se descarga una cotización enviada o aceptada; el orden es armar → marcar como enviada → descargar (R-PDF-1) | Equipo **(provisional)** |
 | 22/11/2026 | Sesión | Termina tras 30 minutos sin actividad; no se puede desactivar al último administrador activo (R-ID-4) | Equipo, según HU01 **(provisional)** |

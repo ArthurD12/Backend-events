@@ -13,5 +13,6 @@
 | Logo | Por ahora el PDF lleva el nombre comercial en texto, sin imagen | El logo real de Darze todavía no está disponible |
 
 ## Consecuencias
-- Una dependencia más en `pyproject.toml`, documentada en `STACK.md`, `README.md` e `INSTALACION.md` (regla 13).
+- Una dependencia más en `pyproject.toml` (`reportlab`, que trae `pillow`), documentada en `STACK.md`, `README.md` e `INSTALACION.md` (regla 13).
+- `types-reportlab` solo en desarrollo: ReportLab no trae tipos y mypy corre en modo estricto.
 - El PDF se genera al pedirlo: no se guarda en disco ni en la base, y no cambia la cotización.

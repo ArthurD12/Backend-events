@@ -14,6 +14,10 @@ from local_eventos.modules.commercial.application.clients.ports.client_repositor
     ClientRepository,
 )
 from local_eventos.modules.commercial.application.quotes.ports.clock import Clock
+from local_eventos.modules.commercial.application.quotes.ports.document import (
+    CompanyProfile,
+    QuoteDocumentRenderer,
+)
 from local_eventos.modules.commercial.application.quotes.ports.quote_repository import (
     QuoteRepository,
 )
@@ -48,3 +52,15 @@ def get_clock() -> Clock:
 Quotes = Annotated[QuoteRepository, Depends(get_quote_repository)]
 Services = Annotated[ServiceLookup, Depends(get_service_lookup)]
 Today = Annotated[Clock, Depends(get_clock)]
+
+
+def get_quote_renderer() -> QuoteDocumentRenderer:
+    return composition.quote_renderer()
+
+
+def get_company_profile() -> CompanyProfile:
+    return composition.company_profile()
+
+
+Renderer = Annotated[QuoteDocumentRenderer, Depends(get_quote_renderer)]
+Company = Annotated[CompanyProfile, Depends(get_company_profile)]

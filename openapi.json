@@ -3533,6 +3533,91 @@
         ]
       }
     },
+    "/v1/quotes/{quote_id}/pdf": {
+      "get": {
+        "description": "Descarga la cotización en PDF (HU09). Solo enviada o aceptada; no la modifica.",
+        "operationId": "quotes_pdf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "quote_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Quote Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "El PDF de la cotización"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`quote.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`quote.pdf_not_available`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Quote Pdf",
+        "tags": [
+          "cotizaciones"
+        ]
+      }
+    },
     "/v1/quotes/{quote_id}/status": {
       "post": {
         "description": "Enviada, aceptada, rechazada o de vuelta a borrador (R-COT-3).",
