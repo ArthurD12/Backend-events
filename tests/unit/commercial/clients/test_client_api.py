@@ -11,6 +11,9 @@ from local_eventos.modules.commercial.application.clients.ports.client_repositor
     ClientRepository,
 )
 from local_eventos.modules.commercial.presentation.dependencies import get_client_repository
+from local_eventos.modules.identity.domain.permissions import Role
+from local_eventos.modules.identity.public_api import get_current_user
+from tests.unit.current_user import signed_in_as
 
 from .fakes import InMemoryClientRepository
 
@@ -35,6 +38,7 @@ def api() -> Iterator[TestClient]:
 
     app = create_app(readiness_check=_no_database)
     app.dependency_overrides[get_client_repository] = in_memory
+    app.dependency_overrides[get_current_user] = signed_in_as(Role.EVENTS_MANAGER)
     with TestClient(app) as client:
         yield client
 
@@ -102,3 +106,21 @@ def test_hu04_cliente_inexistente_responde_404(api: TestClient) -> None:
 
     assert response.status_code == 404
     assert response.json()["code"] == "client.not_found"
+
+
+def test_ca01_7_clientes_exigen_sesion(api: TestClient) -> None:
+    del api.app.dependency_overrides[get_current_user]  # type: ignore[attr-defined]
+
+    response = api.get("/v1/clients")
+
+    assert response.status_code == 401
+    assert response.json()["code"] == "auth.not_authenticated"
+
+
+def test_ca01_7_compras_y_almacen_no_gestiona_clientes(api: TestClient) -> None:
+    api.app.dependency_overrides[get_current_user] = signed_in_as(Role.PURCHASING_MANAGER)  # type: ignore[attr-defined]
+
+    response = api.post("/v1/clients", json=FAMILIA_QUISPE)
+
+    assert response.status_code == 403
+    assert response.json()["code"] == "auth.forbidden"

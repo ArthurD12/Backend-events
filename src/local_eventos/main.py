@@ -18,6 +18,14 @@ from local_eventos.modules.commercial.presentation import client_router
 from local_eventos.modules.commercial.presentation.errors import (
     register_error_handlers as register_commercial_errors,
 )
+from local_eventos.modules.identity.presentation import (
+    access_log_router,
+    auth_router,
+    user_router,
+)
+from local_eventos.modules.identity.presentation.errors import (
+    register_error_handlers as register_identity_errors,
+)
 from local_eventos.shared.infrastructure.config import CorsSettings, Settings
 from local_eventos.shared.infrastructure.db import check_database, create_engine
 from local_eventos.shared.presentation import health
@@ -59,9 +67,13 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(health.router)
+    app.include_router(auth_router.router)
+    app.include_router(user_router.router)
+    app.include_router(access_log_router.router)
     app.include_router(client_router.router)
     app.include_router(category_router.router)
     app.include_router(service_router.router)
+    register_identity_errors(app)
     register_commercial_errors(app)
     register_catalog_errors(app)
     return app

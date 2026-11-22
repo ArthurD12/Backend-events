@@ -1,12 +1,13 @@
 """Endpoints de categorías del catálogo (HU06). Traducen HTTP ⇄ caso de uso; sin reglas de negocio.
 
-Pendiente: solo el administrador crea y modifica categorías; el permiso se agrega con HU01.
+Leer exige `catalog:read` (los tres roles); crear y modificar, `catalog:manage` (solo el
+administrador), según DOMAIN.md §9.
 """
 
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Depends, status
 
 from local_eventos.modules.catalog.application.use_cases.change_category_status import (
     ActivateCategory,
@@ -17,9 +18,20 @@ from local_eventos.modules.catalog.application.use_cases.list_categories import 
 from local_eventos.modules.catalog.application.use_cases.rename_category import RenameCategory
 from local_eventos.modules.catalog.presentation.catalog_schemas import CategoryIn, CategoryOut
 from local_eventos.modules.catalog.presentation.dependencies import Categories, Services
+from local_eventos.modules.identity.public_api import Permission, require_permission
 from local_eventos.shared.presentation.problems import Problem
 
-router = APIRouter(prefix="/v1/catalog/categories", tags=["catálogo"])
+router = APIRouter(
+    prefix="/v1/catalog/categories",
+    tags=["catálogo"],
+    responses={
+        401: {"model": Problem, "description": "`auth.not_authenticated`, `auth.session_expired`"},
+        403: {"model": Problem, "description": "`auth.forbidden`"},
+    },
+)
+
+_READ = [Depends(require_permission(Permission.CATALOG_READ))]
+_MANAGE = [Depends(require_permission(Permission.CATALOG_MANAGE))]
 
 _Responses = dict[int | str, dict[str, Any]]
 
@@ -34,6 +46,7 @@ _INVALID: _Responses = {
 
 @router.post(
     "",
+    dependencies=_MANAGE,
     status_code=status.HTTP_201_CREATED,
     operation_id="catalog_categories_create",
     responses={**_DUPLICATED, **_INVALID},
@@ -43,7 +56,7 @@ async def create_category(body: CategoryIn, categories: Categories) -> CategoryO
     return CategoryOut.from_category(await CreateCategory(categories)(body.name))
 
 
-@router.get("", operation_id="catalog_categories_list")
+@router.get("", dependencies=_READ, operation_id="catalog_categories_list")
 async def list_categories(
     categories: Categories, include_inactive: bool = False
 ) -> list[CategoryOut]:
@@ -54,6 +67,7 @@ async def list_categories(
 
 @router.put(
     "/{category_id}",
+    dependencies=_MANAGE,
     operation_id="catalog_categories_rename",
     responses={**_NOT_FOUND, **_DUPLICATED, **_INVALID},
 )
@@ -66,6 +80,7 @@ async def rename_category(
 
 @router.post(
     "/{category_id}/deactivate",
+    dependencies=_MANAGE,
     operation_id="catalog_categories_deactivate",
     responses={
         **_NOT_FOUND,
@@ -81,7 +96,10 @@ async def deactivate_category(
 
 
 @router.post(
-    "/{category_id}/activate", operation_id="catalog_categories_activate", responses=_NOT_FOUND
+    "/{category_id}/activate",
+    dependencies=_MANAGE,
+    operation_id="catalog_categories_activate",
+    responses=_NOT_FOUND,
 )
 async def activate_category(category_id: UUID, categories: Categories) -> CategoryOut:
     """Vuelve a activar una categoría desactivada."""

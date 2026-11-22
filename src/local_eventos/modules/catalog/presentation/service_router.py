@@ -1,13 +1,14 @@
 """Endpoints de servicios del catálogo (HU06). Traducen HTTP ⇄ caso de uso; sin reglas de negocio.
 
 El precio es referencial: la cotización lo copia y lo congela (AGENTS.md, regla 6).
-Pendiente: solo el administrador registra y modifica servicios; el permiso se agrega con HU01.
+Leer exige `catalog:read` (los tres roles); registrar y modificar, `catalog:manage` (solo el
+administrador), según DOMAIN.md §9.
 """
 
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from local_eventos.modules.catalog.application.use_cases.change_service_status import (
     ActivateService,
@@ -27,9 +28,20 @@ from local_eventos.modules.catalog.application.use_cases.update_service import (
 )
 from local_eventos.modules.catalog.presentation.catalog_schemas import ServiceIn, ServiceOut
 from local_eventos.modules.catalog.presentation.dependencies import Categories, Services
+from local_eventos.modules.identity.public_api import Permission, require_permission
 from local_eventos.shared.presentation.problems import Problem
 
-router = APIRouter(prefix="/v1/catalog/services", tags=["catálogo"])
+router = APIRouter(
+    prefix="/v1/catalog/services",
+    tags=["catálogo"],
+    responses={
+        401: {"model": Problem, "description": "`auth.not_authenticated`, `auth.session_expired`"},
+        403: {"model": Problem, "description": "`auth.forbidden`"},
+    },
+)
+
+_READ = [Depends(require_permission(Permission.CATALOG_READ))]
+_MANAGE = [Depends(require_permission(Permission.CATALOG_MANAGE))]
 
 _Responses = dict[int | str, dict[str, Any]]
 
@@ -45,6 +57,7 @@ _CATEGORY_PROBLEMS: _Responses = {
 
 @router.post(
     "",
+    dependencies=_MANAGE,
     status_code=status.HTTP_201_CREATED,
     operation_id="catalog_services_register",
     responses=_CATEGORY_PROBLEMS,
@@ -65,7 +78,7 @@ async def register_service(
     return ServiceOut.from_service(service)
 
 
-@router.get("", operation_id="catalog_services_search")
+@router.get("", dependencies=_READ, operation_id="catalog_services_search")
 async def search_services(
     services: Services,
     text: Annotated[str, Query(description="Parte del nombre del servicio")] = "",
@@ -83,6 +96,7 @@ async def search_services(
 
 @router.put(
     "/{service_id}",
+    dependencies=_MANAGE,
     operation_id="catalog_services_update",
     responses={**_CATEGORY_PROBLEMS, **_SERVICE_NOT_FOUND},
 )
@@ -105,6 +119,7 @@ async def update_service(
 
 @router.post(
     "/{service_id}/deactivate",
+    dependencies=_MANAGE,
     operation_id="catalog_services_deactivate",
     responses=_SERVICE_NOT_FOUND,
 )
@@ -114,7 +129,10 @@ async def deactivate_service(service_id: UUID, services: Services) -> ServiceOut
 
 
 @router.post(
-    "/{service_id}/activate", operation_id="catalog_services_activate", responses=_SERVICE_NOT_FOUND
+    "/{service_id}/activate",
+    dependencies=_MANAGE,
+    operation_id="catalog_services_activate",
+    responses=_SERVICE_NOT_FOUND,
 )
 async def activate_service(service_id: UUID, services: Services) -> ServiceOut:
     """Vuelve a ofrecer un servicio desactivado."""

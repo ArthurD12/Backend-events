@@ -43,6 +43,10 @@ migration name:
 openapi:
     uv run python -m local_eventos.tools.export_openapi
 
+# Crea el primer administrador (una vez, al instalar). Pide nombre, correo y contraseña.
+create-admin:
+    uv run python -m local_eventos.tools.create_admin
+
 docs:
     uv run mkdocs serve
 
