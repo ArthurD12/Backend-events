@@ -111,4 +111,8 @@ Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. e
 | 15/11/2026 | Qué se convierte en evento | El contrato firmado con adelanto (§4, regla 15) | Equipo, según el documento validado **(provisional)** |
 | 22/11/2026 | Contraseña de usuario | Mínimo 8 caracteres, sin exigir símbolos (R-ID-1) | Equipo **(provisional)** |
 | 22/11/2026 | Intentos fallidos de inicio de sesión | Solo se registran en el historial; la cuenta no se bloquea (R-ID-2) | Equipo **(provisional)** |
+| 22/11/2026 | Horario del evento | Puede cruzar la medianoche: si la hora de fin es menor que la de inicio, termina al día siguiente (R-COT-1) | Equipo **(provisional)** |
+| 22/11/2026 | Cotización enviada | Para cambiarla se devuelve a borrador (R-COT-2) | Equipo **(provisional)** |
+| 22/11/2026 | Estados de la cotización | Borrador → enviada, aceptada o rechazada; enviada → aceptada, rechazada o borrador; aceptada y rechazada son finales (R-COT-3) | Equipo **(provisional)** |
+| 22/11/2026 | Fecha del evento | Hoy o una fecha futura (R-COT-4); al menos una línea por cotización (R-COT-5) | Equipo **(provisional)** |
 | 22/11/2026 | Sesión | Termina tras 30 minutos sin actividad; no se puede desactivar al último administrador activo (R-ID-4) | Equipo, según HU01 **(provisional)** |
