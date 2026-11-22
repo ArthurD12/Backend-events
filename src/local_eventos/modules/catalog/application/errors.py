@@ -37,3 +37,11 @@ class ServiceNotFoundError(CatalogApplicationError):
             "catalog.service_not_found",
             "No se encontró un servicio con ese identificador.",
         )
+
+
+class CategoryHasActiveServicesError(CatalogApplicationError):
+    def __init__(self) -> None:
+        super().__init__(
+            "catalog.category_has_active_services",
+            "La categoría tiene servicios activos: desactívalos o muévelos antes.",
+        )

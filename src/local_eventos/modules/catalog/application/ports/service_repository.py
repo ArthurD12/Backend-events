@@ -13,6 +13,10 @@ class ServiceRepository(Protocol):
 
     async def update(self, service: Service) -> None: ...
 
+    async def has_active_in_category(self, category_id: UUID) -> bool:
+        """True si la categoría tiene al menos un servicio activo."""
+        ...
+
     async def search(
         self,
         text: str,

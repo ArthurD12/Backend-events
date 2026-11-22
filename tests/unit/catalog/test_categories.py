@@ -23,7 +23,7 @@ from local_eventos.modules.catalog.application.use_cases.rename_category import 
 )
 from local_eventos.modules.catalog.domain.errors import CatalogValidationError
 
-from .fakes import InMemoryCategoryRepository
+from .fakes import InMemoryCategoryRepository, InMemoryServiceRepository
 
 
 @pytest.mark.asyncio
@@ -98,7 +98,7 @@ async def test_hu06_categoria_inexistente() -> None:
     assert error.value.code == "catalog.category_not_found"
 
     with pytest.raises(CategoryNotFoundError):
-        await DeactivateCategory(repository)(uuid4())
+        await DeactivateCategory(repository, InMemoryServiceRepository)(uuid4())
 
 
 @pytest.mark.asyncio
@@ -106,7 +106,7 @@ async def test_hu06_desactiva_y_reactiva_la_categoria() -> None:
     repository = InMemoryCategoryRepository()
     category = await CreateCategory(repository)("Decoración")
 
-    await DeactivateCategory(repository)(category.id)
+    await DeactivateCategory(repository, InMemoryServiceRepository())(category.id)
     assert repository.categories[category.id].active is False
 
     await ActivateCategory(repository)(category.id)
@@ -120,7 +120,7 @@ async def test_hu06_lista_solo_activas_por_defecto_y_ordenadas() -> None:
     await create("Mobiliario")
     await create("Bebidas")
     old = await create("Animación")
-    await DeactivateCategory(repository)(old.id)
+    await DeactivateCategory(repository, InMemoryServiceRepository())(old.id)
     list_categories = ListCategories(repository)
 
     active = await list_categories()

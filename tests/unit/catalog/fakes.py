@@ -41,6 +41,9 @@ class InMemoryServiceRepository:
     async def update(self, service: Service) -> None:
         self.services[service.id] = service
 
+    async def has_active_in_category(self, category_id: UUID) -> bool:
+        return any(s.active and s.category_id == category_id for s in self.services.values())
+
     async def search(
         self,
         text: str,

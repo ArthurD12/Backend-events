@@ -5,9 +5,13 @@ from uuid import UUID, uuid4
 import pytest
 
 from local_eventos.modules.catalog.application.errors import (
+    CategoryHasActiveServicesError,
     CategoryInactiveError,
     CategoryNotFoundError,
     ServiceNotFoundError,
+)
+from local_eventos.modules.catalog.application.use_cases.change_category_status import (
+    DeactivateCategory,
 )
 from local_eventos.modules.catalog.application.use_cases.change_service_status import (
     ActivateService,
@@ -211,3 +215,19 @@ async def test_hu06_busca_por_nombre_categoria_y_estado() -> None:
     assert [s.name for s in by_category] == ["Barra libre"]
     assert [s.name for s in inactive] == ["Buffet chifa"]
     assert len(everything) == 4
+
+
+@pytest.mark.asyncio
+async def test_hu06_no_desactiva_una_categoria_con_servicios_activos() -> None:
+    catalog = Catalog()
+    service = await catalog.register()
+    deactivate = DeactivateCategory(catalog.categories, catalog.services)
+
+    with pytest.raises(CategoryHasActiveServicesError) as error:
+        await deactivate(catalog.food.id)
+    assert error.value.code == "catalog.category_has_active_services"
+    assert catalog.food.active is True
+
+    await DeactivateService(catalog.services)(service.id)
+    await deactivate(catalog.food.id)
+    assert catalog.food.active is False
