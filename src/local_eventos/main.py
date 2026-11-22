@@ -10,6 +10,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from local_eventos.modules.catalog.presentation import category_router, service_router
+from local_eventos.modules.catalog.presentation.errors import (
+    register_error_handlers as register_catalog_errors,
+)
 from local_eventos.modules.commercial.presentation import client_router
 from local_eventos.modules.commercial.presentation.errors import (
     register_error_handlers as register_commercial_errors,
@@ -56,7 +60,10 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     )
     app.include_router(health.router)
     app.include_router(client_router.router)
+    app.include_router(category_router.router)
+    app.include_router(service_router.router)
     register_commercial_errors(app)
+    register_catalog_errors(app)
     return app
 
 

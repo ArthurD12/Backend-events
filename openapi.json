@@ -1,6 +1,43 @@
 {
   "components": {
     "schemas": {
+      "CategoryIn": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CategoryIn",
+        "type": "object"
+      },
+      "CategoryOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "active"
+        ],
+        "title": "CategoryOut",
+        "type": "object"
+      },
       "ClientContactUpdate": {
         "properties": {
           "address": {
@@ -173,6 +210,15 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "PriceUnit": {
+        "description": "Cómo se cobra el servicio: el buffet por persona, lo demás por unidad.",
+        "enum": [
+          "PER_PERSON",
+          "PER_UNIT"
+        ],
+        "title": "PriceUnit",
+        "type": "string"
+      },
       "Problem": {
         "description": "Error de negocio. `code` no cambia aunque cambie el texto de `detail`.",
         "properties": {
@@ -205,6 +251,103 @@
           "detail"
         ],
         "title": "Problem",
+        "type": "object"
+      },
+      "ServiceIn": {
+        "properties": {
+          "category_id": {
+            "format": "uuid",
+            "title": "Category Id",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "price_unit": {
+            "$ref": "#/components/schemas/PriceUnit",
+            "description": "PER_PERSON (buffet) o PER_UNIT (lo demás)"
+          },
+          "reference_price_cents": {
+            "description": "Precio referencial en céntimos: S/ 45.00 = 4500",
+            "title": "Reference Price Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "name",
+          "category_id",
+          "price_unit",
+          "reference_price_cents"
+        ],
+        "title": "ServiceIn",
+        "type": "object"
+      },
+      "ServiceOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "category_id": {
+            "format": "uuid",
+            "title": "Category Id",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "price_unit": {
+            "$ref": "#/components/schemas/PriceUnit"
+          },
+          "reference_price_cents": {
+            "title": "Reference Price Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category_id",
+          "price_unit",
+          "reference_price_cents",
+          "currency",
+          "description",
+          "active"
+        ],
+        "title": "ServiceOut",
         "type": "object"
       },
       "ValidationError": {
@@ -298,6 +441,615 @@
         "summary": "Ready",
         "tags": [
           "operación"
+        ]
+      }
+    },
+    "/v1/catalog/categories": {
+      "get": {
+        "description": "Categorías ordenadas por nombre. El formulario de servicios pide solo las activas.",
+        "operationId": "catalog_categories_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "include_inactive",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Inactive",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryOut"
+                  },
+                  "title": "Response Catalog Categories List",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Categories",
+        "tags": [
+          "catálogo"
+        ]
+      },
+      "post": {
+        "description": "Crea una categoría activa. El nombre no se repite (\"Bebidas\" = \"bebidas\").",
+        "operationId": "catalog_categories_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`catalog.category_name_duplicated`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Dato inválido: `catalog.category_name_required`, etc."
+          }
+        },
+        "summary": "Create Category",
+        "tags": [
+          "catálogo"
+        ]
+      }
+    },
+    "/v1/catalog/categories/{category_id}": {
+      "put": {
+        "description": "Cambia el nombre sin repetir el de otra categoría.",
+        "operationId": "catalog_categories_rename",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "category_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Category Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`catalog.category_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`catalog.category_name_duplicated`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Dato inválido: `catalog.category_name_required`, etc."
+          }
+        },
+        "summary": "Rename Category",
+        "tags": [
+          "catálogo"
+        ]
+      }
+    },
+    "/v1/catalog/categories/{category_id}/activate": {
+      "post": {
+        "description": "Vuelve a activar una categoría desactivada.",
+        "operationId": "catalog_categories_activate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "category_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Category Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`catalog.category_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Activate Category",
+        "tags": [
+          "catálogo"
+        ]
+      }
+    },
+    "/v1/catalog/categories/{category_id}/deactivate": {
+      "post": {
+        "description": "Desactiva sin eliminar. No se puede si la categoría tiene servicios activos.",
+        "operationId": "catalog_categories_deactivate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "category_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Category Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`catalog.category_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`catalog.category_has_active_services`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Deactivate Category",
+        "tags": [
+          "catálogo"
+        ]
+      }
+    },
+    "/v1/catalog/services": {
+      "get": {
+        "description": "Busca por nombre (sin distinguir mayúsculas) y categoría. Máximo 50, ordenados.",
+        "operationId": "catalog_services_search",
+        "parameters": [
+          {
+            "description": "Parte del nombre del servicio",
+            "in": "query",
+            "name": "text",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Parte del nombre del servicio",
+              "title": "Text",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_inactive",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Inactive",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ServiceOut"
+                  },
+                  "title": "Response Catalog Services Search",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search Services",
+        "tags": [
+          "catálogo"
+        ]
+      },
+      "post": {
+        "description": "Registra un servicio activo en una categoría activa.",
+        "operationId": "catalog_services_register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`catalog.category_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`catalog.category_inactive`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Dato inválido: `catalog.price_invalid`, etc."
+          }
+        },
+        "summary": "Register Service",
+        "tags": [
+          "catálogo"
+        ]
+      }
+    },
+    "/v1/catalog/services/{service_id}": {
+      "put": {
+        "description": "Modifica el servicio. Las cotizaciones ya hechas no cambian: guardan su copia del precio.",
+        "operationId": "catalog_services_update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServiceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`catalog.service_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`catalog.category_inactive`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Dato inválido: `catalog.price_invalid`, etc."
+          }
+        },
+        "summary": "Update Service",
+        "tags": [
+          "catálogo"
+        ]
+      }
+    },
+    "/v1/catalog/services/{service_id}/activate": {
+      "post": {
+        "description": "Vuelve a ofrecer un servicio desactivado.",
+        "operationId": "catalog_services_activate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`catalog.service_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Activate Service",
+        "tags": [
+          "catálogo"
+        ]
+      }
+    },
+    "/v1/catalog/services/{service_id}/deactivate": {
+      "post": {
+        "description": "Desactiva sin eliminar: deja de ofrecerse en cotizaciones nuevas (RN02).",
+        "operationId": "catalog_services_deactivate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServiceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`catalog.service_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Deactivate Service",
+        "tags": [
+          "catálogo"
         ]
       }
     },
