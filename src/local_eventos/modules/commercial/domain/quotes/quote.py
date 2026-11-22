@@ -216,11 +216,7 @@ class Quote:
         notes: str | None = None,
     ) -> None:
         """Solo en borrador y no vencida (CA-08.1, CA-08.4). Valida todo antes de asignar."""
-        if self.effective_status(today) is not QuoteStatus.DRAFT:
-            raise QuoteRuleError(
-                "quote.not_editable",
-                "Solo se modifica en borrador. Si fue enviada, devuélvela a borrador primero.",
-            )
+        self.ensure_editable(today)
         new_details = details.checked(today)
         new_valid_until = _check_valid_until(valid_until, today)
         new_lines = _check_lines(lines)
@@ -229,6 +225,13 @@ class Quote:
         self.valid_until = new_valid_until
         self.lines = new_lines
         self.notes = new_notes
+
+    def ensure_editable(self, today: date) -> None:
+        if self.effective_status(today) is not QuoteStatus.DRAFT:
+            raise QuoteRuleError(
+                "quote.not_editable",
+                "Solo se modifica en borrador. Si fue enviada, devuélvela a borrador primero.",
+            )
 
     def change_status(self, new_status: QuoteStatus, today: date) -> None:
         current = self.effective_status(today)
