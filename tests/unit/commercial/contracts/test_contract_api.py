@@ -17,6 +17,7 @@ from local_eventos.modules.ledger.application.use_cases.payments import (
     RecordPayment,
 )
 from tests.unit.commercial.clients.fakes import InMemoryClientRepository
+from tests.unit.commercial.events.fakes import InMemoryEventRepository
 from tests.unit.commercial.quotes.fakes import (
     FakeClock,
     FakeServiceLookup,
@@ -80,6 +81,7 @@ def api() -> Iterator[Api]:
     quotes = InMemoryQuoteRepository({customer.id: customer.name})
     contracts = InMemoryContractRepository({customer.id: customer.name})
     payments = InMemoryPaymentRepository()
+    events = InMemoryEventRepository()
     clock = FakeClock()
 
     async def quotes_dep() -> InMemoryQuoteRepository:
@@ -100,6 +102,9 @@ def api() -> Iterator[Api]:
     async def history_dep() -> ContractPayments:
         return ContractPayments(payments)
 
+    async def events_dep() -> InMemoryEventRepository:
+        return events
+
     app = create_app(readiness_check=_no_database)
     app.dependency_overrides.update(
         {
@@ -109,6 +114,7 @@ def api() -> Iterator[Api]:
             deps.get_service_lookup: catalog_dep,
             deps.get_payment_recorder: recorder_dep,
             deps.get_payments_lookup: history_dep,
+            deps.get_event_repository: events_dep,
             deps.get_clock: lambda: clock,
             get_current_user: signed_in_as(Role.EVENTS_MANAGER),
         }

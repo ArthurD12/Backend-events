@@ -457,6 +457,19 @@
             "title": "Event Date",
             "type": "string"
           },
+          "event_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "El evento, si el contrato ya se convirtió (HU10)",
+            "title": "Event Id"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -513,6 +526,7 @@
           "signature",
           "cancellation",
           "payments",
+          "event_id",
           "created_at"
         ],
         "title": "ContractOut",
@@ -630,6 +644,25 @@
           "status"
         ],
         "title": "ContractSummaryOut",
+        "type": "object"
+      },
+      "CoordinatorOut": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "CoordinatorOut",
         "type": "object"
       },
       "DashboardOut": {
@@ -765,6 +798,325 @@
         ],
         "title": "DocumentType",
         "type": "string"
+      },
+      "EventConvertIn": {
+        "properties": {
+          "contract_id": {
+            "format": "uuid",
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "coordinator_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Responsable de coordinación. Si se omite: quien convierte",
+            "title": "Coordinator Id"
+          }
+        },
+        "required": [
+          "contract_id"
+        ],
+        "title": "EventConvertIn",
+        "type": "object"
+      },
+      "EventOut": {
+        "properties": {
+          "client_id": {
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "contract_code": {
+            "title": "Contract Code",
+            "type": "string"
+          },
+          "contract_id": {
+            "format": "uuid",
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "coordinator_id": {
+            "format": "uuid",
+            "title": "Coordinator Id",
+            "type": "string"
+          },
+          "coordinator_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío si el usuario ya no está activo",
+            "title": "Coordinator Name"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "ends_next_day": {
+            "title": "Ends Next Day",
+            "type": "boolean"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "event_type": {
+            "$ref": "#/components/schemas/EventType"
+          },
+          "guests": {
+            "title": "Guests",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "quote_code": {
+            "title": "Quote Code",
+            "type": "string"
+          },
+          "quote_id": {
+            "format": "uuid",
+            "title": "Quote Id",
+            "type": "string"
+          },
+          "services": {
+            "items": {
+              "$ref": "#/components/schemas/EventServiceOut"
+            },
+            "title": "Services",
+            "type": "array"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventStatus"
+          },
+          "venue": {
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "contract_id",
+          "contract_code",
+          "quote_id",
+          "quote_code",
+          "client_id",
+          "client_name",
+          "event_type",
+          "event_date",
+          "start_time",
+          "end_time",
+          "ends_next_day",
+          "venue",
+          "guests",
+          "coordinator_id",
+          "coordinator_name",
+          "status",
+          "services",
+          "created_at"
+        ],
+        "title": "EventOut",
+        "type": "object"
+      },
+      "EventPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EventSummaryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "EventPageOut",
+        "type": "object"
+      },
+      "EventServiceOut": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LineKind"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "service_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Id"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/LineUnit"
+          }
+        },
+        "required": [
+          "kind",
+          "service_id",
+          "description",
+          "unit",
+          "quantity"
+        ],
+        "title": "EventServiceOut",
+        "type": "object"
+      },
+      "EventStatus": {
+        "description": "DOMAIN.md §3. HU10 solo crea eventos programados; los demás estados llegan con HU11.",
+        "enum": [
+          "SCHEDULED",
+          "CONFIRMED",
+          "IN_PROGRESS",
+          "FINISHED",
+          "CANCELLED"
+        ],
+        "title": "EventStatus",
+        "type": "string"
+      },
+      "EventSummaryOut": {
+        "properties": {
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "contract_id": {
+            "format": "uuid",
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "coordinator_id": {
+            "format": "uuid",
+            "title": "Coordinator Id",
+            "type": "string"
+          },
+          "coordinator_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coordinator Name"
+          },
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "event_type": {
+            "$ref": "#/components/schemas/EventType"
+          },
+          "guests": {
+            "title": "Guests",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventStatus"
+          },
+          "venue": {
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "contract_id",
+          "client_name",
+          "event_type",
+          "event_date",
+          "start_time",
+          "end_time",
+          "venue",
+          "guests",
+          "coordinator_id",
+          "coordinator_name",
+          "status"
+        ],
+        "title": "EventSummaryOut",
+        "type": "object"
       },
       "EventType": {
         "description": "Lista fija de tipos de evento (DOMAIN.md §4, regla 13).",
@@ -966,7 +1318,9 @@
           "quotes:manage",
           "dashboard:read",
           "contracts:manage",
-          "payments:record"
+          "payments:record",
+          "events:manage",
+          "events:read"
         ],
         "title": "Permission",
         "type": "string"
@@ -3711,7 +4065,7 @@
     },
     "/v1/contracts/{contract_id}": {
       "get": {
-        "description": "El contrato con su firma, su anulación y sus pagos.",
+        "description": "El contrato con su firma, su anulación, sus pagos y su evento, si ya lo es.",
         "operationId": "contracts_get",
         "parameters": [
           {
@@ -3863,7 +4217,7 @@
                 }
               }
             },
-            "description": "`contract.already_cancelled`"
+            "description": "`contract.already_cancelled`, `contract.has_event`"
           },
           "422": {
             "content": {
@@ -4061,6 +4415,364 @@
         "summary": "Get Dashboard",
         "tags": [
           "panel"
+        ]
+      }
+    },
+    "/v1/events": {
+      "get": {
+        "description": "Eventos de la fecha más próxima a la más lejana.",
+        "operationId": "events_search",
+        "parameters": [
+          {
+            "description": "Parte del código o del nombre del cliente",
+            "in": "query",
+            "name": "text",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Parte del código o del nombre del cliente",
+              "title": "Text",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/EventStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search Events",
+        "tags": [
+          "eventos"
+        ]
+      },
+      "post": {
+        "description": "Convierte un contrato firmado y con adelanto en evento programado (HU10).",
+        "operationId": "events_convert",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventConvertIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`contract.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.contract_not_ready`, `event.already_exists`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.coordinator_invalid`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Convert Contract",
+        "tags": [
+          "eventos"
+        ]
+      }
+    },
+    "/v1/events/coordinators": {
+      "get": {
+        "description": "Usuarios activos que pueden coordinar un evento (R-EVT-2).",
+        "operationId": "events_coordinators",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CoordinatorOut"
+                  },
+                  "title": "Response Events Coordinators",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Coordinators",
+        "tags": [
+          "eventos"
+        ]
+      }
+    },
+    "/v1/events/{event_id}": {
+      "get": {
+        "operationId": "events_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Event",
+        "tags": [
+          "eventos"
         ]
       }
     },

@@ -1,4 +1,4 @@
-"""Tablas del módulo comercial en PostgreSQL: clientes (HU04) y cotizaciones (HU07–HU08).
+"""Tablas del módulo comercial en PostgreSQL: clientes, cotizaciones, contratos y eventos.
 
 Estas clases describen las tablas, no son la entidad `Client` del dominio: el repositorio
 traduce entre unas y otras. Prefijo `commercial_` por ser del módulo comercial (ADR 0003).
@@ -185,6 +185,70 @@ class ContractCounterRow(Base):
     """Último correlativo usado por año, para el código CON-AAAA-NNNN."""
 
     __tablename__ = "commercial_contract_counters"
+
+    year: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    last: Mapped[int]
+
+
+class EventRow(Base):
+    """Evento (HU10). `contract_id` es único: un contrato, un solo evento (CA-10.5)."""
+
+    __tablename__ = "commercial_events"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('SCHEDULED', 'CONFIRMED', 'IN_PROGRESS', 'FINISHED', 'CANCELLED')",
+            name="status_valid",
+        ),
+        CheckConstraint(
+            "event_type IN ('WEDDING', 'BIRTHDAY', 'QUINCEANERA', 'CORPORATE', 'GRADUATION',"
+            " 'OTHER')",
+            name="event_type_valid",
+        ),
+        CheckConstraint("guests > 0", name="guests_positive"),
+        CheckConstraint("start_time <> end_time", name="times_differ"),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(20), unique=True)
+    contract_id: Mapped[UUID] = mapped_column(ForeignKey("commercial_contracts.id"), unique=True)
+    quote_id: Mapped[UUID] = mapped_column(ForeignKey("commercial_quotes.id"))
+    client_id: Mapped[UUID] = mapped_column(ForeignKey("commercial_clients.id"), index=True)
+    event_type: Mapped[str] = mapped_column(String(20))
+    event_date: Mapped[date] = mapped_column(Date, index=True)
+    start_time: Mapped[time] = mapped_column(Time)
+    end_time: Mapped[time] = mapped_column(Time)
+    venue: Mapped[str] = mapped_column(String(300))
+    guests: Mapped[int]
+    coordinator_id: Mapped[UUID]  # usuario de identity: sin FK entre módulos
+    status: Mapped[str] = mapped_column(String(15), index=True)
+    created_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class EventServiceRow(Base):
+    """Servicio contratado, copiado al evento (CA-10.2)."""
+
+    __tablename__ = "commercial_event_services"
+    __table_args__ = (
+        CheckConstraint("kind IN ('SERVICE', 'EXTRA')", name="kind_valid"),
+        CheckConstraint("price_unit IN ('PER_PERSON', 'PER_UNIT')", name="price_unit_valid"),
+        CheckConstraint("quantity > 0", name="quantity_positive"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[UUID] = mapped_column(ForeignKey("commercial_events.id"), index=True)
+    position: Mapped[int]
+    kind: Mapped[str] = mapped_column(String(10))
+    service_id: Mapped[UUID | None]  # servicio del catálogo: sin FK entre módulos
+    description: Mapped[str] = mapped_column(String(200))
+    price_unit: Mapped[str] = mapped_column(String(10))
+    quantity: Mapped[int]
+
+
+class EventCounterRow(Base):
+    """Último correlativo usado por año, para el código EVT-AAAA-NNNN."""
+
+    __tablename__ = "commercial_event_counters"
 
     year: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
     last: Mapped[int]

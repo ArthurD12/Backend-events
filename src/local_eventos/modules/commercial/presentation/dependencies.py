@@ -16,6 +16,9 @@ from local_eventos.modules.commercial.application.clients.ports.client_repositor
 from local_eventos.modules.commercial.application.contracts.ports.contract_repository import (
     ContractRepository,
 )
+from local_eventos.modules.commercial.application.events.ports.event_repository import (
+    EventRepository,
+)
 from local_eventos.modules.commercial.application.quotes.ports.clock import Clock
 from local_eventos.modules.commercial.application.quotes.ports.document import (
     CompanyProfile,
@@ -24,6 +27,7 @@ from local_eventos.modules.commercial.application.quotes.ports.document import (
 from local_eventos.modules.commercial.application.quotes.ports.quote_repository import (
     QuoteRepository,
 )
+from local_eventos.modules.identity.public_api import CoordinatorLookup
 from local_eventos.modules.ledger.public_api import PaymentRecorder, PaymentsLookup
 from local_eventos.shared.presentation.database import get_session
 
@@ -91,3 +95,19 @@ async def get_payments_lookup(
 Contracts = Annotated[ContractRepository, Depends(get_contract_repository)]
 Payments = Annotated[PaymentRecorder, Depends(get_payment_recorder)]
 PaymentHistory = Annotated[PaymentsLookup, Depends(get_payments_lookup)]
+
+
+async def get_event_repository(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> EventRepository:
+    return composition.event_repository(session)
+
+
+async def get_coordinator_lookup(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> CoordinatorLookup:
+    return composition.coordinators(session)
+
+
+Events = Annotated[EventRepository, Depends(get_event_repository)]
+Coordinators = Annotated[CoordinatorLookup, Depends(get_coordinator_lookup)]

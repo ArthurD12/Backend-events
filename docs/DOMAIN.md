@@ -119,4 +119,7 @@ Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. e
 | 22/11/2026 | Cancelación y devolución del adelanto | Sin reglas automáticas: el sistema registra la anulación con su motivo y, si hubo devolución, el monto, el usuario y la fecha (R-CON-3) | Product Owner |
 | 22/11/2026 | ¿Quién registra pagos, firma y adelanto? | Administrador y encargado de eventos (R-CON-4; amplía el actor de HU42) | Product Owner |
 | 22/11/2026 | Firma del contrato | La firma y el pago del adelanto se registran en un solo paso (R-CON-1); el adelanto es mayor que cero (R-CON-2); una cotización tiene un solo contrato (R-CON-5) | Equipo **(provisional)** |
+| 22/11/2026 | ¿Cuándo nace el evento? | Con un botón **"Convertir en evento"** en el contrato firmado con adelanto, no automáticamente (R-EVT-1) | Product Owner |
+| 22/11/2026 | Responsable de coordinación del evento | Un usuario del sistema (administrador o encargado de eventos) hasta que exista el módulo de personal (R-EVT-2) | Product Owner |
+| 22/11/2026 | Anular un contrato que ya es evento | No se anula desde el contrato: se cancela el evento (R-EVT-3); también lo impide la base de datos | Equipo **(provisional)** |
 | 22/11/2026 | Sesión | Termina tras 30 minutos sin actividad; no se puede desactivar al último administrador activo (R-ID-4) | Equipo, según HU01 **(provisional)** |
