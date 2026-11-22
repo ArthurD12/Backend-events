@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 from testcontainers.community.postgres import PostgresContainer
 
 from local_eventos.main import create_app
+from tests.integration.auth import create_test_admin, sign_in, use_test_jwt_secret
 
 pytestmark = pytest.mark.integration
 
@@ -33,8 +34,11 @@ def api() -> Iterator[TestClient]:
         pytest.MonkeyPatch.context() as patch,
     ):
         patch.setenv("DATABASE_URL", postgres.get_connection_url())
+        use_test_jwt_secret(patch)
         command.upgrade(Config(str(ROOT / "alembic.ini")), "head")
+        create_test_admin(postgres.get_connection_url())
         with TestClient(create_app()) as client:
+            sign_in(client)
             yield client
 
 

@@ -18,6 +18,9 @@ from local_eventos.modules.catalog.presentation.dependencies import (
     get_category_repository,
     get_service_repository,
 )
+from local_eventos.modules.identity.domain.permissions import Role
+from local_eventos.modules.identity.public_api import get_current_user
+from tests.unit.current_user import signed_in_as
 
 from .fakes import InMemoryCategoryRepository, InMemoryServiceRepository
 
@@ -43,6 +46,7 @@ def api() -> Iterator[TestClient]:
     app = create_app(readiness_check=_no_database)
     app.dependency_overrides[get_category_repository] = in_memory_categories
     app.dependency_overrides[get_service_repository] = in_memory_services
+    app.dependency_overrides[get_current_user] = signed_in_as(Role.ADMIN)
     with TestClient(app) as client:
         yield client
 
@@ -207,3 +211,27 @@ def test_hu06_reactiva_un_servicio(api: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json()["active"] is True
+
+
+@pytest.mark.parametrize("role", [Role.EVENTS_MANAGER, Role.PURCHASING_MANAGER])
+def test_ca01_7_los_encargados_leen_el_catalogo_pero_no_lo_modifican(
+    api: TestClient, role: Role
+) -> None:
+    category_id = _category(api)
+    api.app.dependency_overrides[get_current_user] = signed_in_as(role)  # type: ignore[attr-defined]
+
+    read = api.get(SERVICES)
+    create = api.post(CATEGORIES, json={"name": "Bebidas"})
+    change = api.post(SERVICES, json=_buffet(category_id))
+
+    assert read.status_code == 200
+    assert api.get(CATEGORIES).status_code == 200
+    assert create.status_code == 403
+    assert change.status_code == 403
+    assert create.json()["code"] == "auth.forbidden"
+
+
+def test_ca01_7_catalogo_exige_sesion(api: TestClient) -> None:
+    del api.app.dependency_overrides[get_current_user]  # type: ignore[attr-defined]
+
+    assert api.get(CATEGORIES).status_code == 401

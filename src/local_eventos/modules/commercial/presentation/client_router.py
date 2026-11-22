@@ -1,12 +1,13 @@
 """Endpoints de clientes (HU04). Traducen HTTP ⇄ caso de uso; no contienen reglas de negocio.
 
-Pendiente: corregir documento (RN03) necesita saber qué usuario corrige; se agrega con HU01.
+Exigen el permiso `clients:manage` (administrador y encargado de eventos, DOMAIN.md §9).
+Pendiente: el endpoint de corregir documento (RN03) recibirá al `CurrentUser` que corrige.
 """
 
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from local_eventos.modules.commercial.application.clients.use_cases.change_client_status import (
     ActivateClient,
@@ -31,9 +32,18 @@ from local_eventos.modules.commercial.presentation.client_schemas import (
     ClientOut,
 )
 from local_eventos.modules.commercial.presentation.dependencies import Clients
+from local_eventos.modules.identity.public_api import Permission, require_permission
 from local_eventos.shared.presentation.problems import Problem
 
-router = APIRouter(prefix="/v1/clients", tags=["clientes"])
+router = APIRouter(
+    prefix="/v1/clients",
+    tags=["clientes"],
+    dependencies=[Depends(require_permission(Permission.CLIENTS_MANAGE))],
+    responses={
+        401: {"model": Problem, "description": "`auth.not_authenticated`, `auth.session_expired`"},
+        403: {"model": Problem, "description": "`auth.forbidden`"},
+    },
+)
 
 _Responses = dict[int | str, dict[str, Any]]
 

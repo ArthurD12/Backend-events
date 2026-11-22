@@ -62,6 +62,7 @@ winget install --id=Casey.Just -e     # just en Windows (Linux/macOS: uv tool in
 uv sync                               # instala lo fijado en uv.lock (o: just install)
 docker compose up -d db               # PostgreSQL local (o: just up)
 uv run pytest -m ""                   # pruebas con integración (o: just test-all)
+uv run python -m local_eventos.tools.create_admin  # primer administrador (o: just create-admin)
 ```
 
 ## Decidido que NO se usa

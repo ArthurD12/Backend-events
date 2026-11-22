@@ -15,7 +15,10 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from local_eventos.modules.identity import composition
-from local_eventos.modules.identity.application.errors import ForbiddenError
+from local_eventos.modules.identity.application.errors import (
+    ForbiddenError,
+    NotAuthenticatedError,
+)
 from local_eventos.modules.identity.application.ports.access_log_repository import (
     AccessLogRepository,
 )
@@ -85,12 +88,20 @@ class CurrentUser:
     permissions: frozenset[Permission]
 
 
-async def get_current_user(
+async def _access_token(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
+) -> str:
+    """Sin token responde 401 de inmediato, sin abrir una conexión a la base de datos."""
+    if credentials is None:
+        raise NotAuthenticatedError()
+    return credentials.credentials
+
+
+async def get_current_user(
+    token: Annotated[str, Depends(_access_token)],
     users: Users,
     tokens: Tokens,
 ) -> CurrentUser:
-    token = credentials.credentials if credentials else None
     user = await AuthenticateAccessToken(users, tokens)(token)
     return CurrentUser(id=user.id, name=user.name, role=user.role, permissions=user.permissions)
 

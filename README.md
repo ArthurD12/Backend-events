@@ -41,6 +41,7 @@ cp .env.example .env        # Windows: copy .env.example .env (y cambia la clave
 just install                # uv sync
 just up                     # docker compose up -d db
 just migrate                # alembic upgrade head
+just create-admin           # primer administrador (una sola vez)
 ```
 
 ## Cómo ejecutar
@@ -64,7 +65,8 @@ just arch     # import-linter
 
 Ver todos los atajos con `just --list`. Lista completa y significado en el `justfile`.
 Comandos adicionales: `just migrate` / `just migration <nombre>` (Alembic),
-`just openapi` (exporta `openapi.json`), `just docs` (MkDocs), `just fmt`.
+`just openapi` (exporta `openapi.json`), `just create-admin` (primer administrador),
+`just docs` (MkDocs), `just fmt`.
 
 ## Estructura del repositorio
 

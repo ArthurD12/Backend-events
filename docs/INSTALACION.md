@@ -29,7 +29,7 @@ cd Backend-events
 
 ## 3. Variables de entorno
 
-Copia el archivo de ejemplo y cambia la clave en **las dos líneas** donde aparece (`POSTGRES_PASSWORD` y `DATABASE_URL`):
+Copia el archivo de ejemplo y cambia la clave en **las dos líneas** donde aparece (`POSTGRES_PASSWORD` y `DATABASE_URL`). Cambia también `JWT_SECRET`, la clave que firma las sesiones: genera una con el comando que aparece en el mismo archivo:
 
 ```bash
 copy .env.example .env      # Windows
@@ -61,6 +61,12 @@ just migrate    # alembic upgrade head
 ```
 
 El esquema se crea **solo** con migraciones de Alembic, nunca con SQL a mano.
+
+Después crea el **primer administrador**. Se hace una sola vez: sin él nadie puede crear usuarios.
+
+```bash
+just create-admin   # pide nombre, correo y contraseña (mínimo 8 caracteres)
+```
 
 ## 7. Levantar la API
 
@@ -98,6 +104,7 @@ Si los dos terminan en verde, la instalación es correcta.
 | `just fmt` | Corrige el formato y el orden de los imports |
 | `just migration "<nombre>"` | Genera una migración a partir de los modelos ORM |
 | `just openapi` | Actualiza `openapi.json` (el contrato con el frontend) después de cambiar la API |
+| `just create-admin` | Crea un administrador (el primero, al instalar; los demás usuarios se crean desde el sistema) |
 | `docker compose down` | Apaga PostgreSQL (los datos se conservan) |
 
 ## Problemas frecuentes
@@ -107,4 +114,5 @@ Si los dos terminan en verde, la instalación es correcta.
 - **`Field required: database_url`** al ejecutar `just dev` o `just migrate` → falta el paso 3 o se ejecutó fuera de la carpeta del proyecto.
 - **`just migrate` falla con `connection was closed in the middle of operation`** → hay otro PostgreSQL instalado en Windows usando el mismo puerto. Compruébalo con `netstat -ano | findstr :5433`: si aparecen dos números de proceso distintos, cambia `POSTGRES_PORT` y el puerto de `DATABASE_URL` en `.env` a otro libre (por ejemplo, 5434) y ejecuta `just up` de nuevo.
 - **`error during connect` / `Cannot connect to the Docker daemon`** → Docker Desktop no está abierto.
+- **`Field required: jwt_secret`** o **`String should have at least 32 characters`** al iniciar sesión → falta `JWT_SECRET` en `.env` o es muy corta (paso 3).
 - **`just check` dice "Would reformat"** → ejecuta `just fmt` y configura la extensión Ruff en VS Code (paso 1).

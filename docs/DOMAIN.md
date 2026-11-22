@@ -109,3 +109,6 @@ Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. e
 | 11/11/2026 | Clientes, cotizaciones, contratos y eventos | Un solo módulo comercial (ADR 0003) | Product Owner |
 | 15/11/2026 | Vigencia, códigos, IGV, precio editable, cantidad por persona, conceptos adicionales, tipos de evento, cotización vencida (§4, reglas 7–14) | Ver §4 | Equipo **(provisional)** |
 | 15/11/2026 | Qué se convierte en evento | El contrato firmado con adelanto (§4, regla 15) | Equipo, según el documento validado **(provisional)** |
+| 22/11/2026 | Contraseña de usuario | Mínimo 8 caracteres, sin exigir símbolos (R-ID-1) | Equipo **(provisional)** |
+| 22/11/2026 | Intentos fallidos de inicio de sesión | Solo se registran en el historial; la cuenta no se bloquea (R-ID-2) | Equipo **(provisional)** |
+| 22/11/2026 | Sesión | Termina tras 30 minutos sin actividad; no se puede desactivar al último administrador activo (R-ID-4) | Equipo, según HU01 **(provisional)** |
