@@ -522,7 +522,9 @@
           "catalog:read",
           "catalog:manage",
           "quotes:manage",
-          "dashboard:read"
+          "dashboard:read",
+          "contracts:manage",
+          "payments:record"
         ],
         "title": "Permission",
         "type": "string"

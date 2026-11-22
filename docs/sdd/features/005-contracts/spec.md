@@ -1,7 +1,7 @@
 # Spec: Contrato, firma y adelanto
 
 - **ID**: 005-contracts
-- **Estado**: borrador (pendiente de aprobación)
+- **Estado**: aprobado (César Suclupe, 22/11/2026)
 - **Módulos afectados**: `commercial` (submódulo `contracts`), `ledger` (primer registro de pagos), `identity` (permisos)
 - **Historias**: HU41 y HU42 (RF102 y RF103). HU43 (PDF del contrato, RF104) queda para después: ver §8.
 - **Fuente**: documento del proyecto, tercer avance, épica E03 «Cotizaciones y contratos», aprobado por Darze.

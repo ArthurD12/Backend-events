@@ -1,7 +1,7 @@
 # Plan: Contrato, firma y adelanto
 
 - **Spec**: ./spec.md
-- **Estado**: borrador (pendiente de aprobación)
+- **Estado**: aprobado (César Suclupe, 22/11/2026)
 
 ## 1. Módulos y fronteras
 - **`commercial`**, submódulo `contracts` (ADR 0003): lee la cotización directamente (mismo módulo); FK `quote_id` y `client_id` dentro de `commercial`.
