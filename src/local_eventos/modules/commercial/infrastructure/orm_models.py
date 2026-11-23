@@ -206,6 +206,9 @@ class EventRow(Base):
         ),
         CheckConstraint("guests > 0", name="guests_positive"),
         CheckConstraint("start_time <> end_time", name="times_differ"),
+        CheckConstraint(
+            "(status = 'CANCELLED') = (cancel_reason IS NOT NULL)", name="cancelled_has_reason"
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
@@ -223,6 +226,9 @@ class EventRow(Base):
     status: Mapped[str] = mapped_column(String(15), index=True)
     created_by: Mapped[UUID]
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    cancel_reason: Mapped[str | None] = mapped_column(String(500))
+    cancelled_by: Mapped[UUID | None]
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class EventServiceRow(Base):

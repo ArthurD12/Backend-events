@@ -31,12 +31,31 @@ class EventStatus(StrEnum):
     CANCELLED = "CANCELLED"
 
 
+_REASON_MAX_LENGTH = 500
+_CANCELLABLE = (EventStatus.SCHEDULED, EventStatus.CONFIRMED)  # R-EVT-5
+
+
 class EventRuleError(Exception):
     """Operación no permitida (responde 409)."""
 
     def __init__(self, code: str, message: str) -> None:
         super().__init__(message)
         self.code = code
+
+
+class EventValidationError(Exception):
+    """Dato inválido (responde 422)."""
+
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
+@dataclass(frozen=True)
+class EventCancellation:
+    reason: str
+    cancelled_by: UUID
+    cancelled_at: datetime
 
 
 @dataclass(frozen=True)
@@ -68,6 +87,7 @@ class Event:
     services: tuple[EventService, ...]
     created_by: UUID
     created_at: datetime
+    cancellation: EventCancellation | None = None
 
     @classmethod
     def from_contract(
@@ -120,6 +140,33 @@ class Event:
     @property
     def ends_next_day(self) -> bool:
         return self.end_time < self.start_time
+
+    def check_cancellation(self, reason: str) -> str:
+        """CA-11.C1 y CA-11.C2. Se valida antes de registrar pagos. Devuelve el motivo limpio."""
+        if self.status not in _CANCELLABLE:
+            raise EventRuleError(
+                "event.not_cancellable",
+                "Solo se cancela un evento programado o confirmado.",
+            )
+        cleaned = " ".join(reason.split())
+        if not cleaned:
+            raise EventValidationError(
+                "event.reason_required", "Para cancelar el evento, indica el motivo."
+            )
+        if len(cleaned) > _REASON_MAX_LENGTH:
+            raise EventValidationError(
+                "event.reason_too_long",
+                f"El motivo no puede superar {_REASON_MAX_LENGTH} caracteres.",
+            )
+        return cleaned
+
+    def cancel(self, *, reason: str, cancelled_by: UUID, now: datetime) -> None:
+        """CA-11.C5: queda quién canceló y cuándo. El contrato lo anula aplicación (R-EVT-4)."""
+        cleaned = self.check_cancellation(reason)
+        self.cancellation = EventCancellation(
+            reason=cleaned, cancelled_by=cancelled_by, cancelled_at=now
+        )
+        self.status = EventStatus.CANCELLED
 
 
 def format_event_code(year: int, number: int) -> str:

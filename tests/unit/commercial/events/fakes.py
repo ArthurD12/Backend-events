@@ -33,6 +33,9 @@ class InMemoryEventRepository:
             raise EventAlreadyExistsError()
         self.events[event.id] = replace(event)
 
+    async def update(self, event: Event) -> None:
+        self.events[event.id] = replace(event)
+
     async def next_number(self, year: int) -> int:
         self.counters[year] = self.counters.get(year, 0) + 1
         return self.counters[year]

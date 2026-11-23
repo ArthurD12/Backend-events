@@ -1,5 +1,6 @@
-"""Endpoints de eventos (HU10). Consultar exige `events:read` (los tres roles); convertir un
-contrato en evento, `events:manage` (administrador y encargado de eventos)."""
+"""Endpoints de eventos (HU10 y HU11, parte). Consultar exige `events:read` (los tres roles);
+convertir y cancelar, `events:manage` (administrador y encargado de eventos). Cancelar exige
+además `payments:record`, porque puede registrar una devolución."""
 
 from datetime import date
 from typing import Annotated
@@ -12,6 +13,7 @@ from local_eventos.modules.commercial.application.events.ports.event_repository 
 )
 from local_eventos.modules.commercial.application.events.use_cases.events import (
     MAX_PAGE_SIZE,
+    CancelEvent,
     ConvertContractToEvent,
     GetEvent,
     SearchEvents,
@@ -22,11 +24,13 @@ from local_eventos.modules.commercial.presentation.dependencies import (
     Contracts,
     Coordinators,
     Events,
+    Payments,
     Quotes,
     Today,
 )
 from local_eventos.modules.commercial.presentation.event_schemas import (
     CoordinatorOut,
+    EventCancelIn,
     EventConvertIn,
     EventOut,
     EventPageOut,
@@ -45,6 +49,7 @@ router = APIRouter(
 )
 
 Manager = Annotated[CurrentUser, Depends(require_permission(Permission.EVENTS_MANAGE))]
+Cashier = Annotated[CurrentUser, Depends(require_permission(Permission.PAYMENTS_RECORD))]
 
 
 @router.post(
@@ -119,6 +124,43 @@ async def get_event(
     return await _out(await GetEvent(events)(event_id), contracts, quotes, clients, coordinators)
 
 
+@router.post(
+    "/{event_id}/cancel",
+    operation_id="events_cancel",
+    responses={
+        404: {"model": Problem, "description": "`event.not_found`"},
+        409: {"model": Problem, "description": "`event.not_cancellable`"},
+        422: {
+            "model": Problem,
+            "description": "`event.reason_required`, `contract.refund_invalid`, `payment.*`",
+        },
+    },
+)
+async def cancel_event(
+    event_id: UUID,
+    body: EventCancelIn,
+    _: Manager,
+    user: Cashier,
+    events: Events,
+    contracts: Contracts,
+    payments: Payments,
+    quotes: Quotes,
+    clients: Clients,
+    coordinators: Coordinators,
+    clock: Today,
+) -> EventOut:
+    """Cancela el evento y anula su contrato; si hubo devolución, la registra (R-EVT-4)."""
+    event = await CancelEvent(events, contracts, payments, clock)(
+        event_id,
+        reason=body.reason,
+        cancelled_by=user.id,
+        refund_cents=body.refund_cents,
+        refund=body.refund.to_payment() if body.refund else None,
+        note=body.note,
+    )
+    return await _out(event, contracts, quotes, clients, coordinators)
+
+
 async def _out(
     event: Event,
     contracts: Contracts,
@@ -132,7 +174,7 @@ async def _out(
     names = {c.id: c.name for c in await coordinators()}
     return EventOut.from_event(
         event,
-        contract_code=contract.code if contract else "",
+        contract=contract,
         quote_code=quote.code if quote else "",
         client_name=client.name if client else "",
         coordinator_name=names.get(event.coordinator_id),

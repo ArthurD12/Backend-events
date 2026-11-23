@@ -10,8 +10,10 @@ from local_eventos.modules.commercial.application.events.ports.event_repository 
     EventSummary,
 )
 from local_eventos.modules.commercial.application.events.use_cases.events import EventPage
+from local_eventos.modules.commercial.domain.contracts.contract import Contract
 from local_eventos.modules.commercial.domain.events.event import Event, EventStatus
 from local_eventos.modules.commercial.domain.quotes.quote import EventType, LineKind, LineUnit
+from local_eventos.modules.commercial.presentation.contract_schemas import PaymentIn
 
 
 class EventConvertIn(BaseModel):
@@ -19,6 +21,20 @@ class EventConvertIn(BaseModel):
     coordinator_id: UUID | None = Field(
         default=None, description="Responsable de coordinación. Si se omite: quien convierte"
     )
+
+
+class EventCancelIn(BaseModel):
+    reason: str
+    refund_cents: int | None = Field(default=None, description="Solo si se devolvió dinero")
+    refund: PaymentIn | None = Field(default=None, description="Cómo se devolvió")
+    note: str | None = None
+
+
+class EventCancellationOut(BaseModel):
+    reason: str
+    refund_cents: int | None = Field(description="Devolución registrada en el contrato")
+    note: str | None
+    cancelled_at: datetime
 
 
 class CoordinatorOut(BaseModel):
@@ -54,6 +70,7 @@ class EventOut(BaseModel):
     coordinator_name: str | None = Field(description="Vacío si el usuario ya no está activo")
     status: EventStatus
     services: list[EventServiceOut]
+    cancellation: EventCancellationOut | None
     created_at: datetime
 
     @classmethod
@@ -61,7 +78,7 @@ class EventOut(BaseModel):
         cls,
         event: Event,
         *,
-        contract_code: str,
+        contract: Contract | None,
         quote_code: str,
         client_name: str,
         coordinator_name: str | None,
@@ -70,7 +87,7 @@ class EventOut(BaseModel):
             id=event.id,
             code=event.code,
             contract_id=event.contract_id,
-            contract_code=contract_code,
+            contract_code=contract.code if contract else "",
             quote_id=event.quote_id,
             quote_code=quote_code,
             client_id=event.client_id,
@@ -95,8 +112,21 @@ class EventOut(BaseModel):
                 )
                 for s in event.services
             ],
+            cancellation=_cancellation(event, contract),
             created_at=event.created_at,
         )
+
+
+def _cancellation(event: Event, contract: Contract | None) -> EventCancellationOut | None:
+    if event.cancellation is None:
+        return None
+    contract_cancellation = contract.cancellation if contract else None
+    return EventCancellationOut(
+        reason=event.cancellation.reason,
+        refund_cents=contract_cancellation.refund_cents if contract_cancellation else None,
+        note=contract_cancellation.note if contract_cancellation else None,
+        cancelled_at=event.cancellation.cancelled_at,
+    )
 
 
 class EventSummaryOut(BaseModel):

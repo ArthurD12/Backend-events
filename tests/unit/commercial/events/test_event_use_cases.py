@@ -22,6 +22,7 @@ from local_eventos.modules.commercial.application.events.ports.event_repository 
     EventFilters,
 )
 from local_eventos.modules.commercial.application.events.use_cases.events import (
+    CancelEvent,
     ConvertContractToEvent,
     GetEvent,
     SearchEvents,
@@ -33,12 +34,21 @@ from local_eventos.modules.commercial.domain.contracts.contract import (
     Contract,
     ContractRuleError,
     ContractStatus,
+    ContractValidationError,
 )
-from local_eventos.modules.commercial.domain.events.event import EventRuleError, EventStatus
+from local_eventos.modules.commercial.domain.events.event import (
+    EventRuleError,
+    EventStatus,
+    EventValidationError,
+)
 from local_eventos.modules.commercial.domain.quotes.quote import QuoteStatus
 from local_eventos.modules.identity.public_api import Coordinator
 from local_eventos.modules.ledger.application.use_cases.payments import RecordPayment
-from local_eventos.modules.ledger.domain.payment import PaymentMethod
+from local_eventos.modules.ledger.domain.payment import (
+    LedgerValidationError,
+    PaymentKind,
+    PaymentMethod,
+)
 from tests.unit.commercial.contracts.fakes import InMemoryContractRepository
 from tests.unit.commercial.quotes.world import World, build_world
 from tests.unit.ledger.fakes import InMemoryPaymentRepository
@@ -65,6 +75,11 @@ class Setup:
     def cancel(self) -> CancelContract:
         return CancelContract(
             self.contracts, RecordPayment(self.payments), self.world.clock, self.events
+        )
+
+    def cancel_event(self) -> CancelEvent:
+        return CancelEvent(
+            self.events, self.contracts, RecordPayment(self.payments), self.world.clock
         )
 
     async def contract(self, *, signed: bool = True) -> Contract:
@@ -179,3 +194,83 @@ async def test_busca_por_texto_estado_y_fechas(setup: Setup) -> None:
     assert cancelled.total == 0
     with pytest.raises(EventNotFoundError):
         await GetEvent(setup.events)(uuid4())
+
+
+async def test_ca11_c4_cancelar_evento_anula_contrato_y_registra_devolucion(setup: Setup) -> None:
+    contract = await setup.contract()
+    event = await setup.convert()(contract.id, created_by=MANAGER.id)
+    today = setup.world.clock.today()
+
+    cancelled = await setup.cancel_event()(
+        event.id,
+        reason=" El cliente   canceló ",
+        cancelled_by=MANAGER.id,
+        refund_cents=50_000,
+        refund=AdvancePayment(paid_on=today, method=PaymentMethod.TRANSFER, reference="Op. 9"),
+        note="Acordado por teléfono",
+    )
+
+    stored = await setup.contracts.get(contract.id)
+    advance, refund = setup.payments.payments
+    assert cancelled.status is EventStatus.CANCELLED
+    assert cancelled.cancellation is not None
+    assert cancelled.cancellation.reason == "El cliente canceló"
+    assert await GetEvent(setup.events)(event.id) == cancelled
+    assert stored is not None and stored.status is ContractStatus.CANCELLED
+    assert stored.cancellation is not None
+    assert (stored.cancellation.reason, stored.cancellation.refund_cents) == (
+        "El cliente canceló",
+        50_000,
+    )
+    assert stored.cancellation.refund_payment_id == refund.id
+    assert (advance.kind, refund.kind) == (PaymentKind.ADVANCE, PaymentKind.REFUND)
+
+
+async def test_ca11_c4_sin_devolucion(setup: Setup) -> None:
+    event = await setup.convert()((await setup.contract()).id, created_by=MANAGER.id)
+
+    await setup.cancel_event()(event.id, reason="Cambió de proveedor", cancelled_by=MANAGER.id)
+
+    assert len(setup.payments.payments) == 1  # solo el adelanto
+
+
+@pytest.mark.parametrize(
+    ("changes", "error"),
+    [
+        ({"reason": " "}, EventValidationError),
+        ({"reason": "Canceló", "refund_cents": 999_999_999}, ContractValidationError),
+        (
+            {
+                "reason": "Canceló",
+                "refund_cents": 1_000,
+                "refund": AdvancePayment(paid_on=date(2030, 1, 1), method=PaymentMethod.CASH),
+            },
+            LedgerValidationError,
+        ),
+    ],
+)
+async def test_ca11_c4_si_algo_falla_no_cambia_nada(
+    setup: Setup, changes: dict[str, object], error: type[Exception]
+) -> None:
+    contract = await setup.contract()
+    event = await setup.convert()(contract.id, created_by=MANAGER.id)
+
+    with pytest.raises(error):
+        await setup.cancel_event()(event.id, cancelled_by=MANAGER.id, **changes)  # type: ignore[arg-type]
+
+    stored_event = await setup.events.get(event.id)
+    stored_contract = await setup.contracts.get(contract.id)
+    assert stored_event is not None and stored_event.status is EventStatus.SCHEDULED
+    assert stored_contract is not None and stored_contract.status is ContractStatus.SIGNED
+    assert len(setup.payments.payments) == 1
+
+
+async def test_ca11_c1_no_se_cancela_dos_veces_ni_uno_inexistente(setup: Setup) -> None:
+    event = await setup.convert()((await setup.contract()).id, created_by=MANAGER.id)
+    await setup.cancel_event()(event.id, reason="Canceló", cancelled_by=MANAGER.id)
+
+    with pytest.raises(EventRuleError) as error:
+        await setup.cancel_event()(event.id, reason="Otra vez", cancelled_by=MANAGER.id)
+    assert error.value.code == "event.not_cancellable"
+    with pytest.raises(EventNotFoundError):
+        await setup.cancel_event()(uuid4(), reason="x", cancelled_by=MANAGER.id)
