@@ -1,9 +1,9 @@
-# Backend del Local de Eventos
+# Backend de Darze (catering y eventos)
 
-Backend interno de un local de eventos (matrimonios, cumpleaños, promociones).
-Un edificio con varios salones —uno por piso, **no divisibles**— que se alquilan **por horas**,
-y un solo punto de venta. Todo lo que se vende está ligado a una reserva; los cobros se **registran**
-en un ledger (sin pasarela de pagos ni facturación electrónica).
+Backend interno de **Darze**, empresa de catering y organización de eventos (San Juan de Lurigancho, Lima).
+Centraliza el flujo `cliente → cotización → contrato → evento`, la asignación de personal, el almacén,
+los requerimientos y compras, y los pagos. Los cobros se **registran** en un ledger
+(sin pasarela de pagos ni facturación electrónica).
 
 Es un **monolito modular** con Clean Architecture en Python: un solo despliegue
 (API FastAPI + PostgreSQL), dividido en módulos de negocio con fronteras estrictas
@@ -12,24 +12,22 @@ Ver `docs/architecture/ARCHITECTURE.md` y `docs/DOMAIN.md`.
 Nace para **una sola organización**, con mínimo mantenimiento.
 
 El frontend (Next.js + TypeScript + Tailwind) vive en **otro repositorio** y consume
-el OpenAPI de este. El módulo de IA es un servicio aparte y opcional:
-este backend solo le envía datos mediante el módulo `reporting`.
+el OpenAPI de este. El agente de IA es un módulo del backend (`assistant`), solo de consulta,
+que usa funciones controladas de los demás módulos (ver ADR 0002).
 
 ## Stack
 
 Python 3.12+ · FastAPI · Pydantic v2 · SQLAlchemy 2.0 async (asyncpg) · Alembic · PostgreSQL ·
 uv · ruff · mypy (strict) · pytest (+ Testcontainers) · import-linter · structlog + Sentry ·
-Docker + GitHub Actions. **Sin** Redis, Celery ni Kafka.
+ReportLab (PDF de cotizaciones, ADR 0004) · Docker + GitHub Actions. **Sin** Redis, Celery ni Kafka.
 
-Las versiones concretas las fija `uv.lock` / `pyproject` cuando exista —se verifica en 000-bootstrap—;
-este README no fija versiones.
+Las versiones concretas las fijan `pyproject.toml` y `uv.lock`; este README no fija versiones.
 
 Detalle, justificación y comandos de instalación de cada tecnología: `docs/architecture/STACK.md`.
 
 ## Requisitos previos
 
-- Python 3.12 o superior
-- `uv` (entorno, dependencias y lockfile)
+- `uv` (instala Python 3.12, el entorno, las dependencias y el lockfile)
 - `just` (atajos de comandos)
 - Docker + Docker Compose (PostgreSQL local y tests de integración)
 - Un clon de este repositorio
@@ -38,14 +36,12 @@ Guía paso a paso desde cero: [`docs/INSTALACION.md`](docs/INSTALACION.md).
 
 ## Instalación
 
-> **se verifica en 000-bootstrap**: `pyproject.toml`, `docker-compose.yml` y `.env.example` aún no existen;
-> los pasos que dependen de ellos se marcan en `docs/INSTALACION.md`.
-
 ```bash
-cp .env.example .env        # se verifica en 000-bootstrap
-docker compose up -d db     # o: just up
+cp .env.example .env        # Windows: copy .env.example .env (y cambia la clave)
 just install                # uv sync
+just up                     # docker compose up -d db
 just migrate                # alembic upgrade head
+just create-admin           # primer administrador (una sola vez)
 ```
 
 ## Cómo ejecutar
@@ -54,13 +50,14 @@ just migrate                # alembic upgrade head
 just dev   # uv run fastapi dev src/local_eventos/main.py
 ```
 
-> **se verifica en 000-bootstrap**: la app runnable aún no existe.
+Comprueba http://localhost:8000/health (`ok`), http://localhost:8000/ready (`ready`) y http://localhost:8000/docs.
 
 ## Cómo correr tests y calidad
 
 ```bash
-just test     # pytest
-just check    # ruff + mypy + lint-imports + pytest
+just test     # pruebas unitarias (sin Docker)
+just test-all # unitarias + integración con PostgreSQL real (necesita Docker)
+just check    # ruff + mypy + lint-imports + pruebas unitarias
 just lint     # ruff check + formato
 just types    # mypy strict
 just arch     # import-linter
@@ -68,7 +65,8 @@ just arch     # import-linter
 
 Ver todos los atajos con `just --list`. Lista completa y significado en el `justfile`.
 Comandos adicionales: `just migrate` / `just migration <nombre>` (Alembic),
-`just openapi` (exporta `openapi.json`), `just docs` (MkDocs), `just fmt`.
+`just openapi` (exporta `openapi.json`), `just create-admin` (primer administrador),
+`just docs` (MkDocs), `just fmt`.
 
 ## Estructura del repositorio
 
@@ -89,7 +87,7 @@ La versión completa y vigente está en ese documento:
 ├─ src/local_eventos/
 │  ├─ main.py                # create_app(): routers, middlewares, errores
 │  ├─ shared/                # domain / application / infrastructure transversales
-│  └─ modules/               # identity, venues, clients, catalog, bookings, inventory, ledger, reporting
+│  └─ modules/               # identity, commercial, catalog, staff, ledger, inventory, purchasing, reporting, assistant
 └─ tests/                    # unit, integration (Postgres real), architecture
 ```
 
@@ -132,5 +130,5 @@ Sin `spec.md` y `plan.md` aprobados por el humano **no se implementa** (ver `AGE
 ```
 
 Cada feature vive en `docs/sdd/features/<NNN-slug>/{spec,plan,tasks}.md`.
-Orden sugerido de arranque: `000-bootstrap` → identity → venues → clients → catalog → bookings →
-ledger → inventory → reporting.
+Orden sugerido de arranque (según el cronograma de Sprints): `000-bootstrap` → identity → commercial (clientes) →
+catalog → commercial (cotizaciones, contratos, eventos) → staff → ledger → inventory → assistant.

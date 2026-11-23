@@ -1,0 +1,25 @@
+"""Errores de la capa de aplicación de eventos. `code` es estable para el frontend."""
+
+
+class EventApplicationError(Exception):
+    def __init__(self, code: str, message: str) -> None:
+        super().__init__(message)
+        self.code = code
+
+
+class EventNotFoundError(EventApplicationError):
+    def __init__(self) -> None:
+        super().__init__("event.not_found", "No se encontró el evento.")
+
+
+class EventAlreadyExistsError(EventApplicationError):
+    def __init__(self) -> None:
+        super().__init__("event.already_exists", "Este contrato ya se convirtió en evento.")
+
+
+class EventCoordinatorInvalidError(EventApplicationError):
+    def __init__(self) -> None:
+        super().__init__(
+            "event.coordinator_invalid",
+            "El responsable debe ser un administrador o encargado de eventos activo.",
+        )

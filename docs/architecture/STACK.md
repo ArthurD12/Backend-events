@@ -12,6 +12,7 @@
 | `alembic` | Migraciones |
 | `pwdlib[argon2]` (o `argon2-cffi`) | Hash de contraseñas |
 | `pyjwt` | Tokens de acceso |
+| `reportlab` | PDF de cotizaciones (ADR 0004). Sin librerías del sistema: funciona igual en Windows y Docker |
 | `structlog` | Logs estructurados |
 | `sentry-sdk[fastapi]` | Errores en producción |
 | `httpx` | Cliente HTTP del conector `reporting` |
@@ -25,6 +26,7 @@
 | `import-linter` | Reglas de arquitectura |
 | `pytest`, `pytest-asyncio`, `pytest-cov` | Tests |
 | `testcontainers[postgres]` | PostgreSQL real en integración |
+| `types-reportlab` | Tipos de ReportLab para que mypy (strict) revise el código del PDF |
 | `hypothesis` | Propiedades (ledger, inventario, solapes) |
 | `pre-commit` | Hooks locales |
 | `just` | Atajos de comandos |
@@ -36,9 +38,6 @@
 Docker multi-stage (usuario no root, healthcheck) · docker-compose (API + PostgreSQL en local) · GitHub Actions (CI, CD, docs) · GHCR para imágenes · PostgreSQL con backups automáticos.
 
 ## Por qué se eligió cada tecnología
-
-> **se verifica en 000-bootstrap**: estas justificaciones describen la decisión ya tomada en este
-> documento; la instalación y configuración reales (pyproject, compose, CI) se verifican en 000-bootstrap.
 
 | Tecnología | Por qué |
 |---|---|
@@ -60,11 +59,12 @@ Docker multi-stage (usuario no root, healthcheck) · docker-compose (API + Postg
 **Comandos de instalación** (oficiales, una línea cada uno):
 
 ```bash
-pipx install uv                # entorno, dependencias y lockfile
-uv sync                        # instala lo fijado en uv.lock (o: just install)
-pipx install just              # atajos de comandos (just check, just test, just dev, ...)
-pipx install ruff              # lint y formato (en el repo se ejecuta vía uv run ruff)
-docker compose up -d db        # PostgreSQL local (o: just up) — se verifica en 000-bootstrap
+winget install --id=astral-sh.uv -e   # uv en Windows (Linux/macOS: instalador oficial de astral.sh)
+winget install --id=Casey.Just -e     # just en Windows (Linux/macOS: uv tool install rust-just)
+uv sync                               # instala lo fijado en uv.lock (o: just install)
+docker compose up -d db               # PostgreSQL local (o: just up)
+uv run pytest -m ""                   # pruebas con integración (o: just test-all)
+uv run python -m local_eventos.tools.create_admin  # primer administrador (o: just create-admin)
 ```
 
 ## Decidido que NO se usa

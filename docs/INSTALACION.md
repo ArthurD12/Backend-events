@@ -1,61 +1,62 @@
 # Instalación paso a paso (desde cero)
 
-> Guía para instalar el backend en una máquina nueva, sin conocimientos previos del proyecto.
-> Cuando un paso depende de algo que aún no existe en el repositorio, está marcado con
-> **se verifica en 000-bootstrap** — no sigas ese paso como si el archivo ya existiera.
+> Guía para levantar el backend en una máquina nueva, sin conocimientos previos del proyecto.
+> Los comandos funcionan en Windows (CMD o PowerShell) y en Linux/macOS; donde cambian, se indican los dos.
 
 ## 1. Requisitos previos de la máquina
 
-Instala estas herramientas en tu sistema operativo:
+| Herramienta | Para qué sirve | Windows | Verificar |
+|---|---|---|---|
+| Git | Clonar el repositorio | `winget install --id=Git.Git -e` | `git --version` |
+| Docker Desktop | PostgreSQL local y pruebas de integración | [docker.com](https://www.docker.com/products/docker-desktop/) | `docker compose version` |
+| `uv` | Instala Python 3.12, crea el entorno e instala las dependencias | `winget install --id=astral-sh.uv -e` | `uv --version` |
+| `just` | Atajos de comandos (`just dev`, `just check`…) | `winget install --id=Casey.Just -e` | `just --version` |
 
-| Herramienta | Para qué sirve | Cómo se instala (oficial) |
-|---|---|---|
-| Python 3.12 o superior | Lenguaje del backend | Desde [python.org](https://www.python.org/downloads/) — verifica con `python --version` |
-| `uv` | Instala dependencias y crea el entorno virtual | `pipx install uv` o el instalador oficial de [astral.sh](https://docs.astral.sh/uv/getting-started/installation/) |
-| `just` | Ejecuta los atajos de comandos | `pipx install just` o [just.systems](https://just.systems/) |
-| Docker + Docker Compose | PostgreSQL local y tests de integración | [docker.com](https://www.docker.com/get-started/) — verifica con `docker compose version` |
-| Git | Clonar el repositorio | [git-scm.com](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) |
+En Linux/macOS: `uv` con el [instalador oficial](https://docs.astral.sh/uv/getting-started/installation/) y `just` con `uv tool install rust-just`.
 
-> **se verifica en 000-bootstrap**: `pyproject.toml`, `docker-compose.yml`, `.env.example` y una app
-> runnable aún NO existen en el repositorio. Los pasos 4 a 7 asumen que ya existen.
+No hace falta instalar Python a mano: `uv` descarga la versión del archivo `.python-version` (3.12).
+
+**Editor (VS Code):** instala la extensión **Ruff** (`charliermarsh.ruff`) y ponla como formateador de Python.
+Así el editor usa la misma configuración del proyecto (`pyproject.toml`, líneas de 100 caracteres) y
+`just check` no marca archivos para reformatear.
 
 ## 2. Clonar el repositorio
 
 ```bash
-git clone <url-del-repo>
+git clone https://github.com/ArthurD12/Backend-events.git
 cd Backend-events
 ```
 
-## 3. Crear la base de datos con Docker Compose
+## 3. Variables de entorno
 
-PostgreSQL se levanta con Docker Compose, no se instala en la máquina:
-
-```bash
-just up                 # docker compose up -d db
-```
-
-Por defecto escucha en el puerto local de PostgreSQL (5432). Los datos viven en un volumen de Docker,
-para que no se pierdan al reiniciar.
-
-> **se verifica en 000-bootstrap**: `docker-compose.yml` (con el servicio `db` y sus credenciales)
-> aún no existe. Hasta entonces no hay base de datos que levantar.
-
-## 4. Variables de entorno
+Copia el archivo de ejemplo y cambia la clave en **las dos líneas** donde aparece (`POSTGRES_PASSWORD` y `DATABASE_URL`). Cambia también `JWT_SECRET`, la clave que firma las sesiones: genera una con el comando que aparece en el mismo archivo:
 
 ```bash
-cp .env.example .env
+copy .env.example .env      # Windows
+cp .env.example .env        # Linux/macOS
 ```
 
-> **se verifica en 000-bootstrap**: `.env.example` aún no existe. Las variables que se esperan —según
-> el dominio e infraestructura ya definidos— son, al menos: la URL de conexión a PostgreSQL
-> (`DATABASE_URL`) y las claves de JWT de autenticación, más la clave de integración de `reporting`
-> cuando se active el servicio de IA. Edita `.env` con tus valores reales; nunca subas `.env` al repo.
+El archivo `.env` está en `.gitignore`: nunca se sube a GitHub.
 
-## 5. Instalar las dependencias con uv
+Para el **PDF de las cotizaciones**, completa en `.env` los datos de Darze (`COMPANY_NAME`, `COMPANY_RUC`, `COMPANY_ADDRESS`, `COMPANY_PHONE`, `COMPANY_EMAIL`). Los que dejes vacíos no se imprimen.
+
+## 4. Instalar las dependencias
 
 ```bash
-just install    # uv sync — crea el entorno virtual e instala todo desde uv.lock
+just install    # uv sync: crea .venv e instala las versiones exactas de uv.lock
 ```
+
+Incluye ReportLab, la librería del PDF de cotizaciones: no hace falta instalar nada más en Windows.
+
+## 5. Levantar PostgreSQL
+
+Abre Docker Desktop y espera a que diga que está en ejecución. Luego:
+
+```bash
+just up         # docker compose up -d db
+```
+
+Los datos viven en el volumen `darze_pgdata`: no se pierden al apagar la computadora.
 
 ## 6. Crear el esquema de base de datos
 
@@ -63,30 +64,59 @@ just install    # uv sync — crea el entorno virtual e instala todo desde uv.lo
 just migrate    # alembic upgrade head
 ```
 
-El esquema se crea **solo** con migraciones Alembic; nunca con SQL suelto a mano.
+El esquema se crea **solo** con migraciones de Alembic, nunca con SQL a mano.
 
-## 7. Levantar el servidor (modo desarrollo)
+Después crea el **primer administrador**. Se hace una sola vez: sin él nadie puede crear usuarios.
 
 ```bash
-just dev   # uv run fastapi dev src/local_eventos/main.py
+just create-admin   # pide nombre, correo y contraseña (mínimo 8 caracteres)
 ```
 
-> **se verifica en 000-bootstrap**: la app runnable (`src/local_eventos/main.py`) aún no existe.
+## 7. Levantar la API
+
+```bash
+just dev        # uv run fastapi dev src/local_eventos/main.py
+```
 
 ## 8. Verificar la instalación
 
+Con la API en ejecución, abre en el navegador:
+
+| Dirección | Debe mostrar |
+|---|---|
+| http://localhost:8000/health | `{"status":"ok"}` |
+| http://localhost:8000/ready | `{"status":"ready"}` (si dice `not_ready`, PostgreSQL no está levantado o la clave de `.env` no coincide) |
+| http://localhost:8000/docs | La documentación interactiva de la API |
+
+En otra terminal, ejecuta las comprobaciones completas:
+
 ```bash
-just check   # ruff + mypy + lint-imports + pytest
+just check      # ruff + mypy + import-linter + pruebas unitarias
+just test-all   # además, pruebas de integración con PostgreSQL real (Docker en ejecución)
 ```
 
-Si el comando termina en verde, la instalación es correcta.
-Para levantar la documentación local: `just docs` (MkDocs, se verifica en 000-bootstrap:
-`mkdocs.yml` aún no existe).
+Si los dos terminan en verde, la instalación es correcta.
+
+## Comandos del día a día
+
+| Comando | Qué hace |
+|---|---|
+| `just dev` | Levanta la API y la recarga al guardar cambios |
+| `just test` | Pruebas unitarias (rápidas, sin Docker) |
+| `just test-all` | Pruebas unitarias y de integración |
+| `just check` | Todo lo que revisa GitHub Actions en cada pull request |
+| `just fmt` | Corrige el formato y el orden de los imports |
+| `just migration "<nombre>"` | Genera una migración a partir de los modelos ORM |
+| `just openapi` | Actualiza `openapi.json` (el contrato con el frontend) después de cambiar la API |
+| `just create-admin` | Crea un administrador (el primero, al instalar; los demás usuarios se crean desde el sistema) |
+| `docker compose down` | Apaga PostgreSQL (los datos se conservan) |
 
 ## Problemas frecuentes
 
-- **`docker compose: command not found`** → falta Docker Compose; instala Docker Desktop o el plugin
-  de Compose.
-- **Puerto 5432 ocupado** → hay otro PostgreSQL corriendo; detenlo o cambia el puerto en
-  `docker-compose.yml` (se verifica en 000-bootstrap).
-- **`.env` no definido** → falta el paso 4; sin las variables de entorno la app no arranca.
+- **`/ready` responde `not_ready`** → PostgreSQL no está levantado (`just up`) o la clave de `DATABASE_URL` no es la misma que `POSTGRES_PASSWORD` en `.env`.
+- **`Falta POSTGRES_USER en .env`** al ejecutar `just up` → falta el paso 3.
+- **`Field required: database_url`** al ejecutar `just dev` o `just migrate` → falta el paso 3 o se ejecutó fuera de la carpeta del proyecto.
+- **`just migrate` falla con `connection was closed in the middle of operation`** → hay otro PostgreSQL instalado en Windows usando el mismo puerto. Compruébalo con `netstat -ano | findstr :5433`: si aparecen dos números de proceso distintos, cambia `POSTGRES_PORT` y el puerto de `DATABASE_URL` en `.env` a otro libre (por ejemplo, 5434) y ejecuta `just up` de nuevo.
+- **`error during connect` / `Cannot connect to the Docker daemon`** → Docker Desktop no está abierto.
+- **`Field required: jwt_secret`** o **`String should have at least 32 characters`** al iniciar sesión → falta `JWT_SECRET` en `.env` o es muy corta (paso 3).
+- **`just check` dice "Would reformat"** → ejecuta `just fmt` y configura la extensión Ruff en VS Code (paso 1).
