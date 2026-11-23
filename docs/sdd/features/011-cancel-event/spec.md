@@ -1,7 +1,7 @@
 # Spec: Cancelar un evento
 
 - **ID**: 011-cancel-event
-- **Estado**: borrador, pendiente de aprobación
+- **Estado**: aprobado (César Suclupe, 23/11/2026)
 - **Módulos afectados**: `commercial` (submódulos `events` y `contracts`), `ledger` (devolución)
 - **Historia**: HU11 (#12), **solo la parte de cancelar**. El resto de HU11 (editar la planificación y los otros cambios de estado) va en otro spec, cuando el Product Owner defina sus reglas.
 
@@ -25,7 +25,7 @@ Con HU10, un contrato que ya es evento no se anula desde el contrato (R-EVT-3). 
 
 ## 5. Reglas
 - **R-EVT-3** *(equipo, provisional)*: sigue igual. El contrato con evento no se anula desde el contrato; se anula **cancelando el evento**.
-- **R-EVT-4** *(equipo, provisional, a validar por el Product Owner)*: cancelar el evento **anula el contrato**. Si el cliente quiere otra fecha, se hace una cotización nueva (una cotización tiene un solo contrato, R-CON-5).
+- **R-EVT-4** *(Scrum Master, 23/11/2026; a validar por el Product Owner)*: cancelar el evento **anula el contrato**. Si el cliente quiere otra fecha, se hace una cotización nueva (una cotización tiene un solo contrato, R-CON-5).
 - **R-EVT-5** *(equipo, provisional)*: se cancela desde programado o confirmado. No desde "en ejecución" ni "finalizado".
 - La devolución sigue la decisión del Product Owner del 22/11/2026: solo se registra, sin reglas automáticas (R-CON-3).
 

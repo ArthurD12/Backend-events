@@ -107,3 +107,30 @@ def test_ca10_5_no_se_convierte_dos_veces(api: TestClient) -> None:
     again = api.post("/v1/events", json={"contract_id": contract_id})
 
     assert (again.status_code, again.json()["code"]) == (409, "event.already_exists")
+
+
+def test_ca11_cancelar_evento_de_punta_a_punta(api: TestClient) -> None:
+    contract_id = _signed_contract(api, "40000003")
+    event_id = api.post("/v1/events", json={"contract_id": contract_id}).json()["id"]
+
+    response = api.post(
+        f"/v1/events/{event_id}/cancel",
+        json={
+            "reason": "El cliente canceló",
+            "refund_cents": 300_000,
+            "refund": {"paid_on": TODAY.isoformat(), "method": "TRANSFER", "reference": "Op 7"},
+        },
+    )
+    contract = api.get(f"/v1/contracts/{contract_id}").json()
+    again = api.post("/v1/events", json={"contract_id": contract_id})
+
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "CANCELLED"
+    assert response.json()["cancellation"]["refund_cents"] == 300_000
+    assert contract["status"] == "CANCELLED"
+    assert contract["cancellation"]["reason"] == "El cliente canceló"
+    assert [(p["kind"], p["amount_cents"]) for p in contract["payments"]] == [
+        ("ADVANCE", 407_500),
+        ("REFUND", 300_000),
+    ]
+    assert (again.status_code, again.json()["code"]) == (409, "event.already_exists")

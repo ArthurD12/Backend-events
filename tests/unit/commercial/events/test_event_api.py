@@ -220,3 +220,46 @@ def test_permisos_compras_lee_pero_no_convierte(api: Api) -> None:
     assert listed.status_code == 200
     assert (converted.status_code, converted.json()["code"]) == (403, "auth.forbidden")
     assert coordinators.status_code == 403
+
+
+def test_ca11_cancelar_evento_por_api(api: Api) -> None:
+    contract_id = api.contract()
+    event_id = api.convert(contract_id).json()["id"]
+    url = f"/v1/events/{event_id}/cancel"
+
+    no_reason = api.client.post(url, json={"reason": " "})
+    cancelled = api.client.post(
+        url,
+        json={
+            "reason": "El cliente canceló",
+            "refund_cents": 100_000,
+            "refund": {"paid_on": "2026-11-22", "method": "CASH"},
+            "note": "Se devolvió en efectivo",
+        },
+    )
+    again = api.client.post(url, json={"reason": "Otra vez"})
+    contract = api.client.get(f"/v1/contracts/{contract_id}").json()
+    listed = api.client.get("/v1/events", params={"status": "CANCELLED"}).json()
+
+    assert (no_reason.status_code, no_reason.json()["code"]) == (422, "event.reason_required")
+    assert cancelled.status_code == 200, cancelled.text
+    body = cancelled.json()
+    assert body["status"] == "CANCELLED"
+    assert body["cancellation"]["reason"] == "El cliente canceló"
+    assert (body["cancellation"]["refund_cents"], body["cancellation"]["note"]) == (
+        100_000,
+        "Se devolvió en efectivo",
+    )
+    assert (again.status_code, again.json()["code"]) == (409, "event.not_cancellable")
+    assert contract["status"] == "CANCELLED"
+    assert [p["kind"] for p in contract["payments"]] == ["ADVANCE", "REFUND"]
+    assert [e["id"] for e in listed["items"]] == [event_id]
+
+
+def test_compras_no_cancela(api: Api) -> None:
+    event_id = api.convert(api.contract()).json()["id"]
+    api.sign_in_as(Role.PURCHASING_MANAGER)
+
+    response = api.client.post(f"/v1/events/{event_id}/cancel", json={"reason": "x"})
+
+    assert (response.status_code, response.json()["code"]) == (403, "auth.forbidden")

@@ -19,6 +19,7 @@ from local_eventos.modules.commercial.application.events.ports.event_repository 
 )
 from local_eventos.modules.commercial.domain.events.event import (
     Event,
+    EventCancellation,
     EventRuleError,
     EventService,
     EventStatus,
@@ -91,6 +92,18 @@ class SqlAlchemyEventRepository:
             )
             for position, service in enumerate(event.services, start=1)
         )
+        await self._session.flush()
+
+    async def update(self, event: Event) -> None:
+        """Por ahora solo cambia el estado y la cancelación (HU11, parte)."""
+        row = await self._session.get(EventRow, event.id)
+        if row is None:
+            raise LookupError(f"El evento {event.id} no existe en la base de datos.")
+        cancellation = event.cancellation
+        row.status = event.status.value
+        row.cancel_reason = cancellation.reason if cancellation else None
+        row.cancelled_by = cancellation.cancelled_by if cancellation else None
+        row.cancelled_at = cancellation.cancelled_at if cancellation else None
         await self._session.flush()
 
     async def next_number(self, year: int) -> int:
@@ -174,7 +187,17 @@ class SqlAlchemyEventRepository:
             ),
             created_by=row.created_by,
             created_at=row.created_at,
+            cancellation=_cancellation(row),
         )
+
+
+def _cancellation(row: EventRow) -> EventCancellation | None:
+    if row.cancel_reason is None:
+        return None
+    assert row.cancelled_by is not None and row.cancelled_at is not None
+    return EventCancellation(
+        reason=row.cancel_reason, cancelled_by=row.cancelled_by, cancelled_at=row.cancelled_at
+    )
 
 
 def _conditions(filters: EventFilters) -> list[ColumnElement[bool]]:

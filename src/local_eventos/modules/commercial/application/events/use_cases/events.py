@@ -1,4 +1,5 @@
-"""Casos de uso de eventos (HU10): convertir un contrato firmado en evento y consultarlos."""
+"""Casos de uso de eventos: convertir un contrato firmado en evento (HU10), consultarlos y
+cancelarlos (HU11, parte)."""
 
 from dataclasses import dataclass
 from uuid import UUID
@@ -6,6 +7,9 @@ from uuid import UUID
 from local_eventos.modules.commercial.application.contracts.errors import ContractNotFoundError
 from local_eventos.modules.commercial.application.contracts.ports.contract_repository import (
     ContractRepository,
+)
+from local_eventos.modules.commercial.application.contracts.use_cases.contracts import (
+    AdvancePayment,
 )
 from local_eventos.modules.commercial.application.events.errors import (
     EventAlreadyExistsError,
@@ -23,6 +27,12 @@ from local_eventos.modules.commercial.application.quotes.ports.quote_repository 
 )
 from local_eventos.modules.commercial.domain.events.event import Event, format_event_code
 from local_eventos.modules.identity.public_api import CoordinatorLookup
+from local_eventos.modules.ledger.public_api import (
+    PaymentKind,
+    PaymentMethod,
+    PaymentRecorder,
+    PaymentRequest,
+)
 
 MAX_PAGE_SIZE = 100
 
@@ -115,3 +125,70 @@ class SearchEvents:
             offset=(page - 1) * page_size,
         )
         return EventPage(items=items, total=total, page=page, page_size=page_size)
+
+
+class CancelEvent:
+    """Cancela el evento y anula su contrato en un solo paso (CA-11.C4, R-EVT-4).
+
+    Si hubo devolución, se registra en pagos dentro de la misma transacción: o se guarda todo,
+    o nada. Todo se valida antes de registrar el pago.
+    """
+
+    def __init__(
+        self,
+        events: EventRepository,
+        contracts: ContractRepository,
+        payments: PaymentRecorder,
+        clock: Clock,
+    ) -> None:
+        self._events = events
+        self._contracts = contracts
+        self._payments = payments
+        self._clock = clock
+
+    async def __call__(
+        self,
+        event_id: UUID,
+        *,
+        reason: str,
+        cancelled_by: UUID,
+        refund_cents: int | None = None,
+        refund: AdvancePayment | None = None,
+        note: str | None = None,
+    ) -> Event:
+        today, now = self._clock.today(), self._clock.now()
+        event = await GetEvent(self._events)(event_id)
+        cleaned = event.check_cancellation(reason)
+        contract = await self._contracts.get(event.contract_id)
+        if contract is None:  # la base lo impide con una FK; solo por si acaso
+            raise ContractNotFoundError()
+        contract.check_cancellation(cleaned, refund_cents)
+        refund_payment_id = None
+        if refund_cents is not None:
+            how = refund or AdvancePayment(paid_on=today, method=PaymentMethod.CASH)
+            payment = await self._payments(
+                PaymentRequest(
+                    contract_id=contract.id,
+                    kind=PaymentKind.REFUND,
+                    amount_cents=refund_cents,
+                    method=how.method,
+                    reference=how.reference,
+                    paid_on=how.paid_on,
+                    recorded_by=cancelled_by,
+                ),
+                now=now,
+                today=today,
+            )
+            refund_payment_id = payment.id
+        event.cancel(reason=cleaned, cancelled_by=cancelled_by, now=now)
+        await self._events.update(event)  # primero el evento: la base lo exige (R-EVT-3)
+        contract.cancel(
+            reason=cleaned,
+            refund_cents=refund_cents,
+            refund_payment_id=refund_payment_id,
+            note=note,
+            cancelled_by=cancelled_by,
+            now=now,
+        )
+        await self._contracts.update(contract)
+        return event

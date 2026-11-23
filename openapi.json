@@ -799,6 +799,97 @@
         "title": "DocumentType",
         "type": "string"
       },
+      "EventCancelIn": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "refund": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cómo se devolvió"
+          },
+          "refund_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo si se devolvió dinero",
+            "title": "Refund Cents"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "EventCancelIn",
+        "type": "object"
+      },
+      "EventCancellationOut": {
+        "properties": {
+          "cancelled_at": {
+            "format": "date-time",
+            "title": "Cancelled At",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "refund_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Devolución registrada en el contrato",
+            "title": "Refund Cents"
+          }
+        },
+        "required": [
+          "reason",
+          "refund_cents",
+          "note",
+          "cancelled_at"
+        ],
+        "title": "EventCancellationOut",
+        "type": "object"
+      },
       "EventConvertIn": {
         "properties": {
           "contract_id": {
@@ -828,6 +919,16 @@
       },
       "EventOut": {
         "properties": {
+          "cancellation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventCancellationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "client_id": {
             "format": "uuid",
             "title": "Client Id",
@@ -947,6 +1048,7 @@
           "coordinator_name",
           "status",
           "services",
+          "cancellation",
           "created_at"
         ],
         "title": "EventOut",
@@ -4771,6 +4873,105 @@
           }
         ],
         "summary": "Get Event",
+        "tags": [
+          "eventos"
+        ]
+      }
+    },
+    "/v1/events/{event_id}/cancel": {
+      "post": {
+        "description": "Cancela el evento y anula su contrato; si hubo devolución, la registra (R-EVT-4).",
+        "operationId": "events_cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventCancelIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_cancellable`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.reason_required`, `contract.refund_invalid`, `payment.*`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Event",
         "tags": [
           "eventos"
         ]

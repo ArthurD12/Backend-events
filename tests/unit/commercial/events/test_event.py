@@ -10,6 +10,7 @@ from local_eventos.modules.commercial.domain.events.event import (
     Event,
     EventRuleError,
     EventStatus,
+    EventValidationError,
     format_event_code,
 )
 from local_eventos.modules.commercial.domain.quotes.quote import (
@@ -122,3 +123,61 @@ def test_ca10_1_solo_contrato_firmado_con_adelanto() -> None:
 
 def test_ca10_3_codigo() -> None:
     assert format_event_code(2026, 12) == "EVT-2026-0012"
+
+
+def _scheduled_event() -> Event:
+    quote = _accepted_quote()
+    return Event.from_contract(
+        code="EVT-2026-0001", contract=_contract(quote), quote=quote, coordinator_id=uuid4(),
+        created_by=uuid4(), now=NOW,
+    )  # fmt: skip
+
+
+def test_ca11_c1_cancela_con_motivo_y_auditoria() -> None:
+    event = _scheduled_event()
+    user = uuid4()
+
+    event.cancel(reason="  El cliente   canceló ", cancelled_by=user, now=NOW)
+
+    assert event.status is EventStatus.CANCELLED
+    assert event.cancellation is not None
+    assert (event.cancellation.reason, event.cancellation.cancelled_by) == (
+        "El cliente canceló",
+        user,
+    )
+    assert event.cancellation.cancelled_at == NOW
+
+
+@pytest.mark.parametrize(
+    ("reason", "code"), [(" ", "event.reason_required"), ("x" * 501, "event.reason_too_long")]
+)
+def test_ca11_c2_motivo_obligatorio(reason: str, code: str) -> None:
+    event = _scheduled_event()
+
+    with pytest.raises(EventValidationError) as error:
+        event.cancel(reason=reason, cancelled_by=uuid4(), now=NOW)
+
+    assert error.value.code == code
+    assert event.status is EventStatus.SCHEDULED
+
+
+@pytest.mark.parametrize(
+    "status", [EventStatus.IN_PROGRESS, EventStatus.FINISHED, EventStatus.CANCELLED]
+)
+def test_r_evt_5_solo_programado_o_confirmado(status: EventStatus) -> None:
+    event = _scheduled_event()
+    event.status = status
+
+    with pytest.raises(EventRuleError) as error:
+        event.cancel(reason="Canceló", cancelled_by=uuid4(), now=NOW)
+
+    assert error.value.code == "event.not_cancellable"
+
+
+def test_r_evt_5_confirmado_se_cancela() -> None:
+    event = _scheduled_event()
+    event.status = EventStatus.CONFIRMED
+
+    event.cancel(reason="Canceló", cancelled_by=uuid4(), now=NOW)
+
+    assert event.status is EventStatus.CANCELLED

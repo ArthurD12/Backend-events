@@ -33,7 +33,10 @@ from local_eventos.modules.commercial.domain.contracts.contract import (
     ContractRuleError,
     ContractValidationError,
 )
-from local_eventos.modules.commercial.domain.events.event import EventRuleError
+from local_eventos.modules.commercial.domain.events.event import (
+    EventRuleError,
+    EventValidationError,
+)
 from local_eventos.modules.commercial.domain.quotes.quote import (
     QuoteRuleError,
     QuoteValidationError,
@@ -116,6 +119,11 @@ async def _contract_application_error(request: Request, error: Exception) -> JSO
 _EVENT_STATUS = {EventNotFoundError: 404, EventAlreadyExistsError: 409}
 
 
+async def _event_validation_error(request: Request, error: Exception) -> JSONResponse:
+    assert isinstance(error, EventValidationError)
+    return problem_response(status=422, title="Dato inválido", code=error.code, detail=str(error))
+
+
 async def _event_rule_error(request: Request, error: Exception) -> JSONResponse:
     assert isinstance(error, EventRuleError)
     return problem_response(
@@ -140,5 +148,6 @@ def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(ContractValidationError, _contract_validation_error)
     app.add_exception_handler(ContractRuleError, _contract_rule_error)
     app.add_exception_handler(ContractApplicationError, _contract_application_error)
+    app.add_exception_handler(EventValidationError, _event_validation_error)
     app.add_exception_handler(EventRuleError, _event_rule_error)
     app.add_exception_handler(EventApplicationError, _event_application_error)

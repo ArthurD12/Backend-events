@@ -26,6 +26,7 @@ from local_eventos.modules.commercial.domain.clients.client import Client, Docum
 from local_eventos.modules.commercial.domain.contracts.contract import (
     Contract,
     ContractRuleError,
+    ContractStatus,
 )
 from local_eventos.modules.commercial.domain.events.event import (
     Event,
@@ -229,3 +230,39 @@ async def test_r_evt_3_la_base_no_anula_un_contrato_con_evento(
     with pytest.raises(DBAPIError, match="R-EVT-3"):
         async with sessions.begin() as session:
             await session.execute(text("UPDATE commercial_contracts SET status = 'CANCELLED'"))
+
+
+async def test_r_evt_3_con_evento_cancelado_el_contrato_si_se_anula(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    contract, quote = await _contract(sessions, "40000006")
+    event = _event(contract, quote)
+    async with sessions.begin() as session:
+        await SqlAlchemyEventRepository(session).add(event)
+    event.cancel(reason="Canceló", cancelled_by=uuid4(), now=NOW)
+    contract.cancel(
+        reason="Canceló", refund_cents=None, refund_payment_id=None, note=None,
+        cancelled_by=uuid4(), now=NOW,
+    )  # fmt: skip
+
+    async with sessions.begin() as session:
+        await SqlAlchemyEventRepository(session).update(event)
+        await SqlAlchemyContractRepository(session).update(contract)
+
+    async with sessions() as session:
+        saved_event = await SqlAlchemyEventRepository(session).get(event.id)
+        saved_contract = await SqlAlchemyContractRepository(session).get(contract.id)
+    assert saved_event == event
+    assert saved_contract is not None and saved_contract.status is ContractStatus.CANCELLED
+
+
+async def test_ca11_c5_la_base_exige_motivo_al_cancelar(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    contract, quote = await _contract(sessions, "40000007")
+    async with sessions.begin() as session:
+        await SqlAlchemyEventRepository(session).add(_event(contract, quote))
+
+    with pytest.raises(DBAPIError, match="cancelled_has_reason"):
+        async with sessions.begin() as session:
+            await session.execute(text("UPDATE commercial_events SET status = 'CANCELLED'"))

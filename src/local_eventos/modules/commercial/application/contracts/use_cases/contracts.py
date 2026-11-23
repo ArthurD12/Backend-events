@@ -171,7 +171,8 @@ class CancelContract:
         today, now = self._clock.today(), self._clock.now()
         contract = await _get_or_fail(self._contracts, contract_id)
         contract.check_cancellation(reason, refund_cents)
-        if await self._events.get_by_contract(contract.id) is not None:
+        event = await self._events.get_by_contract(contract.id)
+        if event is not None and event.cancellation is None:
             raise ContractRuleError(
                 "contract.has_event",
                 "Este contrato ya es un evento: para anularlo, cancela el evento.",

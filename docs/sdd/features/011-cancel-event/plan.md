@@ -1,7 +1,7 @@
 # Plan: Cancelar un evento
 
 - **Spec**: ./spec.md
-- **Estado**: borrador, pendiente de aprobación
+- **Estado**: aprobado (César Suclupe, 23/11/2026)
 
 ## 1. Módulos y fronteras
 - `commercial`: el caso de uso cancela el evento y anula el contrato (mismo módulo).
