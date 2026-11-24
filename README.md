@@ -112,6 +112,7 @@ y sin claves foráneas entre módulos (los IDs se usan como referencia).
 - [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) — arquitectura del monolito modular.
 - [`docs/architecture/STACK.md`](docs/architecture/STACK.md) — stack, por qué se eligió y cómo instalarlo.
 - [`docs/INSTALACION.md`](docs/INSTALACION.md) — instalación paso a paso desde cero.
+- [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md) — publicación gratuita en Neon, Render y Vercel.
 - [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) — ramas, commits, versionado y flujo SDD.
 - [`docs/operations/RUNBOOK.md`](docs/operations/RUNBOOK.md) — operación y entrega.
 - [`docs/architecture/adr/`](docs/architecture/adr/) — decisiones de arquitectura (ADR).
