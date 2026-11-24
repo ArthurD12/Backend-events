@@ -1,7 +1,8 @@
 """Casos de uso de eventos: convertir un contrato firmado en evento (HU10), consultarlos y
 cancelarlos (HU11, parte)."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from datetime import date
 from uuid import UUID
 
 from local_eventos.modules.commercial.application.contracts.errors import ContractNotFoundError
@@ -15,6 +16,7 @@ from local_eventos.modules.commercial.application.events.errors import (
     EventAlreadyExistsError,
     EventCoordinatorInvalidError,
     EventNotFoundError,
+    EventRangeInvalidError,
 )
 from local_eventos.modules.commercial.application.events.ports.event_repository import (
     EventFilters,
@@ -35,6 +37,8 @@ from local_eventos.modules.ledger.public_api import (
 )
 
 MAX_PAGE_SIZE = 100
+CALENDAR_MAX_DAYS = 92
+_CALENDAR_LIMIT = 1_000  # una MYPE no llega a tantos eventos en 92 días
 
 
 @dataclass(frozen=True)
@@ -115,16 +119,31 @@ class SearchEvents:
         page = max(page, 1)
         page_size = min(max(page_size, 1), MAX_PAGE_SIZE)
         items, total = await self._events.search(
-            EventFilters(
-                text=" ".join(filters.text.split()),
-                status=filters.status,
-                date_from=filters.date_from,
-                date_to=filters.date_to,
-            ),
+            replace(filters, text=" ".join(filters.text.split())),
             limit=page_size,
             offset=(page - 1) * page_size,
         )
         return EventPage(items=items, total=total, page=page, page_size=page_size)
+
+
+class EventCalendar:
+    """HU12: todos los eventos de un periodo (mes, semana o día), sin paginar, por fecha y hora."""
+
+    def __init__(self, events: EventRepository) -> None:
+        self._events = events
+
+    async def __call__(
+        self, date_from: date, date_to: date, filters: EventFilters | None = None
+    ) -> list[EventSummary]:
+        if date_to < date_from or (date_to - date_from).days + 1 > CALENDAR_MAX_DAYS:
+            raise EventRangeInvalidError(CALENDAR_MAX_DAYS)
+        base = filters or EventFilters()
+        items, _ = await self._events.search(
+            replace(base, text=" ".join(base.text.split()), date_from=date_from, date_to=date_to),
+            limit=_CALENDAR_LIMIT,
+            offset=0,
+        )
+        return items
 
 
 class CancelEvent:

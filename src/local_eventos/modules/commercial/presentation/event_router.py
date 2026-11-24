@@ -12,13 +12,16 @@ from local_eventos.modules.commercial.application.events.ports.event_repository 
     EventFilters,
 )
 from local_eventos.modules.commercial.application.events.use_cases.events import (
+    CALENDAR_MAX_DAYS,
     MAX_PAGE_SIZE,
     CancelEvent,
     ConvertContractToEvent,
+    EventCalendar,
     GetEvent,
     SearchEvents,
 )
 from local_eventos.modules.commercial.domain.events.event import Event, EventStatus
+from local_eventos.modules.commercial.domain.quotes.quote import EventType
 from local_eventos.modules.commercial.presentation.dependencies import (
     Clients,
     Contracts,
@@ -34,6 +37,7 @@ from local_eventos.modules.commercial.presentation.event_schemas import (
     EventConvertIn,
     EventOut,
     EventPageOut,
+    EventSummaryOut,
 )
 from local_eventos.modules.identity.public_api import CurrentUser, Permission, require_permission
 from local_eventos.shared.presentation.problems import Problem
@@ -88,6 +92,7 @@ async def search_events(
     coordinators: Coordinators,
     text: Annotated[str, Query(description="Parte del código o del nombre del cliente")] = "",
     status: EventStatus | None = None,
+    event_type: EventType | None = None,
     date_from: date | None = None,
     date_to: date | None = None,
     page: Annotated[int, Query(ge=1)] = 1,
@@ -95,11 +100,39 @@ async def search_events(
 ) -> EventPageOut:
     """Eventos de la fecha más próxima a la más lejana."""
     found = await SearchEvents(events)(
-        EventFilters(text=text, status=status, date_from=date_from, date_to=date_to),
+        EventFilters(
+            text=text,
+            status=status,
+            event_type=event_type,
+            date_from=date_from,
+            date_to=date_to,
+        ),
         page=page,
         page_size=page_size,
     )
     return EventPageOut.from_page(found, {c.id: c.name for c in await coordinators()})
+
+
+@router.get(
+    "/calendar",
+    operation_id="events_calendar",
+    responses={422: {"model": Problem, "description": "`event.range_invalid`"}},
+)
+async def events_calendar(
+    events: Events,
+    coordinators: Coordinators,
+    date_from: date,
+    date_to: Annotated[date, Query(description=f"Hasta {CALENDAR_MAX_DAYS} días desde date_from")],
+    text: Annotated[str, Query(description="Parte del código o del nombre del cliente")] = "",
+    status: EventStatus | None = None,
+    event_type: EventType | None = None,
+) -> list[EventSummaryOut]:
+    """HU12: todos los eventos del periodo visible del calendario, por fecha y hora."""
+    found = await EventCalendar(events)(
+        date_from, date_to, EventFilters(text=text, status=status, event_type=event_type)
+    )
+    names = {c.id: c.name for c in await coordinators()}
+    return [EventSummaryOut.from_summary(item, names.get(item.coordinator_id)) for item in found]
 
 
 @router.get("/coordinators", operation_id="events_coordinators")
