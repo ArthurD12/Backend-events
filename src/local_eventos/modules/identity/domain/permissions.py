@@ -25,6 +25,7 @@ class Permission(StrEnum):
     PAYMENTS_RECORD = "payments:record"
     EVENTS_MANAGE = "events:manage"
     EVENTS_READ = "events:read"
+    STAFF_MANAGE = "staff:manage"
 
 
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
@@ -38,6 +39,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.PAYMENTS_RECORD,  # R-CON-4: el Product Owner lo autorizó (22/11/2026)
             Permission.EVENTS_MANAGE,
             Permission.EVENTS_READ,
+            Permission.STAFF_MANAGE,
         }
     ),
     Role.PURCHASING_MANAGER: frozenset({Permission.CATALOG_READ, Permission.EVENTS_READ}),
