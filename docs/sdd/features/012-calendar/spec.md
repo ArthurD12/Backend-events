@@ -1,7 +1,7 @@
 # Spec: Calendario de eventos
 
 - **ID**: 012-calendar
-- **Estado**: borrador, pendiente de aprobación
+- **Estado**: aprobado (César Suclupe, 24/11/2026)
 - **Módulos afectados**: `commercial` (submódulo `events`, solo lectura)
 - **Historia**: HU12 (#13), RF30 y RF31
 

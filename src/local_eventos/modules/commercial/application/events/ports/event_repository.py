@@ -13,6 +13,7 @@ from local_eventos.modules.commercial.domain.quotes.quote import EventType
 class EventFilters:
     text: str = ""  # parte del código o del nombre del cliente
     status: EventStatus | None = None
+    event_type: EventType | None = None
     date_from: date | None = None
     date_to: date | None = None
 

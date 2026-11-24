@@ -1,7 +1,7 @@
 # Plan: Calendario de eventos
 
 - **Spec**: ./spec.md
-- **Estado**: borrador, pendiente de aprobación
+- **Estado**: aprobado (César Suclupe, 24/11/2026)
 
 ## 1. Módulos y fronteras
 - Solo `commercial` (eventos). Sin tablas nuevas ni migraciones: se lee `commercial_events` con su cliente.

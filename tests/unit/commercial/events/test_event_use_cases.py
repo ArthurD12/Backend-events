@@ -1,7 +1,7 @@
 """Convertir un contrato en evento con piezas en memoria (HU10)."""
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, time
 from uuid import UUID, uuid4
 
 import pytest
@@ -17,6 +17,7 @@ from local_eventos.modules.commercial.application.events.errors import (
     EventAlreadyExistsError,
     EventCoordinatorInvalidError,
     EventNotFoundError,
+    EventRangeInvalidError,
 )
 from local_eventos.modules.commercial.application.events.ports.event_repository import (
     EventFilters,
@@ -24,6 +25,7 @@ from local_eventos.modules.commercial.application.events.ports.event_repository 
 from local_eventos.modules.commercial.application.events.use_cases.events import (
     CancelEvent,
     ConvertContractToEvent,
+    EventCalendar,
     GetEvent,
     SearchEvents,
 )
@@ -41,7 +43,7 @@ from local_eventos.modules.commercial.domain.events.event import (
     EventStatus,
     EventValidationError,
 )
-from local_eventos.modules.commercial.domain.quotes.quote import QuoteStatus
+from local_eventos.modules.commercial.domain.quotes.quote import EventType, QuoteStatus
 from local_eventos.modules.identity.public_api import Coordinator
 from local_eventos.modules.ledger.application.use_cases.payments import RecordPayment
 from local_eventos.modules.ledger.domain.payment import (
@@ -82,9 +84,11 @@ class Setup:
             self.events, self.contracts, RecordPayment(self.payments), self.world.clock
         )
 
-    async def contract(self, *, signed: bool = True) -> Contract:
+    async def contract(
+        self, *, signed: bool = True, changes: dict[str, object] | None = None
+    ) -> Contract:
         world = self.world
-        quote = await world.create()(world.command(), created_by=uuid4())
+        quote = await world.create()(world.command(**(changes or {})), created_by=uuid4())
         await ChangeQuoteStatus(world.quotes, world.clock)(quote.id, QuoteStatus.ACCEPTED)
         contract = await GenerateContract(self.contracts, world.quotes, world.clock)(
             quote.id, created_by=uuid4()
@@ -274,3 +278,50 @@ async def test_ca11_c1_no_se_cancela_dos_veces_ni_uno_inexistente(setup: Setup) 
     assert error.value.code == "event.not_cancellable"
     with pytest.raises(EventNotFoundError):
         await setup.cancel_event()(uuid4(), reason="x", cancelled_by=MANAGER.id)
+
+
+async def _event_on(setup: Setup, day: date, **changes: object) -> UUID:
+    contract = await setup.contract(changes={"event_date": day, **changes})
+    return (await setup.convert()(contract.id, created_by=MANAGER.id)).id
+
+
+async def test_ca12_calendario_del_periodo_ordenado_por_fecha_y_hora(setup: Setup) -> None:
+    late = await _event_on(setup, date(2026, 12, 19), start_time=time(20), end_time=time(3))
+    early = await _event_on(setup, date(2026, 12, 19), start_time=time(12), end_time=time(16))
+    first = await _event_on(setup, date(2026, 12, 1))
+    await _event_on(setup, date(2027, 1, 5))  # fuera del periodo
+
+    december = await EventCalendar(setup.events)(date(2026, 12, 1), date(2026, 12, 31))
+
+    assert [e.id for e in december] == [first, early, late]
+
+
+async def test_ca12_3_filtra_por_estado_tipo_y_cliente(setup: Setup) -> None:
+    wedding = await _event_on(setup, date(2026, 12, 19))
+    birthday = await _event_on(setup, date(2026, 12, 20), event_type=EventType.BIRTHDAY)
+    await setup.cancel_event()(wedding, reason="Canceló", cancelled_by=MANAGER.id)
+    calendar = EventCalendar(setup.events)
+    december = (date(2026, 12, 1), date(2026, 12, 31))
+
+    by_type = await calendar(*december, EventFilters(event_type=EventType.BIRTHDAY))
+    cancelled = await calendar(*december, EventFilters(status=EventStatus.CANCELLED))
+    by_client = await calendar(*december, EventFilters(text=" QUISPE "))
+    nobody = await calendar(*december, EventFilters(text="ramírez"))
+
+    assert [e.id for e in by_type] == [birthday]
+    assert [e.id for e in cancelled] == [wedding]
+    assert len(by_client) == 2  # R-CAL-2: los cancelados también aparecen
+    assert nobody == []
+
+
+@pytest.mark.parametrize(
+    ("start", "end"),
+    [(date(2026, 12, 31), date(2026, 12, 1)), (date(2026, 1, 1), date(2026, 4, 3))],
+)
+async def test_ca12_rango_invalido_o_mayor_a_92_dias(setup: Setup, start: date, end: date) -> None:
+    with pytest.raises(EventRangeInvalidError):
+        await EventCalendar(setup.events)(start, end)
+
+
+async def test_ca12_rango_de_92_dias_es_valido(setup: Setup) -> None:
+    assert await EventCalendar(setup.events)(date(2026, 1, 1), date(2026, 4, 2)) == []

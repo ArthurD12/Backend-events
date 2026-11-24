@@ -23,3 +23,11 @@ class EventCoordinatorInvalidError(EventApplicationError):
             "event.coordinator_invalid",
             "El responsable debe ser un administrador o encargado de eventos activo.",
         )
+
+
+class EventRangeInvalidError(EventApplicationError):
+    def __init__(self, max_days: int) -> None:
+        super().__init__(
+            "event.range_invalid",
+            f"El periodo debe terminar después de empezar y no superar {max_days} días.",
+        )

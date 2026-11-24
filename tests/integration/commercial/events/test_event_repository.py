@@ -266,3 +266,26 @@ async def test_ca11_c5_la_base_exige_motivo_al_cancelar(
     with pytest.raises(DBAPIError, match="cancelled_has_reason"):
         async with sessions.begin() as session:
             await session.execute(text("UPDATE commercial_events SET status = 'CANCELLED'"))
+
+
+async def test_ca12_calendario_filtra_por_rango_y_tipo(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    contract, quote = await _contract(sessions, "40000008")  # boda del 19/12/2026
+    event = _event(contract, quote)
+    async with sessions.begin() as session:
+        await SqlAlchemyEventRepository(session).add(event)
+
+    async def found(**filters: object) -> list[str]:
+        async with sessions() as session:
+            items, _ = await SqlAlchemyEventRepository(session).search(
+                EventFilters(**filters),  # type: ignore[arg-type]
+                limit=100, offset=0,
+            )  # fmt: skip
+        return [item.code for item in items]
+
+    december = {"date_from": date(2026, 12, 1), "date_to": date(2026, 12, 31)}
+    assert await found(**december) == ["EVT-2026-0001"]
+    assert await found(**december, event_type=EventType.WEDDING) == ["EVT-2026-0001"]
+    assert await found(**december, event_type=EventType.BIRTHDAY) == []
+    assert await found(date_from=date(2026, 12, 20), date_to=date(2026, 12, 31)) == []

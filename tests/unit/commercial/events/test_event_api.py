@@ -263,3 +263,35 @@ def test_compras_no_cancela(api: Api) -> None:
     response = api.client.post(f"/v1/events/{event_id}/cancel", json={"reason": "x"})
 
     assert (response.status_code, response.json()["code"]) == (403, "auth.forbidden")
+
+
+def test_ca12_calendario_por_api(api: Api) -> None:
+    api.convert(api.contract())
+    params = {"date_from": "2026-12-01", "date_to": "2026-12-31"}
+
+    december = api.client.get("/v1/events/calendar", params=params)
+    birthdays = api.client.get("/v1/events/calendar", params={**params, "event_type": "BIRTHDAY"})
+    weddings = api.client.get("/v1/events/calendar", params={**params, "event_type": "WEDDING"})
+    too_long = api.client.get(
+        "/v1/events/calendar", params={"date_from": "2026-01-01", "date_to": "2026-12-31"}
+    )
+    missing = api.client.get("/v1/events/calendar", params={"date_from": "2026-12-01"})
+    api.sign_in_as(Role.PURCHASING_MANAGER)
+    purchasing = api.client.get("/v1/events/calendar", params=params)
+
+    assert december.status_code == 200
+    (item,) = december.json()
+    assert (item["event_date"], item["start_time"], item["client_name"]) == (
+        "2026-12-19",
+        "20:00:00",
+        "José Ramírez",
+    )
+    assert (item["event_type"], item["status"], item["coordinator_name"]) == (
+        "BIRTHDAY",
+        "SCHEDULED",
+        api.me.name,
+    )
+    assert len(birthdays.json()) == 1 and weddings.json() == []
+    assert (too_long.status_code, too_long.json()["code"]) == (422, "event.range_invalid")
+    assert missing.status_code == 422
+    assert purchasing.status_code == 200
