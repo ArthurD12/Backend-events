@@ -133,6 +133,8 @@ def _conditions(filters: ContractFilters) -> list[ColumnElement[bool]]:
         )
     if filters.status is not None:
         conditions.append(ContractRow.status == filters.status.value)
+    if filters.client_id is not None:
+        conditions.append(ContractRow.client_id == filters.client_id)
     return conditions
 
 

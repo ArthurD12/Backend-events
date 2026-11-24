@@ -18,6 +18,9 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from testcontainers.community.postgres import PostgresContainer
 
+from local_eventos.modules.commercial.application.contracts.ports.contract_repository import (
+    ContractFilters,
+)
 from local_eventos.modules.commercial.application.events.errors import EventAlreadyExistsError
 from local_eventos.modules.commercial.application.events.ports.event_repository import (
     EventFilters,
@@ -289,3 +292,24 @@ async def test_ca12_calendario_filtra_por_rango_y_tipo(
     assert await found(**december, event_type=EventType.WEDDING) == ["EVT-2026-0001"]
     assert await found(**december, event_type=EventType.BIRTHDAY) == []
     assert await found(date_from=date(2026, 12, 20), date_to=date(2026, 12, 31)) == []
+
+
+async def test_ca05_contratos_y_eventos_filtrados_por_cliente(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    mine, my_quote = await _contract(sessions, "40000009")
+    other, other_quote = await _contract(sessions, "40000010")
+    async with sessions.begin() as session:
+        await SqlAlchemyEventRepository(session).add(_event(mine, my_quote, "EVT-2026-0001"))
+        await SqlAlchemyEventRepository(session).add(_event(other, other_quote, "EVT-2026-0002"))
+
+    async with sessions() as session:
+        events, _ = await SqlAlchemyEventRepository(session).search(
+            EventFilters(client_id=mine.client_id), limit=100, offset=0
+        )
+        contracts, _ = await SqlAlchemyContractRepository(session).search(
+            ContractFilters(client_id=mine.client_id), limit=100, offset=0
+        )
+
+    assert [e.code for e in events] == ["EVT-2026-0001"]
+    assert [c.id for c in contracts] == [mine.id]
