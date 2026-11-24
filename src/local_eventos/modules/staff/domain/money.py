@@ -25,10 +25,6 @@ class Money:
                 "staff.rate_invalid", "La tarifa debe expresarse en céntimos enteros."
             )
         if self.cents < 0:
-            raise StaffValidationError(
-                "staff.rate_invalid", "La tarifa no puede ser negativa."
-            )
+            raise StaffValidationError("staff.rate_invalid", "La tarifa no puede ser negativa.")
         if self.currency != CURRENCY:
-            raise StaffValidationError(
-                "staff.rate_invalid", f"La moneda debe ser {CURRENCY}."
-            )
+            raise StaffValidationError("staff.rate_invalid", f"La moneda debe ser {CURRENCY}.")

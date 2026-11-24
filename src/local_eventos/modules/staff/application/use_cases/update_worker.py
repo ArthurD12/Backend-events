@@ -30,9 +30,7 @@ class UpdateWorker:
         self._workers = workers
         self._clock = clock
 
-    async def execute(
-        self, worker_id: UUID, data: WorkerData, actor_id: UUID
-    ) -> Worker:
+    async def execute(self, worker_id: UUID, data: WorkerData, actor_id: UUID) -> Worker:
         """Actualiza la ficha y devuelve el trabajador persistido.
 
         Lanza `WorkerNotFoundError` si el id no existe, `StaffValidationError` si

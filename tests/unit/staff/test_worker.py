@@ -93,9 +93,7 @@ def test_telefono_invalido(phone: str) -> None:
 
 
 def test_ca15_25_otro_exige_descripcion() -> None:
-    worker = _register(
-        function=WorkerFunction.OTHER, function_description="  jefe   de cocina "
-    )
+    worker = _register(function=WorkerFunction.OTHER, function_description="  jefe   de cocina ")
 
     assert worker.function is WorkerFunction.OTHER
     assert worker.function_description == "jefe de cocina"
@@ -110,8 +108,14 @@ def test_otro_sin_descripcion_falla(description: str | None) -> None:
 
 @pytest.mark.parametrize(
     "function",
-    [None, WorkerFunction.COOK, WorkerFunction.WAITER, WorkerFunction.BARTENDER,
-     WorkerFunction.ASSISTANT, WorkerFunction.COORDINATOR],
+    [
+        None,
+        WorkerFunction.COOK,
+        WorkerFunction.WAITER,
+        WorkerFunction.BARTENDER,
+        WorkerFunction.ASSISTANT,
+        WorkerFunction.COORDINATOR,
+    ],
 )
 def test_ca15_18_funcion_fija_no_admite_descripcion(
     function: WorkerFunction | None,
@@ -154,9 +158,7 @@ def test_ca15_21_hora_extra_condicional(
     overtime_applies: bool, overtime_rate: Money | None, code: str | None
 ) -> None:
     if code is None:
-        worker = _register(
-            overtime_applies=overtime_applies, overtime_rate=overtime_rate
-        )
+        worker = _register(overtime_applies=overtime_applies, overtime_rate=overtime_rate)
         assert worker.overtime_applies is overtime_applies
         assert worker.overtime_rate == overtime_rate
         return

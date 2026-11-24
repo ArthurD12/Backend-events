@@ -149,9 +149,7 @@ def _clean_phone(phone: str | None) -> str | None:
     if not cleaned:
         return None
     if not _PHONE_PATTERN.match(cleaned):
-        raise StaffValidationError(
-            "staff.phone_invalid", "El teléfono solo admite dígitos."
-        )
+        raise StaffValidationError("staff.phone_invalid", "El teléfono solo admite dígitos.")
     return cleaned
 
 
@@ -184,9 +182,7 @@ def _validate_rate(rate: Money | None) -> Money | None:
     return rate
 
 
-def _validate_overtime(
-    overtime_applies: bool, overtime_rate: Money | None
-) -> Money | None:
+def _validate_overtime(overtime_applies: bool, overtime_rate: Money | None) -> Money | None:
     if not isinstance(overtime_applies, bool):
         raise StaffValidationError(
             "staff.overtime_rate_invalid", "La marca de hora extra debe ser booleana."

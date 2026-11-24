@@ -181,9 +181,7 @@ async def test_ca15_4_edicion_a_documento_ajeno_conserva_el_anterior() -> None:
             WORKER_2_ID, _data(name="Beto Ruiz", document_number="44125896"), ACTOR_ID
         )
 
-    assert repository.workers[WORKER_2_ID].document == Document(
-        DocumentType.DNI, "12345678"
-    )
+    assert repository.workers[WORKER_2_ID].document == Document(DocumentType.DNI, "12345678")
     assert repository.audits == []
 
 
@@ -192,9 +190,7 @@ async def test_ca15_4_edicion_conserva_su_propio_documento() -> None:
     repository.workers[WORKER_1_ID] = _worker(worker_id=WORKER_1_ID)
     update = UpdateWorker(repository, FixedClock(NOW))
 
-    updated = await update.execute(
-        WORKER_1_ID, _data(name="Ana Torres Vargas"), ACTOR_ID
-    )
+    updated = await update.execute(WORKER_1_ID, _data(name="Ana Torres Vargas"), ACTOR_ID)
 
     assert updated.name == "Ana Torres Vargas"
     assert updated.document == Document(DocumentType.DNI, "44125896")

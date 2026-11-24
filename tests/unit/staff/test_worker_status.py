@@ -73,9 +73,7 @@ class FakeWorkerRepository:
         raise NotImplementedError
 
 
-def _repository_with_worker(
-    *, status: WorkerStatus = WorkerStatus.ACTIVE
-) -> FakeWorkerRepository:
+def _repository_with_worker(*, status: WorkerStatus = WorkerStatus.ACTIVE) -> FakeWorkerRepository:
     repository = FakeWorkerRepository()
     worker = Worker.register(
         worker_id=WORKER_ID,

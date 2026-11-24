@@ -31,9 +31,7 @@ class _ChangeWorkerStatus:
     def _apply(self, worker: Worker) -> bool:
         raise NotImplementedError
 
-    async def execute(
-        self, worker_id: UUID, reason: str | None, actor_id: UUID
-    ) -> Worker:
+    async def execute(self, worker_id: UUID, reason: str | None, actor_id: UUID) -> Worker:
         """Cambia el estado y devuelve la ficha.
 
         Lanza `WorkerNotFoundError` si el id no existe. Si el trabajador ya está

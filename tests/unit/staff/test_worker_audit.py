@@ -42,9 +42,7 @@ def test_acciones_validas(action: AuditAction) -> None:
 
 @pytest.mark.parametrize("action", [AuditAction.ACTIVATED, AuditAction.DEACTIVATED])
 def test_razon_permitida_en_cambios_de_estado(action: AuditAction) -> None:
-    assert make_audit(action, "  Autorizado por gerencia  ").reason == (
-        "Autorizado por gerencia"
-    )
+    assert make_audit(action, "  Autorizado por gerencia  ").reason == ("Autorizado por gerencia")
 
 
 @pytest.mark.parametrize("action", [AuditAction.CREATED, AuditAction.UPDATED])
