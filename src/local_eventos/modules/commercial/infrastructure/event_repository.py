@@ -212,6 +212,8 @@ def _conditions(filters: EventFilters) -> list[ColumnElement[bool]]:
         )
     if filters.status is not None:
         conditions.append(EventRow.status == filters.status.value)
+    if filters.client_id is not None:
+        conditions.append(EventRow.client_id == filters.client_id)
     if filters.event_type is not None:
         conditions.append(EventRow.event_type == filters.event_type.value)
     if filters.date_from is not None:

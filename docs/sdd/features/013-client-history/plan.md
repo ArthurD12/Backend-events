@@ -1,7 +1,7 @@
 # Plan: Historial del cliente
 
 - **Spec**: ./spec.md
-- **Estado**: borrador, pendiente de aprobación
+- **Estado**: aprobado (César Suclupe, 24/11/2026)
 
 ## 1. Módulos y fronteras
 - Solo `commercial`. Sin tablas nuevas ni migraciones.

@@ -1,7 +1,7 @@
 # Spec: Historial del cliente
 
 - **ID**: 013-client-history
-- **Estado**: borrador, pendiente de aprobación
+- **Estado**: aprobado (César Suclupe, 24/11/2026)
 - **Módulos afectados**: `commercial` (clientes, cotizaciones, contratos y eventos; solo lectura)
 - **Historia**: HU05 (#6), RF11
 
