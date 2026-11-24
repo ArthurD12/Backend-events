@@ -264,6 +264,40 @@
         "title": "ClientCreate",
         "type": "object"
       },
+      "ClientHistoryOut": {
+        "properties": {
+          "client": {
+            "$ref": "#/components/schemas/ClientOut"
+          },
+          "events": {
+            "description": "De la fecha de evento más reciente",
+            "items": {
+              "$ref": "#/components/schemas/HistoryEventOut"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "quotes": {
+            "description": "De la fecha de evento más reciente",
+            "items": {
+              "$ref": "#/components/schemas/QuoteSummaryOut"
+            },
+            "title": "Quotes",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/HistorySummaryOut"
+          }
+        },
+        "required": [
+          "client",
+          "summary",
+          "quotes",
+          "events"
+        ],
+        "title": "ClientHistoryOut",
+        "type": "object"
+      },
       "ClientOut": {
         "properties": {
           "active": {
@@ -1244,6 +1278,74 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HistoryEventOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "event_type": {
+            "$ref": "#/components/schemas/EventType"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventStatus"
+          },
+          "total_cents": {
+            "description": "Total del contrato del evento",
+            "title": "Total Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "event_type",
+          "event_date",
+          "total_cents",
+          "status"
+        ],
+        "title": "HistoryEventOut",
+        "type": "object"
+      },
+      "HistorySummaryOut": {
+        "properties": {
+          "accepted_quotes": {
+            "title": "Accepted Quotes",
+            "type": "integer"
+          },
+          "contracted_cents": {
+            "description": "Suma de contratos firmados; sin los anulados",
+            "title": "Contracted Cents",
+            "type": "integer"
+          },
+          "events": {
+            "title": "Events",
+            "type": "integer"
+          },
+          "quotes": {
+            "title": "Quotes",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "quotes",
+          "accepted_quotes",
+          "events",
+          "contracted_cents"
+        ],
+        "title": "HistorySummaryOut",
         "type": "object"
       },
       "LineKind": {
@@ -3966,6 +4068,85 @@
           }
         ],
         "summary": "Deactivate Client",
+        "tags": [
+          "clientes"
+        ]
+      }
+    },
+    "/v1/clients/{client_id}/history": {
+      "get": {
+        "description": "Cotizaciones y eventos del cliente, con un resumen de su relación con Darze (HU05).",
+        "operationId": "clients_history",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Client Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClientHistoryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`client.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Client History",
         "tags": [
           "clientes"
         ]

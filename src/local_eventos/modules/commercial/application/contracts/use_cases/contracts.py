@@ -4,7 +4,7 @@ El adelanto y la devolución se registran en el módulo de pagos (`ledger.public
 misma transacción que el contrato: o se guardan los dos, o ninguno (CA-42.5).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from uuid import UUID
 
@@ -224,7 +224,7 @@ class SearchContracts:
         page = max(page, 1)
         page_size = min(max(page_size, 1), MAX_PAGE_SIZE)
         items, total = await self._contracts.search(
-            ContractFilters(text=" ".join(filters.text.split()), status=filters.status),
+            replace(filters, text=" ".join(filters.text.split())),
             limit=page_size,
             offset=(page - 1) * page_size,
         )

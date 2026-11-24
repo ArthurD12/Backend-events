@@ -1,4 +1,4 @@
-"""Endpoints de clientes (HU04). Traducen HTTP ⇄ caso de uso; no contienen reglas de negocio.
+"""Endpoints de clientes (HU04) y su historial (HU05). Traducen HTTP ⇄ caso de uso; sin reglas.
 
 Exigen el permiso `clients:manage` (administrador y encargado de eventos, DOMAIN.md §9).
 Pendiente: el endpoint de corregir documento (RN03) recibirá al `CurrentUser` que corrige.
@@ -13,6 +13,9 @@ from local_eventos.modules.commercial.application.clients.use_cases.change_clien
     ActivateClient,
     DeactivateClient,
 )
+from local_eventos.modules.commercial.application.clients.use_cases.client_history import (
+    ClientHistory,
+)
 from local_eventos.modules.commercial.application.clients.use_cases.get_client import GetClient
 from local_eventos.modules.commercial.application.clients.use_cases.register_client import (
     RegisterClient,
@@ -26,12 +29,19 @@ from local_eventos.modules.commercial.application.clients.use_cases.update_clien
     UpdateClientContact,
     UpdateClientContactCommand,
 )
+from local_eventos.modules.commercial.presentation.client_history_schemas import ClientHistoryOut
 from local_eventos.modules.commercial.presentation.client_schemas import (
     ClientContactUpdate,
     ClientCreate,
     ClientOut,
 )
-from local_eventos.modules.commercial.presentation.dependencies import Clients
+from local_eventos.modules.commercial.presentation.dependencies import (
+    Clients,
+    Contracts,
+    Events,
+    Quotes,
+    Today,
+)
 from local_eventos.modules.identity.public_api import Permission, require_permission
 from local_eventos.shared.presentation.problems import Problem
 
@@ -91,6 +101,20 @@ async def search_clients(
 async def get_client(client_id: UUID, clients: Clients) -> ClientOut:
     """Ficha completa de un cliente, activo o no."""
     return ClientOut.from_client(await GetClient(clients)(client_id))
+
+
+@router.get("/{client_id}/history", operation_id="clients_history", responses=_NOT_FOUND)
+async def client_history(
+    client_id: UUID,
+    clients: Clients,
+    quotes: Quotes,
+    contracts: Contracts,
+    events: Events,
+    clock: Today,
+) -> ClientHistoryOut:
+    """Cotizaciones y eventos del cliente, con un resumen de su relación con Darze (HU05)."""
+    history = await ClientHistory(clients, quotes, contracts, events, clock)(client_id)
+    return ClientHistoryOut.from_history(history)
 
 
 @router.put(

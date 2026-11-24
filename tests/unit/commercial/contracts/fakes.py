@@ -61,5 +61,6 @@ class InMemoryContractRepository:
             for s in found
             if (not text or text in s.code.lower() or text in normalize(s.client_name))
             and (filters.status is None or s.status is filters.status)
+            and (filters.client_id is None or self.contracts[s.id].client_id == filters.client_id)
         ]
         return found[offset : offset + limit], len(found)

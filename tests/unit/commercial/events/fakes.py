@@ -67,6 +67,7 @@ class InMemoryEventRepository:
             if (not text or text in s.code.lower() or text in normalize(s.client_name))
             and (filters.status is None or s.status is filters.status)
             and (filters.event_type is None or s.event_type is filters.event_type)
+            and (filters.client_id is None or self.events[s.id].client_id == filters.client_id)
             and (filters.date_from is None or s.event_date >= filters.date_from)
             and (filters.date_to is None or s.event_date <= filters.date_to)
         ]

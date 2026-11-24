@@ -12,6 +12,7 @@ from local_eventos.modules.commercial.domain.contracts.contract import Contract,
 class ContractFilters:
     text: str = ""  # parte del código o del nombre del cliente
     status: ContractStatus | None = None
+    client_id: UUID | None = None
 
 
 @dataclass(frozen=True)
