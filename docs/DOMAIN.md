@@ -113,6 +113,7 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 | Cotizaciones y contratos | ✔ | ✔ | – |
 | Eventos y asignaciones | ✔ | ✔ | lectura |
 | Personal (trabajadores) | ✔ | ✔ | – |
+| Observaciones del evento (bitácora) | ✔ | ✔ | ✔ (R-ACT-5) |
 | Pagos, ingresos y egresos | ✔ | ✔ | – |
 | Productos, almacén, requerimientos y compras | ✔ | lectura del almacén y materiales de sus eventos (`inventory:read`) | ✔ |
 | Reportes financieros | ✔ | – | – |
@@ -164,6 +165,19 @@ La gestión del **personal (trabajadores)** exige el permiso `staff:manage`; el 
 | 25/11/2026 | Avanzar el estado del evento | Un paso a la vez, sin volver atrás. En ejecución solo el día del evento en Lima (si el horario cruza la medianoche, también el día siguiente); finalizado solo desde en ejecución y sin exigir saldo en cero (R-EVT-8) | Equipo **(provisional)** |
 | 25/11/2026 | Cambio de fecha u horario del evento | El sistema avisa que el personal asignado puede tener otro horario; revisar las asignaciones es del módulo de personal (R-EVT-9) | Equipo **(provisional)** |
 | 22/11/2026 | Sesión | Termina tras 30 minutos sin actividad; no se puede desactivar al último administrador activo (R-ID-4) | Equipo, según HU01 **(provisional)** |
+| 25/11/2026 | Editar observaciones del evento | Se editan; queda quién la editó por última vez y cuándo. No se eliminan (R-ACT-1) | Product Owner |
+| 25/11/2026 | Actividades y observaciones según el estado del evento | Actividades: se registran y marcan en programado, confirmado y en ejecución. Observaciones: también con el evento finalizado. En un evento cancelado no se agrega ni se cambia nada; todo se sigue viendo (R-ACT-2) | Product Owner |
+| 25/11/2026 | Eliminar una actividad creada por error | No se elimina en esta versión (R-ACT-3) | Equipo **(provisional; sin respuesta)** |
+| 25/11/2026 | Responsable de la actividad | Un usuario activo, administrador o encargado de eventos; por defecto quien la crea; se puede cambiar. Sin fecha límite (R-ACT-4) | Product Owner |
+| 25/11/2026 | ¿Compras y almacén agrega observaciones? | Sí (p. ej., faltantes de material), con el permiso `event_notes:write`; no crea ni marca actividades (R-ACT-5) | Product Owner |
+| 25/11/2026 | ¿Quién edita una observación? | Su autor o un administrador (permiso `event_notes:edit_any`, solo administrador) (R-ACT-6) | Equipo **(provisional)** |
+| 25/11/2026 | Unidades y cantidades | Lista fija: unidad, kg, g, litro, ml, docena, paquete, caja; cantidades con hasta 3 decimales (R-INV-1) | Equipo **(provisional)** |
+| 25/11/2026 | Categorías de producto | Lista fija: Insumos, Bebidas, Vajilla, Cristalería, Cubiertos, Mantelería, Mobiliario, Descartables, Limpieza, Otros (R-INV-2) | Equipo **(provisional)** |
+| 25/11/2026 | Costeo del inventario | Costo promedio ponderado para el valor del stock; lote y vencimiento solo para alertas; las salidas no se asignan a lotes (R-INV-3, responde §10.3) | Equipo **(provisional, a confirmar con Darze)** |
+| 25/11/2026 | Vencimiento próximo | 15 días o menos, o ya vencido (R-INV-4) | Equipo **(provisional)** |
+| 25/11/2026 | Corregir un movimiento | No se edita ni se borra (lo impide la base de datos): se corrige con un ajuste positivo o negativo con motivo (R-INV-5) | Equipo **(provisional)** |
+| 25/11/2026 | Pago al proveedor | Se registra aparte como egreso de insumos (HU21); recibir la compra no crea el egreso (R-COM-1) | Equipo **(provisional)** |
+| 25/11/2026 | Recepción de compras | Completa, sin recepciones parciales: si llegó menos, se recibe la cantidad real (puede ser 0 en una línea, no en todas) (R-COM-2) | Equipo **(provisional)** |
 | 24/11/2026 | Tipo de trabajador (HU15) | Solo `fijo` o `eventual`; no se registra interno/externo (R-STF-11) | Product Owner |
 | 24/11/2026 | Función del trabajador (HU15) | Lista fija más "otro" con descripción breve obligatoria; editable con auditoría y la asignación conserva la función trabajada (R-STF-12, R-STF-17) | Product Owner |
 | 24/11/2026 | Tarifa y hora extra (HU15) | Tarifa referencial por evento en céntimos de `PEN`, opcional; hora extra condicional con monto referencial variable; el pago se acuerda en la asignación (R-STF-7, R-STF-8, R-STF-14) | Product Owner |
