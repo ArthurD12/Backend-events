@@ -1300,27 +1300,172 @@
         "title": "CoordinatorOut",
         "type": "object"
       },
+      "DashboardCashOut": {
+        "description": "Caja del mes elegido, con el mismo cálculo que el flujo de caja (HU22).",
+        "properties": {
+          "expense_cents": {
+            "title": "Expense Cents",
+            "type": "integer"
+          },
+          "income_cents": {
+            "description": "Pagos de clientes netos de devoluciones + otros",
+            "title": "Income Cents",
+            "type": "integer"
+          },
+          "net_cents": {
+            "title": "Net Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "income_cents",
+          "expense_cents",
+          "net_cents"
+        ],
+        "title": "DashboardCashOut",
+        "type": "object"
+      },
+      "DashboardEventOut": {
+        "properties": {
+          "balance_cents": {
+            "description": "Saldo por cobrar del contrato (RN15)",
+            "title": "Balance Cents",
+            "type": "integer"
+          },
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "overdue": {
+            "description": "Saldo vencido (R-PAG-2)",
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "event_date",
+          "client_name",
+          "status",
+          "balance_cents",
+          "overdue"
+        ],
+        "title": "DashboardEventOut",
+        "type": "object"
+      },
+      "DashboardInventoryOut": {
+        "properties": {
+          "expiring_soon": {
+            "description": "Productos activos por vencer (15 días o menos)",
+            "title": "Expiring Soon",
+            "type": "integer"
+          },
+          "low_stock": {
+            "description": "Productos activos en stock bajo",
+            "title": "Low Stock",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "low_stock",
+          "expiring_soon"
+        ],
+        "title": "DashboardInventoryOut",
+        "type": "object"
+      },
       "DashboardOut": {
         "properties": {
+          "cash": {
+            "$ref": "#/components/schemas/DashboardCashOut",
+            "description": "Caja del mes elegido (CA-31.8)"
+          },
           "currency": {
             "default": "PEN",
             "title": "Currency",
             "type": "string"
+          },
+          "inventory": {
+            "$ref": "#/components/schemas/DashboardInventoryOut",
+            "description": "Alertas de almacén (CA-31.10)"
           },
           "month": {
             "description": "AAAA-MM",
             "title": "Month",
             "type": "string"
           },
+          "purchases": {
+            "$ref": "#/components/schemas/DashboardPurchasesOut",
+            "description": "Compras abiertas (CA-31.11)"
+          },
           "quotes": {
             "$ref": "#/components/schemas/DashboardQuotesOut"
+          },
+          "receivables": {
+            "$ref": "#/components/schemas/DashboardReceivablesOut",
+            "description": "Cobros pendientes (CA-31.9)"
+          },
+          "upcoming_events": {
+            "description": "Eventos de hoy a 14 días, sin cancelados ni finalizados (CA-31.7)",
+            "items": {
+              "$ref": "#/components/schemas/DashboardEventOut"
+            },
+            "title": "Upcoming Events",
+            "type": "array"
           }
         },
         "required": [
           "month",
-          "quotes"
+          "quotes",
+          "upcoming_events",
+          "cash",
+          "receivables",
+          "inventory",
+          "purchases"
         ],
         "title": "DashboardOut",
+        "type": "object"
+      },
+      "DashboardPurchasesOut": {
+        "properties": {
+          "open": {
+            "description": "Solicitadas + ordenadas",
+            "title": "Open",
+            "type": "integer"
+          },
+          "ordered": {
+            "title": "Ordered",
+            "type": "integer"
+          },
+          "requested": {
+            "title": "Requested",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "requested",
+          "ordered",
+          "open"
+        ],
+        "title": "DashboardPurchasesOut",
         "type": "object"
       },
       "DashboardQuoteOut": {
@@ -1406,7 +1551,7 @@
             "type": "integer"
           },
           "upcoming": {
-            "description": "Aceptadas con evento en los próximos 30 días",
+            "description": "Aceptadas con evento en los próximos 30 días. Obsoleto: usar `upcoming_events` del panel (CA-31.7)",
             "items": {
               "$ref": "#/components/schemas/DashboardQuoteOut"
             },
@@ -1424,6 +1569,37 @@
           "recent"
         ],
         "title": "DashboardQuotesOut",
+        "type": "object"
+      },
+      "DashboardReceivablesOut": {
+        "properties": {
+          "contracts": {
+            "description": "Contratos firmados con saldo",
+            "title": "Contracts",
+            "type": "integer"
+          },
+          "overdue_cents": {
+            "title": "Overdue Cents",
+            "type": "integer"
+          },
+          "overdue_contracts": {
+            "description": "De ellos, con el saldo vencido",
+            "title": "Overdue Contracts",
+            "type": "integer"
+          },
+          "total_cents": {
+            "description": "Por cobrar de contratos firmados",
+            "title": "Total Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_cents",
+          "contracts",
+          "overdue_contracts",
+          "overdue_cents"
+        ],
+        "title": "DashboardReceivablesOut",
         "type": "object"
       },
       "EntryIn": {
@@ -9020,7 +9196,7 @@
     },
     "/v1/dashboard": {
       "get": {
-        "description": "Indicadores reales del negocio. Caja y stock se agregan cuando existan sus módulos.",
+        "description": "Indicadores reales del negocio en una petición: cotizaciones, próximos eventos, caja del\nmes, cobros pendientes, alertas de almacén y compras abiertas (CA-31.1 a CA-31.11).",
         "operationId": "dashboard_get",
         "parameters": [
           {

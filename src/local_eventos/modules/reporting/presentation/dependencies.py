@@ -11,20 +11,30 @@ from local_eventos.modules.commercial.public_api import (
     EventFinanceLookup,
     EventFollowUpLookup,
     QuoteStatsLookup,
+    ReceivablesLookup,
+    UpcomingEventsLookup,
     event_account,
     event_detail,
     event_finance,
     event_follow_up,
     quote_stats,
+    receivables,
+    upcoming_events,
 )
 from local_eventos.modules.identity.public_api import UserNamesLookup, user_names
-from local_eventos.modules.inventory.public_api import EventMaterialsLookup, event_materials
+from local_eventos.modules.inventory.public_api import (
+    EventMaterialsLookup,
+    StockReportLookup,
+    event_materials,
+    stock_report,
+)
 from local_eventos.modules.ledger.public_api import (
     CashTotalsLookup,
     EventCashLookup,
     cash_totals,
     event_cash,
 )
+from local_eventos.modules.purchasing.public_api import OpenPurchasesLookup, open_purchases
 from local_eventos.modules.reporting import composition
 from local_eventos.modules.reporting.application.ports.event_staff import EventStaffLookup
 from local_eventos.shared.presentation.database import get_session
@@ -102,3 +112,33 @@ EventMaterialsDep = Annotated[EventMaterialsLookup, Depends(get_event_materials)
 EventAccountDep = Annotated[EventAccountLookup, Depends(get_event_account)]
 EventStaffDep = Annotated[EventStaffLookup, Depends(get_event_staff)]
 UserNamesDep = Annotated[UserNamesLookup, Depends(get_user_names)]
+
+
+async def get_upcoming_events(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> UpcomingEventsLookup:
+    return upcoming_events(session)
+
+
+async def get_receivables(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ReceivablesLookup:
+    return receivables(session)
+
+
+async def get_stock_report(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> StockReportLookup:
+    return stock_report(session)
+
+
+async def get_open_purchases(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> OpenPurchasesLookup:
+    return open_purchases(session)
+
+
+UpcomingEventsDep = Annotated[UpcomingEventsLookup, Depends(get_upcoming_events)]
+ReceivablesDep = Annotated[ReceivablesLookup, Depends(get_receivables)]
+StockReportDep = Annotated[StockReportLookup, Depends(get_stock_report)]
+OpenPurchasesDep = Annotated[OpenPurchasesLookup, Depends(get_open_purchases)]
