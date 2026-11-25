@@ -38,6 +38,10 @@ from local_eventos.modules.inventory.presentation.errors import (
 from local_eventos.modules.ledger.presentation.errors import (
     register_error_handlers as register_ledger_errors,
 )
+from local_eventos.modules.purchasing.presentation import purchase_router, supplier_router
+from local_eventos.modules.purchasing.presentation.errors import (
+    register_error_handlers as register_purchasing_errors,
+)
 from local_eventos.modules.reporting.presentation import dashboard_router
 from local_eventos.shared.infrastructure.config import CorsSettings, Settings
 from local_eventos.shared.infrastructure.db import check_database, create_engine
@@ -92,11 +96,14 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     app.include_router(service_router.router)
     app.include_router(product_router.router)
     app.include_router(movement_router.router)
+    app.include_router(supplier_router.router)
+    app.include_router(purchase_router.router)
     register_identity_errors(app)
     register_commercial_errors(app)
     register_ledger_errors(app)
     register_catalog_errors(app)
     register_inventory_errors(app)
+    register_purchasing_errors(app)
     return app
 
 
