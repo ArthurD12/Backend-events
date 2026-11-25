@@ -6,7 +6,7 @@
 - `changed_by` es un usuario de identity: sin FK (regla 3).
 
 Revision ID: 652825952ff5
-Revises: 15d7a500ef97
+Revises: 5a3a86214ca7
 Create Date: 2026-11-25 15:00:00.000000
 """
 
@@ -17,7 +17,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "652825952ff5"
-down_revision: str | None = "15d7a500ef97"
+down_revision: str | None = "5a3a86214ca7"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

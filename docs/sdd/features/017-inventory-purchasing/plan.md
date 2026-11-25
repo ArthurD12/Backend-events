@@ -7,7 +7,7 @@
 - `inventory` (nuevo): productos, movimientos, stock y alertas.
 - `purchasing` (nuevo): proveedores, solicitudes y compras.
 - `purchasing → inventory.public_api`: `product_lookup`, `low_stock_lookup` (faltantes) y `stock_receiver` (registra las entradas al recibir, en la misma transacción).
-- `inventory → commercial.public_api.event_lookup` (lo crea el lote de personal): validar el evento de una salida.
+- `inventory → commercial.public_api.event_lookup` (se crea en este lote, T-01): validar el evento de una salida.
 - `identity`: `inventory:manage`, `inventory:read`, `purchasing:manage`.
 
 ## 2. Modelo de dominio
@@ -41,7 +41,7 @@
 | `GET/POST /v1/purchasing/purchases`, `GET …/{id}` | `purchasing_purchases_list/create/get` | manage |
 | `POST /v1/purchasing/purchases/{id}/{order,receive,cancel}` | `purchasing_purchases_order/receive/cancel` | manage |
 
-## 5. Persistencia (una migración, encadenada después de la de pagos)
+## 5. Persistencia (migraciones encadenadas al head de developer-b al momento de unir)
 - `inventory_products` (código único), `inventory_movements` (append-only por trigger; `numeric(12,3)`; CHECK de campos según tipo), `inventory_stock` (product_id PK, `quantity numeric(12,3) CHECK (quantity >= 0)`, `avg_cost_cents`): se actualiza en la misma transacción que el movimiento, con `SELECT … FOR UPDATE`.
 - `purchasing_suppliers` (documento único), `purchasing_purchases` (código único, CHECK de estado ↔ datos), `purchasing_purchase_lines` (FK mismo módulo; `product_id` sin FK).
 - Sin FK entre módulos: `event_id`, `product_id`, `supplier_id` en movimientos son IDs.

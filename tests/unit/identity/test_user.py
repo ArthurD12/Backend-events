@@ -89,10 +89,30 @@ def test_r_id_3_permisos_segun_la_tabla_del_dominio() -> None:
         Permission.EVENTS_MANAGE,
         Permission.EVENTS_READ,
         Permission.EVENT_NOTES_WRITE,
+        Permission.INVENTORY_READ,
     }
     assert compras.permissions == {
         Permission.CATALOG_READ,
         Permission.EVENTS_READ,
         Permission.EVENT_NOTES_WRITE,  # R-ACT-5
+        Permission.INVENTORY_READ,
+        Permission.INVENTORY_MANAGE,
+        Permission.PURCHASING_MANAGE,
     }
     assert admin.is_active_admin and not eventos.is_active_admin
+
+
+def test_017_solo_admin_y_compras_gestionan_almacen_y_compras() -> None:
+    eventos = _user(role=Role.EVENTS_MANAGER)
+    compras = _user(role=Role.PURCHASING_MANAGER)
+    admin = _user(role=Role.ADMIN)
+
+    assert Permission.INVENTORY_READ in eventos.permissions
+    assert Permission.INVENTORY_MANAGE not in eventos.permissions
+    assert Permission.PURCHASING_MANAGE not in eventos.permissions
+    for user in (compras, admin):
+        assert {
+            Permission.INVENTORY_READ,
+            Permission.INVENTORY_MANAGE,
+            Permission.PURCHASING_MANAGE,
+        } <= user.permissions

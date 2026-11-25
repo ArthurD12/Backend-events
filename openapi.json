@@ -348,6 +348,60 @@
         "title": "ActivityStatus",
         "type": "string"
       },
+      "AdjustmentIn": {
+        "properties": {
+          "occurred_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Con signo: positivo suma, negativo resta",
+            "examples": [
+              "12.5"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity",
+          "reason"
+        ],
+        "title": "AdjustmentIn",
+        "type": "object"
+      },
+      "CancelIn": {
+        "properties": {
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "CancelIn",
+        "type": "object"
+      },
       "CancellationOut": {
         "properties": {
           "cancelled_at": {
@@ -523,6 +577,23 @@
         "title": "CashSummaryOut",
         "type": "object"
       },
+      "Category": {
+        "description": "R-INV-2: categorías de lista fija.",
+        "enum": [
+          "SUPPLIES",
+          "BEVERAGES",
+          "DINNERWARE",
+          "GLASSWARE",
+          "CUTLERY",
+          "LINENS",
+          "FURNITURE",
+          "DISPOSABLES",
+          "CLEANING",
+          "OTHER"
+        ],
+        "title": "Category",
+        "type": "string"
+      },
       "CategoryIn": {
         "properties": {
           "name": {
@@ -618,7 +689,7 @@
             "type": "string"
           },
           "document_type": {
-            "$ref": "#/components/schemas/DocumentType"
+            "$ref": "#/components/schemas/local_eventos__modules__commercial__domain__clients__client__DocumentType"
           },
           "email": {
             "anyOf": [
@@ -705,7 +776,7 @@
             "type": "string"
           },
           "document_type": {
-            "$ref": "#/components/schemas/DocumentType"
+            "$ref": "#/components/schemas/local_eventos__modules__commercial__domain__clients__client__DocumentType"
           },
           "email": {
             "anyOf": [
@@ -1355,13 +1426,95 @@
         "title": "DashboardQuotesOut",
         "type": "object"
       },
-      "DocumentType": {
-        "enum": [
-          "DNI",
-          "RUC"
+      "EntryIn": {
+        "properties": {
+          "expires_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires On"
+          },
+          "lot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lot"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Por defecto, hoy",
+            "title": "Occurred On"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Cantidad sin signo como texto, hasta 3 decimales",
+            "examples": [
+              "12.5"
+            ],
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Observación opcional",
+            "title": "Reason"
+          },
+          "supplier_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Id"
+          },
+          "unit_cost_cents": {
+            "description": "Costo unitario en céntimos: S/ 3.50 = 350",
+            "title": "Unit Cost Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity",
+          "unit_cost_cents"
         ],
-        "title": "DocumentType",
-        "type": "string"
+        "title": "EntryIn",
+        "type": "object"
       },
       "EventAction": {
         "description": "Qué cambió en el evento, para el historial (CA-11.5).",
@@ -1536,6 +1689,129 @@
           "contract_id"
         ],
         "title": "EventConvertIn",
+        "type": "object"
+      },
+      "EventMaterialOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ProductKind"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "out": {
+            "description": "Salió para el evento",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Out",
+            "type": "string"
+          },
+          "pending_return": {
+            "description": "Reutilizable que falta devolver",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Pending Return",
+            "type": "string"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "returned": {
+            "description": "Volvió al almacén",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Returned",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "wasted": {
+            "description": "Se perdió o se dañó en el evento",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Wasted",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "code",
+          "name",
+          "unit",
+          "kind",
+          "out",
+          "returned",
+          "wasted",
+          "pending_return"
+        ],
+        "title": "EventMaterialOut",
+        "type": "object"
+      },
+      "EventMovementIn": {
+        "description": "Salida o devolución de un evento.",
+        "properties": {
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Cantidad sin signo como texto, hasta 3 decimales",
+            "examples": [
+              "12.5"
+            ],
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Observación opcional",
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "product_id",
+          "event_id",
+          "quantity"
+        ],
+        "title": "EventMovementIn",
         "type": "object"
       },
       "EventOut": {
@@ -2475,138 +2751,16 @@
         "title": "MovementIn",
         "type": "object"
       },
-      "MovementOut": {
-        "properties": {
-          "amount_cents": {
-            "title": "Amount Cents",
-            "type": "integer"
-          },
-          "category": {
-            "$ref": "#/components/schemas/MovementCategory"
-          },
-          "concept": {
-            "title": "Concept",
-            "type": "string"
-          },
-          "currency": {
-            "default": "PEN",
-            "title": "Currency",
-            "type": "string"
-          },
-          "event_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Event Id"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "method": {
-            "$ref": "#/components/schemas/PaymentMethod"
-          },
-          "occurred_on": {
-            "format": "date",
-            "title": "Occurred On",
-            "type": "string"
-          },
-          "recorded_at": {
-            "format": "date-time",
-            "title": "Recorded At",
-            "type": "string"
-          },
-          "recorded_by": {
-            "format": "uuid",
-            "title": "Recorded By",
-            "type": "string"
-          },
-          "recorded_by_name": {
-            "description": "Vacío si el usuario no existe",
-            "title": "Recorded By Name",
-            "type": "string"
-          },
-          "reference": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reference"
-          },
-          "type": {
-            "$ref": "#/components/schemas/MovementType"
-          },
-          "void": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/MovementVoidOut"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Anulado: no entra en los cálculos"
-          }
-        },
-        "required": [
-          "id",
-          "type",
-          "category",
-          "concept",
-          "amount_cents",
-          "method",
-          "reference",
-          "occurred_on",
-          "event_id",
-          "recorded_by",
-          "recorded_by_name",
-          "recorded_at",
-          "void"
+      "MovementKind": {
+        "enum": [
+          "ENTRY",
+          "EXIT",
+          "RETURN",
+          "WASTE",
+          "ADJUSTMENT"
         ],
-        "title": "MovementOut",
-        "type": "object"
-      },
-      "MovementPageOut": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/MovementOut"
-            },
-            "title": "Items",
-            "type": "array"
-          },
-          "page": {
-            "title": "Page",
-            "type": "integer"
-          },
-          "page_size": {
-            "title": "Page Size",
-            "type": "integer"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "page_size"
-        ],
-        "title": "MovementPageOut",
-        "type": "object"
+        "title": "MovementKind",
+        "type": "string"
       },
       "MovementState": {
         "enum": [
@@ -2772,6 +2926,48 @@
         "title": "NoteOut",
         "type": "object"
       },
+      "OrderIn": {
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/OrderLineIn"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "supplier_id": {
+            "format": "uuid",
+            "title": "Supplier Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "supplier_id",
+          "lines"
+        ],
+        "title": "OrderIn",
+        "type": "object"
+      },
+      "OrderLineIn": {
+        "properties": {
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "unit_cost_cents": {
+            "description": "Costo unitario en céntimos: S/ 3.50 = 350",
+            "title": "Unit Cost Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "product_id",
+          "unit_cost_cents"
+        ],
+        "title": "OrderLineIn",
+        "type": "object"
+      },
       "PaymentIn": {
         "properties": {
           "method": {
@@ -2921,6 +3117,9 @@
           "payments:record",
           "events:manage",
           "events:read",
+          "inventory:read",
+          "inventory:manage",
+          "purchasing:manage",
           "finance:read",
           "event_notes:write",
           "event_notes:edit_any"
@@ -2978,6 +3177,534 @@
         ],
         "title": "Problem",
         "type": "object"
+      },
+      "ProductIn": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "code": {
+            "description": "Único, se guarda en mayúsculas (máx. 20)",
+            "title": "Code",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ProductKind",
+            "description": "CONSUMABLE (se gasta) o REUSABLE (vuelve)"
+          },
+          "min_stock": {
+            "default": "0",
+            "description": "Cantidad sin signo como texto, hasta 3 decimales",
+            "examples": [
+              "12.5"
+            ],
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "title": "Min Stock",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "category",
+          "unit",
+          "kind"
+        ],
+        "title": "ProductIn",
+        "type": "object"
+      },
+      "ProductKind": {
+        "enum": [
+          "CONSUMABLE",
+          "REUSABLE"
+        ],
+        "title": "ProductKind",
+        "type": "string"
+      },
+      "ProductOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "avg_cost_cents": {
+            "description": "Costo promedio ponderado por unidad (R-INV-3)",
+            "title": "Avg Cost Cents",
+            "type": "integer"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "expiring_soon": {
+            "description": "Alguna entrada con stock vence en ≤ 15 días",
+            "title": "Expiring Soon",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_low_stock": {
+            "description": "Stock ≤ mínimo (CA-23.5)",
+            "title": "Is Low Stock",
+            "type": "boolean"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ProductKind"
+          },
+          "min_stock": {
+            "description": "Cantidad decimal con 3 decimales",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Min Stock",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "next_expiry": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Expiry"
+          },
+          "stock": {
+            "description": "Cantidad decimal con 3 decimales",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Stock",
+            "type": "string"
+          },
+          "stock_value_cents": {
+            "title": "Stock Value Cents",
+            "type": "integer"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "category",
+          "unit",
+          "kind",
+          "min_stock",
+          "active",
+          "stock",
+          "avg_cost_cents",
+          "stock_value_cents",
+          "currency",
+          "is_low_stock",
+          "expiring_soon",
+          "next_expiry"
+        ],
+        "title": "ProductOut",
+        "type": "object"
+      },
+      "PurchaseLineOut": {
+        "properties": {
+          "expires_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires On"
+          },
+          "lot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lot"
+          },
+          "product_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Code"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "quantity": {
+            "description": "Cantidad decimal con 3 decimales",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Quantity",
+            "type": "string"
+          },
+          "received_quantity": {
+            "anyOf": [
+              {
+                "description": "Cantidad decimal con 3 decimales",
+                "examples": [
+                  "12.500"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received Quantity"
+          },
+          "total_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Cents"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unit_cost_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Cost Cents"
+          }
+        },
+        "required": [
+          "product_id",
+          "product_code",
+          "product_name",
+          "unit",
+          "quantity",
+          "unit_cost_cents",
+          "received_quantity",
+          "lot",
+          "expires_on",
+          "total_cents"
+        ],
+        "title": "PurchaseLineOut",
+        "type": "object"
+      },
+      "PurchaseOut": {
+        "properties": {
+          "cancel_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancel Reason"
+          },
+          "cancelled_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelled At"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "format": "uuid",
+            "title": "Created By",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "invoice_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Number"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/PurchaseLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "ordered_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ordered At"
+          },
+          "received_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PurchaseStatus"
+          },
+          "supplier_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Id"
+          },
+          "supplier_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Name"
+          },
+          "total_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pedido al ordenar; real al recibir",
+            "title": "Total Cents"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "status",
+          "event_id",
+          "notes",
+          "supplier_id",
+          "supplier_name",
+          "invoice_number",
+          "lines",
+          "total_cents",
+          "currency",
+          "created_by",
+          "created_at",
+          "ordered_at",
+          "received_at",
+          "cancelled_at",
+          "cancel_reason"
+        ],
+        "title": "PurchaseOut",
+        "type": "object"
+      },
+      "PurchasePageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PurchaseOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "PurchasePageOut",
+        "type": "object"
+      },
+      "PurchaseRequestIn": {
+        "properties": {
+          "event_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Evento para el que se compra",
+            "title": "Event Id"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/RequestLineIn"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "required": [
+          "lines"
+        ],
+        "title": "PurchaseRequestIn",
+        "type": "object"
+      },
+      "PurchaseStatus": {
+        "enum": [
+          "REQUESTED",
+          "ORDERED",
+          "RECEIVED",
+          "CANCELLED"
+        ],
+        "title": "PurchaseStatus",
+        "type": "string"
       },
       "QuoteIn": {
         "properties": {
@@ -3429,6 +4156,121 @@
         "title": "QuoteSummaryOut",
         "type": "object"
       },
+      "ReceiveIn": {
+        "properties": {
+          "invoice_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Factura o boleta del proveedor",
+            "title": "Invoice Number"
+          },
+          "lines": {
+            "description": "Todas las líneas de la compra (R-COM-2)",
+            "items": {
+              "$ref": "#/components/schemas/ReceiveLineIn"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "received_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Por defecto, hoy",
+            "title": "Received On"
+          }
+        },
+        "required": [
+          "lines"
+        ],
+        "title": "ReceiveIn",
+        "type": "object"
+      },
+      "ReceiveLineIn": {
+        "properties": {
+          "expires_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires On"
+          },
+          "lot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lot"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "received_quantity": {
+            "description": "Cantidad que llegó (puede ser 0)",
+            "examples": [
+              "12.5"
+            ],
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "title": "Received Quantity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "received_quantity"
+        ],
+        "title": "ReceiveLineIn",
+        "type": "object"
+      },
+      "RecordedMovementOut": {
+        "properties": {
+          "avg_cost_cents": {
+            "title": "Avg Cost Cents",
+            "type": "integer"
+          },
+          "movement": {
+            "$ref": "#/components/schemas/local_eventos__modules__inventory__presentation__schemas__MovementOut"
+          },
+          "stock": {
+            "description": "Stock del producto después del movimiento",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Stock",
+            "type": "string"
+          }
+        },
+        "required": [
+          "movement",
+          "stock",
+          "avg_cost_cents"
+        ],
+        "title": "RecordedMovementOut",
+        "type": "object"
+      },
       "RefreshIn": {
         "properties": {
           "refresh_token": {
@@ -3440,6 +4282,30 @@
           "refresh_token"
         ],
         "title": "RefreshIn",
+        "type": "object"
+      },
+      "RequestLineIn": {
+        "properties": {
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Cantidad sin signo como texto, hasta 3 decimales",
+            "examples": [
+              "12.5"
+            ],
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "title": "Quantity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity"
+        ],
+        "title": "RequestLineIn",
         "type": "object"
       },
       "Role": {
@@ -3548,6 +4414,61 @@
         "title": "ServiceOut",
         "type": "object"
       },
+      "ShortageOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "min_stock": {
+            "description": "Cantidad decimal con 3 decimales",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Min Stock",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "stock": {
+            "description": "Cantidad decimal con 3 decimales",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Stock",
+            "type": "string"
+          },
+          "suggested_quantity": {
+            "description": "Para volver al mínimo; editable",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Suggested Quantity",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "product_id",
+          "code",
+          "name",
+          "unit",
+          "stock",
+          "min_stock",
+          "suggested_quantity"
+        ],
+        "title": "ShortageOut",
+        "type": "object"
+      },
       "SignatureOut": {
         "properties": {
           "recorded_at": {
@@ -3571,6 +4492,142 @@
           "recorded_at"
         ],
         "title": "SignatureOut",
+        "type": "object"
+      },
+      "SupplierIn": {
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "document_number": {
+            "description": "RUC de 11 dígitos o DNI de 8",
+            "title": "Document Number",
+            "type": "string"
+          },
+          "document_type": {
+            "$ref": "#/components/schemas/local_eventos__modules__purchasing__domain__supplier__DocumentType"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "name": {
+            "description": "Razón social",
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "title": "Phone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "document_type",
+          "document_number",
+          "phone"
+        ],
+        "title": "SupplierIn",
+        "type": "object"
+      },
+      "SupplierOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "contact_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Name"
+          },
+          "document_number": {
+            "title": "Document Number",
+            "type": "string"
+          },
+          "document_type": {
+            "$ref": "#/components/schemas/local_eventos__modules__purchasing__domain__supplier__DocumentType"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "title": "Phone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "document_type",
+          "document_number",
+          "phone",
+          "contact_name",
+          "email",
+          "address",
+          "active"
+        ],
+        "title": "SupplierOut",
         "type": "object"
       },
       "TokenOut": {
@@ -3607,6 +4664,21 @@
         ],
         "title": "TokenOut",
         "type": "object"
+      },
+      "Unit": {
+        "description": "R-INV-1: unidades de lista fija.",
+        "enum": [
+          "UNIT",
+          "KG",
+          "G",
+          "LITER",
+          "ML",
+          "DOZEN",
+          "PACKAGE",
+          "BOX"
+        ],
+        "title": "Unit",
+        "type": "string"
       },
       "UserCreate": {
         "properties": {
@@ -3760,6 +4832,388 @@
         ],
         "title": "VoidIn",
         "type": "object"
+      },
+      "WasteIn": {
+        "properties": {
+          "event_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Si se perdió en un evento: no baja el stock del almacén",
+            "title": "Event Id"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Cantidad sin signo como texto, hasta 3 decimales",
+            "examples": [
+              "12.5"
+            ],
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity",
+          "reason"
+        ],
+        "title": "WasteIn",
+        "type": "object"
+      },
+      "local_eventos__modules__commercial__domain__clients__client__DocumentType": {
+        "enum": [
+          "DNI",
+          "RUC"
+        ],
+        "title": "DocumentType",
+        "type": "string"
+      },
+      "local_eventos__modules__inventory__presentation__schemas__MovementOut": {
+        "properties": {
+          "event_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "expires_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires On"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/MovementKind"
+          },
+          "lot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lot"
+          },
+          "occurred_on": {
+            "format": "date",
+            "title": "Occurred On",
+            "type": "string"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "purchase_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purchase Id"
+          },
+          "quantity": {
+            "description": "Positiva; con signo solo en el ajuste",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Quantity",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "recorded_by": {
+            "format": "uuid",
+            "title": "Recorded By",
+            "type": "string"
+          },
+          "stock_delta": {
+            "description": "Cuánto cambió el stock del almacén",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Stock Delta",
+            "type": "string"
+          },
+          "supplier_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Id"
+          },
+          "unit_cost_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Cost Cents"
+          }
+        },
+        "required": [
+          "id",
+          "product_id",
+          "kind",
+          "quantity",
+          "stock_delta",
+          "occurred_on",
+          "event_id",
+          "unit_cost_cents",
+          "supplier_id",
+          "lot",
+          "expires_on",
+          "reason",
+          "purchase_id",
+          "recorded_by",
+          "recorded_at"
+        ],
+        "title": "MovementOut",
+        "type": "object"
+      },
+      "local_eventos__modules__inventory__presentation__schemas__MovementPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/local_eventos__modules__inventory__presentation__schemas__MovementOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "MovementPageOut",
+        "type": "object"
+      },
+      "local_eventos__modules__ledger__presentation__movement_schemas__MovementOut": {
+        "properties": {
+          "amount_cents": {
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "category": {
+            "$ref": "#/components/schemas/MovementCategory"
+          },
+          "concept": {
+            "title": "Concept",
+            "type": "string"
+          },
+          "currency": {
+            "default": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "occurred_on": {
+            "format": "date",
+            "title": "Occurred On",
+            "type": "string"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "recorded_by": {
+            "format": "uuid",
+            "title": "Recorded By",
+            "type": "string"
+          },
+          "recorded_by_name": {
+            "description": "Vacío si el usuario no existe",
+            "title": "Recorded By Name",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "type": {
+            "$ref": "#/components/schemas/MovementType"
+          },
+          "void": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MovementVoidOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Anulado: no entra en los cálculos"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "category",
+          "concept",
+          "amount_cents",
+          "method",
+          "reference",
+          "occurred_on",
+          "event_id",
+          "recorded_by",
+          "recorded_by_name",
+          "recorded_at",
+          "void"
+        ],
+        "title": "MovementOut",
+        "type": "object"
+      },
+      "local_eventos__modules__ledger__presentation__movement_schemas__MovementPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/local_eventos__modules__ledger__presentation__movement_schemas__MovementOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "MovementPageOut",
+        "type": "object"
+      },
+      "local_eventos__modules__purchasing__domain__supplier__DocumentType": {
+        "enum": [
+          "RUC",
+          "DNI"
+        ],
+        "title": "DocumentType",
+        "type": "string"
       }
     },
     "securitySchemes": {
@@ -7989,6 +9443,1146 @@
         ]
       }
     },
+    "/v1/inventory/events/{event_id}/materials": {
+      "get": {
+        "description": "CA-26.6: por producto, qué salió, qué volvió, qué se perdió y qué falta devolver.",
+        "operationId": "inventory_event_materials",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EventMaterialOut"
+                  },
+                  "title": "Response Inventory Event Materials",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.event_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Event Materials",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/movements/adjustment": {
+      "post": {
+        "description": "R-INV-5: corrige el stock con un ajuste positivo o negativo y su motivo.",
+        "operationId": "inventory_movements_adjustment",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdjustmentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordedMovementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.product_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.insufficient_stock`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record Adjustment",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/movements/entry": {
+      "post": {
+        "description": "CA-23.2: entrada con costo unitario y, si se conocen, proveedor, lote y vencimiento.",
+        "operationId": "inventory_movements_entry",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntryIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordedMovementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.product_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.product_inactive`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record Entry",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/movements/exit": {
+      "post": {
+        "description": "CA-26.1 y CA-26.2: salida a un evento programado, confirmado o en ejecución.",
+        "operationId": "inventory_movements_exit",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventMovementIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordedMovementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.product_not_found`, `inventory.event_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.insufficient_stock`, `inventory.event_not_assignable`, `inventory.product_inactive`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record Exit",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/movements/return": {
+      "post": {
+        "description": "CA-26.3: no supera lo que salió para el evento menos lo devuelto y lo perdido.",
+        "operationId": "inventory_movements_return",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventMovementIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordedMovementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.product_not_found`, `inventory.event_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.return_exceeds`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record Return",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/movements/waste": {
+      "post": {
+        "description": "CA-26.4: merma con motivo, de almacén (baja el stock) o de un evento.",
+        "operationId": "inventory_movements_waste",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WasteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordedMovementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.product_not_found`, `inventory.event_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.insufficient_stock`, `inventory.waste_exceeds`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record Waste",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/products": {
+      "get": {
+        "description": "Productos con su stock y alertas (CA-23.5), ordenados por nombre.",
+        "operationId": "inventory_products_list",
+        "parameters": [
+          {
+            "description": "Parte del código o del nombre, sin tildes",
+            "in": "query",
+            "name": "text",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Parte del código o del nombre, sin tildes",
+              "title": "Text",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Category"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_inactive",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Inactive",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Solo stock bajo o por vencer",
+            "in": "query",
+            "name": "alerts_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Solo stock bajo o por vencer",
+              "title": "Alerts Only",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProductOut"
+                  },
+                  "title": "Response Inventory Products List",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Products",
+        "tags": [
+          "almacén"
+        ]
+      },
+      "post": {
+        "description": "Registra un producto activo, sin stock: el stock entra con una entrada.",
+        "operationId": "inventory_products_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.code_taken`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Product",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/products/{product_id}": {
+      "get": {
+        "operationId": "inventory_products_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Product Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.product_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Product",
+        "tags": [
+          "almacén"
+        ]
+      },
+      "put": {
+        "description": "Modifica los datos del producto. Su stock y sus movimientos no cambian.",
+        "operationId": "inventory_products_update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Product Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.product_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.code_taken`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Product",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/products/{product_id}/activate": {
+      "post": {
+        "operationId": "inventory_products_activate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Product Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.product_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Activate Product",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/products/{product_id}/deactivate": {
+      "post": {
+        "description": "CA-23.3: no se elimina; se desactiva y deja de recibir entradas y salidas.",
+        "operationId": "inventory_products_deactivate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Product Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.product_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Deactivate Product",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/products/{product_id}/movements": {
+      "get": {
+        "description": "CA-23.4: historial del producto, del movimiento más reciente al más antiguo.",
+        "operationId": "inventory_movements_list",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/local_eventos__modules__inventory__presentation__schemas__MovementPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.product_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Movements",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
     "/v1/movements": {
       "get": {
         "description": "Movimientos de la fecha más reciente a la más antigua, con filtros (CA-21.4).",
@@ -8122,7 +10716,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MovementPageOut"
+                  "$ref": "#/components/schemas/local_eventos__modules__ledger__presentation__movement_schemas__MovementPageOut"
                 }
               }
             },
@@ -8187,7 +10781,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MovementOut"
+                  "$ref": "#/components/schemas/local_eventos__modules__ledger__presentation__movement_schemas__MovementOut"
                 }
               }
             },
@@ -8266,7 +10860,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MovementOut"
+                  "$ref": "#/components/schemas/local_eventos__modules__ledger__presentation__movement_schemas__MovementOut"
                 }
               }
             },
@@ -8604,6 +11198,1119 @@
         "summary": "Void Payment",
         "tags": [
           "pagos"
+        ]
+      }
+    },
+    "/v1/purchasing/purchases": {
+      "get": {
+        "description": "De la más reciente a la más antigua.",
+        "operationId": "purchasing_purchases_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PurchaseStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "event_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "supplier_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Supplier Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchasePageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Purchases",
+        "tags": [
+          "compras"
+        ]
+      },
+      "post": {
+        "description": "CA-28.1: solicitud de compra con sus líneas; se puede vincular a un evento.",
+        "operationId": "purchasing_purchases_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PurchaseRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Purchase",
+        "tags": [
+          "compras"
+        ]
+      }
+    },
+    "/v1/purchasing/purchases/{purchase_id}": {
+      "get": {
+        "operationId": "purchasing_purchases_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Purchase Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.purchase_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Purchase",
+        "tags": [
+          "compras"
+        ]
+      }
+    },
+    "/v1/purchasing/purchases/{purchase_id}/cancel": {
+      "post": {
+        "description": "Cancela una compra solicitada u ordenada, con motivo.",
+        "operationId": "purchasing_purchases_cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Purchase Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.purchase_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.invalid_transition`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Purchase",
+        "tags": [
+          "compras"
+        ]
+      }
+    },
+    "/v1/purchasing/purchases/{purchase_id}/order": {
+      "post": {
+        "description": "CA-29.1: elige proveedor y costo unitario de cada línea.",
+        "operationId": "purchasing_purchases_order",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Purchase Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrderIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.purchase_not_found`, `purchasing.supplier_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.invalid_transition`, `purchasing.supplier_inactive`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Order Purchase",
+        "tags": [
+          "compras"
+        ]
+      }
+    },
+    "/v1/purchasing/purchases/{purchase_id}/receive": {
+      "post": {
+        "description": "CA-29.2 y CA-29.3: una sola vez; registra las entradas al almacén con costo y proveedor.",
+        "operationId": "purchasing_purchases_receive",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Purchase Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.purchase_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.invalid_transition`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Receive Purchase",
+        "tags": [
+          "compras"
+        ]
+      }
+    },
+    "/v1/purchasing/shortages": {
+      "get": {
+        "description": "CA-28.2 (\"Agregar faltantes\"): productos con stock bajo y cuánto pedir.",
+        "operationId": "purchasing_shortages",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ShortageOut"
+                  },
+                  "title": "Response Purchasing Shortages",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Shortages",
+        "tags": [
+          "compras"
+        ]
+      }
+    },
+    "/v1/purchasing/suppliers": {
+      "get": {
+        "description": "CA-27.2: sin distinguir mayúsculas ni tildes, ordenados por razón social.",
+        "operationId": "purchasing_suppliers_list",
+        "parameters": [
+          {
+            "description": "Parte de la razón social o del documento",
+            "in": "query",
+            "name": "text",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Parte de la razón social o del documento",
+              "title": "Text",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_inactive",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Inactive",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SupplierOut"
+                  },
+                  "title": "Response Purchasing Suppliers List",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Suppliers",
+        "tags": [
+          "compras"
+        ]
+      },
+      "post": {
+        "operationId": "purchasing_suppliers_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.document_taken`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Supplier",
+        "tags": [
+          "compras"
+        ]
+      }
+    },
+    "/v1/purchasing/suppliers/{supplier_id}": {
+      "get": {
+        "operationId": "purchasing_suppliers_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "supplier_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Supplier Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.supplier_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Supplier",
+        "tags": [
+          "compras"
+        ]
+      },
+      "put": {
+        "operationId": "purchasing_suppliers_update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "supplier_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Supplier Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.supplier_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.document_taken`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Supplier",
+        "tags": [
+          "compras"
+        ]
+      }
+    },
+    "/v1/purchasing/suppliers/{supplier_id}/activate": {
+      "post": {
+        "operationId": "purchasing_suppliers_activate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "supplier_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Supplier Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.supplier_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Activate Supplier",
+        "tags": [
+          "compras"
+        ]
+      }
+    },
+    "/v1/purchasing/suppliers/{supplier_id}/deactivate": {
+      "post": {
+        "description": "CA-27.3: no se elimina; se desactiva y deja de recibir órdenes.",
+        "operationId": "purchasing_suppliers_deactivate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "supplier_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Supplier Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SupplierOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.supplier_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Deactivate Supplier",
+        "tags": [
+          "compras"
         ]
       }
     },
