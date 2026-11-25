@@ -18,7 +18,7 @@ _DOCUMENT_PATTERN = {
 _DOCUMENT_DIGITS = {"DNI": "8", "CE": "9 a 12"}
 
 
-class DocumentType(StrEnum):
+class WorkerDocumentType(StrEnum):
     DNI = "DNI"
     CE = "CE"
 
@@ -27,11 +27,11 @@ class DocumentType(StrEnum):
 class Document:
     """Documento normalizado del trabajador: tipo + número, sin espacios ni guiones."""
 
-    type: DocumentType
+    type: WorkerDocumentType
     number: str
 
     def __post_init__(self) -> None:
-        if not isinstance(self.type, DocumentType):
+        if not isinstance(self.type, WorkerDocumentType):
             raise StaffValidationError(
                 "staff.document_invalid", "El tipo de documento debe ser DNI o CE."
             )

@@ -8,7 +8,7 @@ se convierten de forma explícita para que el roundtrip sea exacto.
 from __future__ import annotations
 
 from local_eventos.modules.staff.domain.audit import AuditAction, WorkerAudit
-from local_eventos.modules.staff.domain.document import Document, DocumentType
+from local_eventos.modules.staff.domain.document import Document, WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import (
     WorkerFunction,
     WorkerStatus,
@@ -51,7 +51,7 @@ def worker_from_row(row: StaffWorkerRow) -> Worker:
     return Worker(
         id=row.id,
         name=row.name,
-        document=Document(DocumentType(row.document_type), row.document_number),
+        document=Document(WorkerDocumentType(row.document_type), row.document_number),
         phone=row.phone,
         function=None if row.worker_function is None else WorkerFunction(row.worker_function),
         function_description=row.function_description,

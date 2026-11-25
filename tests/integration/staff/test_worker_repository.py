@@ -20,7 +20,7 @@ from testcontainers.community.postgres import PostgresContainer
 
 from local_eventos.modules.staff.application.ports.worker_repository import WorkerRef
 from local_eventos.modules.staff.domain.audit import AuditAction, WorkerAudit
-from local_eventos.modules.staff.domain.document import Document, DocumentType
+from local_eventos.modules.staff.domain.document import Document, WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import WorkerFunction, WorkerStatus
 from local_eventos.modules.staff.domain.money import Money
 from local_eventos.modules.staff.domain.worker import Worker
@@ -77,7 +77,7 @@ def _worker(
 ) -> Worker:
     return Worker.register(
         name=name,
-        document_type=DocumentType.DNI,
+        document_type=WorkerDocumentType.DNI,
         document_number=number,
         phone=phone,
         function=function,
@@ -123,7 +123,7 @@ async def test_ca15_6_actualiza_sin_duplicar(
 
     worker.update(
         name="José Ramírez",
-        document_type=DocumentType.DNI,
+        document_type=WorkerDocumentType.DNI,
         document_number="44125896",
         phone="912345678",
         function=WorkerFunction.OTHER,
@@ -153,8 +153,8 @@ async def test_hu15_get_by_document_incluye_inactivos(
 
     async with sessions() as session:
         repository = SqlAlchemyWorkerRepository(session)
-        found = await repository.get_by_document(Document(DocumentType.DNI, "44125896"))
-        missing = await repository.get_by_document(Document(DocumentType.DNI, "11111111"))
+        found = await repository.get_by_document(Document(WorkerDocumentType.DNI, "44125896"))
+        missing = await repository.get_by_document(Document(WorkerDocumentType.DNI, "11111111"))
 
     assert found is not None and found.status is WorkerStatus.INACTIVE
     assert missing is None

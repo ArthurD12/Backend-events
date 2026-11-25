@@ -21,7 +21,7 @@ from local_eventos.modules.staff.application.use_cases.change_worker_status impo
     DeactivateWorker,
 )
 from local_eventos.modules.staff.domain.audit import AuditAction, WorkerAudit
-from local_eventos.modules.staff.domain.document import Document, DocumentType
+from local_eventos.modules.staff.domain.document import Document, WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import WorkerFunction, WorkerStatus
 from local_eventos.modules.staff.domain.worker import Worker
 
@@ -78,7 +78,7 @@ def _repository_with_worker(*, status: WorkerStatus = WorkerStatus.ACTIVE) -> Fa
     worker = Worker.register(
         worker_id=WORKER_ID,
         name="Ana Torres",
-        document_type=DocumentType.DNI,
+        document_type=WorkerDocumentType.DNI,
         document_number="44125896",
     )
     if status is WorkerStatus.INACTIVE:

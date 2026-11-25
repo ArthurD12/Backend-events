@@ -9,7 +9,7 @@ from uuid import UUID
 
 import pytest
 
-from local_eventos.modules.staff.domain.document import Document, DocumentType
+from local_eventos.modules.staff.domain.document import Document, WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import (
     WorkerFunction,
     WorkerStatus,
@@ -25,7 +25,7 @@ WORKER_ID = UUID("11111111-1111-1111-1111-111111111111")
 def _register(**overrides: object) -> Worker:
     data: dict[str, object] = {
         "name": "Ana Torres",
-        "document_type": DocumentType.DNI,
+        "document_type": WorkerDocumentType.DNI,
         "document_number": "44125896",
         "worker_id": WORKER_ID,
     }
@@ -38,7 +38,7 @@ def test_ca15_1_alta_activa_con_obligatorios() -> None:
 
     assert worker.id == WORKER_ID
     assert worker.name == "Ana Torres"
-    assert worker.document == Document(DocumentType.DNI, "44125896")
+    assert worker.document == Document(WorkerDocumentType.DNI, "44125896")
     assert worker.phone is None
     assert worker.function is None
     assert worker.worker_type is None
@@ -187,7 +187,7 @@ def test_update_reemplaza_datos_editables() -> None:
 
     worker.update(
         name="  Ana   María Torres ",
-        document_type=DocumentType.CE,
+        document_type=WorkerDocumentType.CE,
         document_number="001-234 567 890",
         phone=None,
         function=WorkerFunction.OTHER,
@@ -199,7 +199,7 @@ def test_update_reemplaza_datos_editables() -> None:
     )
 
     assert worker.name == "Ana María Torres"
-    assert worker.document == Document(DocumentType.CE, "001234567890")
+    assert worker.document == Document(WorkerDocumentType.CE, "001234567890")
     assert worker.phone is None
     assert worker.function_description == "jefa de cocina"
     assert worker.worker_type is WorkerType.EVENTUAL
@@ -220,7 +220,7 @@ def test_update_limpia_opcionales_omitidos() -> None:
 
     worker.update(
         name="Ana Torres",
-        document_type=DocumentType.DNI,
+        document_type=WorkerDocumentType.DNI,
         document_number="44125896",
     )
 
@@ -238,7 +238,7 @@ def test_update_valida_antes_de_mutar() -> None:
     with pytest.raises(StaffValidationError) as error:
         worker.update(
             name="",
-            document_type=DocumentType.DNI,
+            document_type=WorkerDocumentType.DNI,
             document_number="123",
             phone="abc",
             overtime_applies=True,
@@ -246,7 +246,7 @@ def test_update_valida_antes_de_mutar() -> None:
 
     assert error.value.code == "staff.name_required"
     assert worker.name == "Ana Torres"
-    assert worker.document == Document(DocumentType.DNI, "44125896")
+    assert worker.document == Document(WorkerDocumentType.DNI, "44125896")
     assert worker.phone == "987654321"
     assert worker.rate == Money(1000)
     assert worker.overtime_applies is False

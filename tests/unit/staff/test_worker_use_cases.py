@@ -27,7 +27,7 @@ from local_eventos.modules.staff.application.use_cases.update_worker import (
 )
 from local_eventos.modules.staff.application.use_cases.worker_data import WorkerData
 from local_eventos.modules.staff.domain.audit import AuditAction, WorkerAudit
-from local_eventos.modules.staff.domain.document import Document, DocumentType
+from local_eventos.modules.staff.domain.document import Document, WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import (
     WorkerFunction,
     WorkerStatus,
@@ -92,7 +92,7 @@ class FakeWorkerRepository:
 def _data(**overrides: object) -> WorkerData:
     values: dict[str, object] = {
         "name": "Ana Torres",
-        "document_type": DocumentType.DNI,
+        "document_type": WorkerDocumentType.DNI,
         "document_number": "44125896",
     }
     values.update(overrides)
@@ -103,7 +103,7 @@ def _worker(
     *,
     worker_id: UUID,
     name: str = "Ana Torres",
-    document_type: DocumentType = DocumentType.DNI,
+    document_type: WorkerDocumentType = WorkerDocumentType.DNI,
     document_number: str = "44125896",
 ) -> Worker:
     return Worker.register(
@@ -130,7 +130,7 @@ async def test_ca15_1_alta_activa_con_auditoria() -> None:
 
     assert worker.status is WorkerStatus.ACTIVE
     assert worker.name == "Ana Torres"
-    assert worker.document == Document(DocumentType.DNI, "44125896")
+    assert worker.document == Document(WorkerDocumentType.DNI, "44125896")
     assert repository.workers[worker.id] is worker
     assert len(repository.audits) == 1
     audit = repository.audits[0]
@@ -181,7 +181,7 @@ async def test_ca15_4_edicion_a_documento_ajeno_conserva_el_anterior() -> None:
             WORKER_2_ID, _data(name="Beto Ruiz", document_number="44125896"), ACTOR_ID
         )
 
-    assert repository.workers[WORKER_2_ID].document == Document(DocumentType.DNI, "12345678")
+    assert repository.workers[WORKER_2_ID].document == Document(WorkerDocumentType.DNI, "12345678")
     assert repository.audits == []
 
 
@@ -193,7 +193,7 @@ async def test_ca15_4_edicion_conserva_su_propio_documento() -> None:
     updated = await update.execute(WORKER_1_ID, _data(name="Ana Torres Vargas"), ACTOR_ID)
 
     assert updated.name == "Ana Torres Vargas"
-    assert updated.document == Document(DocumentType.DNI, "44125896")
+    assert updated.document == Document(WorkerDocumentType.DNI, "44125896")
     assert len(repository.audits) == 1
 
 

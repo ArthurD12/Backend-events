@@ -14,7 +14,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from local_eventos.modules.staff.application.ports.worker_repository import WorkerPage
-from local_eventos.modules.staff.domain.document import DocumentType
+from local_eventos.modules.staff.domain.document import WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import (
     WorkerFunction,
     WorkerStatus,
@@ -33,7 +33,7 @@ class _WorkerEditable(BaseModel):
     """Campos editables de la ficha: `PUT` es reemplazo completo (plan §5.1)."""
 
     name: str = Field(description="Nombre completo del trabajador")
-    document_type: DocumentType = Field(description="DNI o CE")
+    document_type: WorkerDocumentType = Field(description="DNI o CE")
     document_number: str = Field(description="Número de documento; el dominio lo normaliza")
     phone: str | None = Field(default=None, description="Solo dígitos")
     function: WorkerFunction | None = Field(
@@ -65,7 +65,7 @@ class WorkerOut(BaseModel):
 
     id: UUID
     name: str
-    document_type: DocumentType
+    document_type: WorkerDocumentType
     document_number: str
     phone: str | None
     function: WorkerFunction | None
@@ -102,7 +102,7 @@ class WorkerSummaryOut(BaseModel):
 
     id: UUID
     name: str
-    document_type: DocumentType
+    document_type: WorkerDocumentType
     document_number: str
     function: WorkerFunction | None
     function_description: str | None

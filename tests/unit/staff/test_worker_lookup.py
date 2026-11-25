@@ -19,7 +19,7 @@ from local_eventos.modules.staff.application.ports.worker_repository import (
     WorkerRef,
 )
 from local_eventos.modules.staff.domain.audit import WorkerAudit
-from local_eventos.modules.staff.domain.document import Document, DocumentType
+from local_eventos.modules.staff.domain.document import Document, WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import WorkerFunction, WorkerStatus
 from local_eventos.modules.staff.domain.money import Money
 from local_eventos.modules.staff.domain.worker import Worker
@@ -98,7 +98,7 @@ def _worker(
     worker = Worker.register(
         worker_id=worker_id,
         name=name,
-        document_type=DocumentType.DNI,
+        document_type=WorkerDocumentType.DNI,
         document_number=document_number,
         phone="987654321",
         function=function,

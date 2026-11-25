@@ -29,7 +29,7 @@ from local_eventos.modules.staff.application.use_cases.search_workers import (
     SearchWorkers,
 )
 from local_eventos.modules.staff.domain.audit import WorkerAudit
-from local_eventos.modules.staff.domain.document import Document, DocumentType
+from local_eventos.modules.staff.domain.document import Document, WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import (
     WorkerFunction,
     WorkerStatus,
@@ -119,7 +119,7 @@ def _worker(
     worker = Worker.register(
         worker_id=worker_id,
         name=name,
-        document_type=DocumentType.DNI,
+        document_type=WorkerDocumentType.DNI,
         document_number=document_number,
         phone="987654321",
         function=function,

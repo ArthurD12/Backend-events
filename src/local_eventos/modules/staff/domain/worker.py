@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass
 from uuid import UUID, uuid4
 
-from local_eventos.modules.staff.domain.document import Document, DocumentType
+from local_eventos.modules.staff.domain.document import Document, WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import (
     WorkerFunction,
     WorkerStatus,
@@ -49,7 +49,7 @@ class Worker:
         cls,
         *,
         name: str,
-        document_type: DocumentType,
+        document_type: WorkerDocumentType,
         document_number: str,
         phone: str | None = None,
         function: WorkerFunction | None = None,
@@ -85,7 +85,7 @@ class Worker:
         self,
         *,
         name: str,
-        document_type: DocumentType,
+        document_type: WorkerDocumentType,
         document_number: str,
         phone: str | None = None,
         function: WorkerFunction | None = None,

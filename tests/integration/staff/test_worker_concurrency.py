@@ -21,7 +21,7 @@ from testcontainers.community.postgres import PostgresContainer
 
 from local_eventos.modules.staff.application.errors import DuplicateDocumentError
 from local_eventos.modules.staff.domain.audit import AuditAction, WorkerAudit
-from local_eventos.modules.staff.domain.document import Document, DocumentType
+from local_eventos.modules.staff.domain.document import Document, WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import WorkerFunction
 from local_eventos.modules.staff.domain.money import Money
 from local_eventos.modules.staff.domain.worker import Worker
@@ -69,7 +69,7 @@ def _worker(
     name: str,
     number: str,
     *,
-    document_type: DocumentType = DocumentType.DNI,
+    document_type: WorkerDocumentType = WorkerDocumentType.DNI,
 ) -> Worker:
     return Worker.register(
         name=name,
@@ -128,8 +128,8 @@ async def test_ca15_3_tipos_distintos_con_mismo_numero(
     puede ser válido para ambos tipos. Se comprueba lo que sí garantiza el esquema: un
     DNI y un CE válidos conviven, y la restricción UNIQUE cubre (tipo, número).
     """
-    dni = _worker("Ana Pérez", "44125896", document_type=DocumentType.DNI)
-    ce = _worker("Luis Gómez", "441258961", document_type=DocumentType.CE)
+    dni = _worker("Ana Pérez", "44125896", document_type=WorkerDocumentType.DNI)
+    ce = _worker("Luis Gómez", "441258961", document_type=WorkerDocumentType.CE)
 
     async with sessions.begin() as session:
         repository = SqlAlchemyWorkerRepository(session)
@@ -139,7 +139,7 @@ async def test_ca15_3_tipos_distintos_con_mismo_numero(
     async with sessions() as session:
         total = await session.scalar(select(func.count()).select_from(StaffWorkerRow))
         by_document = await SqlAlchemyWorkerRepository(session).get_by_document(
-            Document(DocumentType.CE, "441258961")
+            Document(WorkerDocumentType.CE, "441258961")
         )
 
     assert total == 2

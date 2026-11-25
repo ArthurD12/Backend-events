@@ -14,7 +14,7 @@ import pytest
 from pydantic import ValidationError
 
 from local_eventos.modules.staff.application.ports.worker_repository import WorkerPage
-from local_eventos.modules.staff.domain.document import DocumentType
+from local_eventos.modules.staff.domain.document import WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import (
     WorkerFunction,
     WorkerStatus,
@@ -55,7 +55,7 @@ def _worker(
 ) -> Worker:
     return Worker.register(
         name="Ana Quispe",
-        document_type=DocumentType.DNI,
+        document_type=WorkerDocumentType.DNI,
         document_number="12345678",
         phone="987654321",
         function=function,
@@ -72,7 +72,7 @@ def test_worker_create_valido() -> None:
     payload = WorkerCreate.model_validate(VALID_PAYLOAD)
 
     assert payload.name == "Ana Quispe"
-    assert payload.document_type is DocumentType.DNI
+    assert payload.document_type is WorkerDocumentType.DNI
     assert payload.function is WorkerFunction.WAITER
     assert payload.worker_type is WorkerType.FIXED
     assert payload.rate_cents == 4500
@@ -224,7 +224,7 @@ def test_worker_out_rechaza_currency_distinta() -> None:
 def test_worker_summary_incluye_documento() -> None:
     summary = WorkerSummaryOut.from_worker(_worker())
 
-    assert summary.document_type is DocumentType.DNI
+    assert summary.document_type is WorkerDocumentType.DNI
     assert summary.document_number == "12345678"
     assert summary.status is WorkerStatus.ACTIVE
 

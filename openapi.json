@@ -233,7 +233,7 @@
             "type": "string"
           },
           "document_type": {
-            "$ref": "#/components/schemas/local_eventos__modules__commercial__domain__clients__client__DocumentType"
+            "$ref": "#/components/schemas/DocumentType"
           },
           "email": {
             "anyOf": [
@@ -320,7 +320,7 @@
             "type": "string"
           },
           "document_type": {
-            "$ref": "#/components/schemas/local_eventos__modules__commercial__domain__clients__client__DocumentType"
+            "$ref": "#/components/schemas/DocumentType"
           },
           "email": {
             "anyOf": [
@@ -824,6 +824,14 @@
         ],
         "title": "DashboardQuotesOut",
         "type": "object"
+      },
+      "DocumentType": {
+        "enum": [
+          "DNI",
+          "RUC"
+        ],
+        "title": "DocumentType",
+        "type": "string"
       },
       "EventCancelIn": {
         "properties": {
@@ -2342,7 +2350,7 @@
             "type": "string"
           },
           "document_type": {
-            "$ref": "#/components/schemas/local_eventos__modules__staff__domain__document__DocumentType",
+            "$ref": "#/components/schemas/WorkerDocumentType",
             "description": "DNI o CE"
           },
           "function": {
@@ -2438,6 +2446,14 @@
         "title": "WorkerCreate",
         "type": "object"
       },
+      "WorkerDocumentType": {
+        "enum": [
+          "DNI",
+          "CE"
+        ],
+        "title": "WorkerDocumentType",
+        "type": "string"
+      },
       "WorkerFunction": {
         "description": "Función del trabajador: lista fija del sistema más `OTHER` con descripción.",
         "enum": [
@@ -2464,7 +2480,7 @@
             "type": "string"
           },
           "document_type": {
-            "$ref": "#/components/schemas/local_eventos__modules__staff__domain__document__DocumentType"
+            "$ref": "#/components/schemas/WorkerDocumentType"
           },
           "function": {
             "anyOf": [
@@ -2633,7 +2649,7 @@
             "type": "string"
           },
           "document_type": {
-            "$ref": "#/components/schemas/local_eventos__modules__staff__domain__document__DocumentType"
+            "$ref": "#/components/schemas/WorkerDocumentType"
           },
           "function": {
             "anyOf": [
@@ -2710,7 +2726,7 @@
             "type": "string"
           },
           "document_type": {
-            "$ref": "#/components/schemas/local_eventos__modules__staff__domain__document__DocumentType",
+            "$ref": "#/components/schemas/WorkerDocumentType",
             "description": "DNI o CE"
           },
           "function": {
@@ -2805,22 +2821,6 @@
         ],
         "title": "WorkerUpdate",
         "type": "object"
-      },
-      "local_eventos__modules__commercial__domain__clients__client__DocumentType": {
-        "enum": [
-          "DNI",
-          "RUC"
-        ],
-        "title": "DocumentType",
-        "type": "string"
-      },
-      "local_eventos__modules__staff__domain__document__DocumentType": {
-        "enum": [
-          "DNI",
-          "CE"
-        ],
-        "title": "DocumentType",
-        "type": "string"
       }
     },
     "securitySchemes": {

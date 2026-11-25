@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from local_eventos.modules.staff.domain.audit import AuditAction, WorkerAudit
-from local_eventos.modules.staff.domain.document import Document, DocumentType
+from local_eventos.modules.staff.domain.document import Document, WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import (
     WorkerFunction,
     WorkerStatus,
@@ -59,7 +59,7 @@ def test_roundtrip_ficha_completa() -> None:
     worker = Worker.register(
         worker_id=WORKER_ID,
         name="Ana Torres",
-        document_type=DocumentType.CE,
+        document_type=WorkerDocumentType.CE,
         document_number="123456789",
         phone="987654321",
         function=WorkerFunction.OTHER,
@@ -86,7 +86,7 @@ def test_roundtrip_ficha_minima_con_opcionales_nulos() -> None:
     worker = Worker.register(
         worker_id=WORKER_ID,
         name="Luis Ramos",
-        document_type=DocumentType.DNI,
+        document_type=WorkerDocumentType.DNI,
         document_number="44125896",
     )
 
@@ -141,7 +141,7 @@ def test_documento_se_normaliza_al_reconstruir() -> None:
     worker = Worker.register(
         worker_id=WORKER_ID,
         name="Luis Ramos",
-        document_type=DocumentType.DNI,
+        document_type=WorkerDocumentType.DNI,
         document_number="44125896",
     )
     row = worker_to_row(worker)
@@ -149,5 +149,5 @@ def test_documento_se_normaliza_al_reconstruir() -> None:
 
     rebuilt = worker_from_row(row)
 
-    assert rebuilt.document == Document(DocumentType.DNI, "44125896")
+    assert rebuilt.document == Document(WorkerDocumentType.DNI, "44125896")
     assert rebuilt.status is WorkerStatus.ACTIVE

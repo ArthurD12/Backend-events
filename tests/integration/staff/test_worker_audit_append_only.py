@@ -30,7 +30,7 @@ from local_eventos.modules.staff.application.use_cases.update_worker import (
     UpdateWorker,
 )
 from local_eventos.modules.staff.application.use_cases.worker_data import WorkerData
-from local_eventos.modules.staff.domain.document import DocumentType
+from local_eventos.modules.staff.domain.document import WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import WorkerFunction, WorkerType
 from local_eventos.modules.staff.domain.money import Money
 from local_eventos.modules.staff.infrastructure.orm_models import StaffWorkerAuditRow
@@ -95,7 +95,7 @@ def _data(
 ) -> WorkerData:
     return WorkerData(
         name=name,
-        document_type=DocumentType.DNI,
+        document_type=WorkerDocumentType.DNI,
         document_number=number,
         phone=phone,
         function=WorkerFunction.COOK,

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from local_eventos.modules.staff.domain.document import DocumentType
+from local_eventos.modules.staff.domain.document import WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import WorkerFunction, WorkerType
 from local_eventos.modules.staff.domain.money import Money
 
@@ -19,7 +19,7 @@ class WorkerData:
     """Campos editables de la ficha de un trabajador (plan §5.2)."""
 
     name: str
-    document_type: DocumentType
+    document_type: WorkerDocumentType
     document_number: str
     phone: str | None = None
     function: WorkerFunction | None = None
