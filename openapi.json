@@ -3188,7 +3188,8 @@
           "finance:read",
           "event_notes:write",
           "event_notes:edit_any",
-          "staff:manage"
+          "staff:manage",
+          "staff:assign"
         ],
         "title": "Permission",
         "type": "string"
