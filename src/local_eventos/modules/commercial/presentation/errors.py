@@ -15,9 +15,12 @@ from local_eventos.modules.commercial.application.contracts.errors import (
     ContractQuoteNotFoundError,
 )
 from local_eventos.modules.commercial.application.events.errors import (
+    ActivityNotFoundError,
     EventAlreadyExistsError,
     EventApplicationError,
     EventNotFoundError,
+    NoteNotAuthorError,
+    NoteNotFoundError,
 )
 from local_eventos.modules.commercial.application.quotes.errors import (
     QuoteApplicationError,
@@ -116,7 +119,13 @@ async def _contract_application_error(request: Request, error: Exception) -> JSO
     )
 
 
-_EVENT_STATUS = {EventNotFoundError: 404, EventAlreadyExistsError: 409}
+_EVENT_STATUS = {
+    EventNotFoundError: 404,
+    EventAlreadyExistsError: 409,
+    ActivityNotFoundError: 404,
+    NoteNotFoundError: 404,
+    NoteNotAuthorError: 403,
+}
 
 
 async def _event_validation_error(request: Request, error: Exception) -> JSONResponse:
