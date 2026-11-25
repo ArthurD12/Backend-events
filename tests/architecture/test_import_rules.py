@@ -62,6 +62,36 @@ def test_ca7_un_import_prohibido_rompe_la_arquitectura(
     assert broken_rule in result.stdout
 
 
+@pytest.mark.parametrize(
+    ("line", "broken_rule"),
+    [
+        (
+            "import fastapi  # noqa: F401",
+            "El dominio no depende de frameworks BROKEN",
+        ),
+        (
+            "import sqlalchemy  # noqa: F401",
+            "El dominio no depende de frameworks BROKEN",
+        ),
+        (
+            "import pydantic  # noqa: F401",
+            "El dominio no depende de frameworks BROKEN",
+        ),
+        (
+            "from local_eventos.modules.identity.domain import permissions  # noqa: F401",
+            "Los modulos solo se usan entre si por su public_api BROKEN",
+        ),
+    ],
+)
+def test_staff_domain_no_importa_frameworks_ni_identity_interna(
+    tmp_path: Path, line: str, broken_rule: str
+) -> None:
+    result = _lint_imports_with(tmp_path, "modules/staff/domain/worker.py", line)
+
+    assert result.returncode != 0
+    assert broken_rule in result.stdout
+
+
 def test_ca7_usar_otro_modulo_por_su_public_api_esta_permitido(tmp_path: Path) -> None:
     result = _lint_imports_with(
         tmp_path,
