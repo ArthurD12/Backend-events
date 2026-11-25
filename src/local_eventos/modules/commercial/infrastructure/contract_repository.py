@@ -41,6 +41,15 @@ class SqlAlchemyContractRepository:
         row = await self._session.get(ContractRow, contract_id)
         return _to_contract(row) if row is not None else None
 
+    async def get_for_update(self, contract_id: UUID) -> Contract | None:
+        row = await self._session.scalar(
+            select(ContractRow)
+            .where(ContractRow.id == contract_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        return _to_contract(row) if row is not None else None
+
     async def get_by_quote(self, quote_id: UUID) -> Contract | None:
         row = await self._session.scalar(
             select(ContractRow).where(ContractRow.quote_id == quote_id)

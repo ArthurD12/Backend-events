@@ -24,6 +24,9 @@ class InMemoryContractRepository:
         contract = self.contracts.get(contract_id)
         return replace(contract) if contract else None
 
+    async def get_for_update(self, contract_id: UUID) -> Contract | None:
+        return await self.get(contract_id)
+
     async def get_by_quote(self, quote_id: UUID) -> Contract | None:
         return next((replace(c) for c in self.contracts.values() if c.quote_id == quote_id), None)
 

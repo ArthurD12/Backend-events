@@ -7,7 +7,7 @@ import asyncio
 from collections.abc import AsyncIterator, Iterator
 from datetime import UTC, date, datetime, time
 from pathlib import Path
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from alembic import command
@@ -23,8 +23,17 @@ from local_eventos.modules.commercial.application.contracts.errors import (
 from local_eventos.modules.commercial.application.contracts.ports.contract_repository import (
     ContractFilters,
 )
+from local_eventos.modules.commercial.application.contracts.use_cases.payments import (
+    GetContractAccount,
+    NewPayment,
+    RecordContractPayment,
+)
 from local_eventos.modules.commercial.domain.clients.client import Client, DocumentType
-from local_eventos.modules.commercial.domain.contracts.contract import Contract, ContractStatus
+from local_eventos.modules.commercial.domain.contracts.contract import (
+    Contract,
+    ContractStatus,
+    ContractValidationError,
+)
 from local_eventos.modules.commercial.domain.quotes.quote import (
     EventDetails,
     EventType,
@@ -43,11 +52,17 @@ from local_eventos.modules.commercial.infrastructure.contract_repository import 
 from local_eventos.modules.commercial.infrastructure.quote_repository import (
     SqlAlchemyQuoteRepository,
 )
+from local_eventos.modules.ledger.application.ports.payment_repository import PaymentEntry
+from local_eventos.modules.ledger.application.use_cases.payments import (
+    ContractPaymentEntries,
+    RecordPayment,
+)
 from local_eventos.modules.ledger.domain.payment import Payment, PaymentKind, PaymentMethod
 from local_eventos.modules.ledger.infrastructure.payment_repository import (
     SqlAlchemyPaymentRepository,
 )
 from local_eventos.shared.infrastructure.db import create_engine
+from tests.unit.commercial.quotes.fakes import FakeClock
 
 pytestmark = pytest.mark.integration
 
@@ -243,3 +258,81 @@ async def test_busca_y_codigos_sin_repetir(sessions: async_sessionmaker[AsyncSes
 
     assert numbers == [1, 2, 3]
     assert (total, found[0].code) == (1, "CON-2026-0001")
+
+
+async def _signed_in_db(sessions: async_sessionmaker[AsyncSession], number: str) -> Contract:
+    contract = _contract(await _accepted_quote(sessions, number), f"CON-2026-{number[-4:]}")
+    advance = _advance(contract)
+    contract.sign(
+        signed_on=TODAY, signer_name="José", advance_payment_id=advance.id,
+        recorded_by=uuid4(), now=NOW, today=TODAY,
+    )  # fmt: skip
+    async with sessions.begin() as session:
+        await SqlAlchemyContractRepository(session).add(contract)
+        await SqlAlchemyPaymentRepository(session).add(advance)
+    return contract
+
+
+class _SlowEntries(ContractPaymentEntries):
+    """Tarda tras leer los pagos: sin el bloqueo, dos pagos leerían el mismo saldo."""
+
+    async def __call__(self, contract_id: UUID) -> list[PaymentEntry]:
+        entries = await super().__call__(contract_id)
+        await asyncio.sleep(0.3)
+        return entries
+
+
+async def _pay(sessions: async_sessionmaker[AsyncSession], contract: Contract, amount: int) -> None:
+    async with sessions.begin() as session:
+        payments = SqlAlchemyPaymentRepository(session)
+        await RecordContractPayment(
+            SqlAlchemyContractRepository(session),
+            _SlowEntries(payments),
+            RecordPayment(payments),
+            FakeClock(),
+        )(
+            contract.id,
+            NewPayment(amount_cents=amount, paid_on=TODAY, method=PaymentMethod.CASH),
+            recorded_by=uuid4(),
+        )
+
+
+async def test_ca19_2_pagar_hasta_saldo_cero_y_el_siguiente_falla(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    contract = await _signed_in_db(sessions, "40000011")
+    rest = contract.total_cents - contract.advance_cents
+
+    await _pay(sessions, contract, rest - 1_000)
+    await _pay(sessions, contract, 1_000)
+    with pytest.raises(ContractValidationError) as error:
+        await _pay(sessions, contract, 1)
+
+    async with sessions() as session:
+        account = await GetContractAccount(
+            SqlAlchemyContractRepository(session),
+            ContractPaymentEntries(SqlAlchemyPaymentRepository(session)),
+            FakeClock(),
+        )(contract.id)
+    assert error.value.code == "payment.exceeds_balance"
+    assert (account.balance.paid_cents, account.balance.balance_cents) == (contract.total_cents, 0)
+
+
+async def test_dos_pagos_simultaneos_no_superan_el_saldo(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    """La fila del contrato se bloquea (FOR UPDATE): el segundo pago ve el saldo del primero."""
+    contract = await _signed_in_db(sessions, "40000012")
+    rest = contract.total_cents - contract.advance_cents
+
+    results = await asyncio.gather(
+        _pay(sessions, contract, rest), _pay(sessions, contract, rest), return_exceptions=True
+    )
+
+    failures = [r for r in results if isinstance(r, Exception)]
+    assert len(failures) == 1
+    assert isinstance(failures[0], ContractValidationError)
+    assert failures[0].code == "payment.exceeds_balance"
+    async with sessions() as session:
+        entries = await SqlAlchemyPaymentRepository(session).entries_for_contract(contract.id)
+    assert sum(e.payment.amount_cents for e in entries) == contract.total_cents
