@@ -9,6 +9,11 @@ from local_eventos.modules.commercial.application.events.ports.event_repository 
     EventFilters,
     EventSummary,
 )
+from local_eventos.modules.commercial.domain.events.activity import (
+    ActivityChange,
+    EventActivity,
+    EventNote,
+)
 from local_eventos.modules.commercial.domain.events.event import Event
 from local_eventos.modules.identity.public_api import Coordinator
 
@@ -80,3 +85,47 @@ class FakeCoordinators:
 
     async def __call__(self) -> list[Coordinator]:
         return list(self.coordinators)
+
+
+class InMemoryEventLogRepository:
+    """Actividades, su historial y observaciones en memoria (HU13)."""
+
+    def __init__(self) -> None:
+        self.activities: dict[UUID, EventActivity] = {}
+        self.changes: list[ActivityChange] = []
+        self.notes: dict[UUID, EventNote] = {}
+
+    async def get_activity(self, activity_id: UUID) -> EventActivity | None:
+        activity = self.activities.get(activity_id)
+        return replace(activity) if activity else None
+
+    async def list_activities(self, event_id: UUID) -> list[EventActivity]:
+        found = [replace(a) for a in self.activities.values() if a.event_id == event_id]
+        return sorted(found, key=lambda a: a.created_at)
+
+    async def add_activity(self, activity: EventActivity) -> None:
+        self.activities[activity.id] = replace(activity)
+
+    async def update_activity(
+        self, activity: EventActivity, change: ActivityChange | None = None
+    ) -> None:
+        self.activities[activity.id] = replace(activity)
+        if change is not None:
+            self.changes.append(change)
+
+    async def list_changes(self, activity_id: UUID) -> list[ActivityChange]:
+        return [c for c in self.changes if c.activity_id == activity_id]
+
+    async def get_note(self, note_id: UUID) -> EventNote | None:
+        note = self.notes.get(note_id)
+        return replace(note) if note else None
+
+    async def list_notes(self, event_id: UUID) -> list[EventNote]:
+        found = [replace(n) for n in self.notes.values() if n.event_id == event_id]
+        return sorted(found, key=lambda n: n.created_at, reverse=True)
+
+    async def add_note(self, note: EventNote) -> None:
+        self.notes[note.id] = replace(note)
+
+    async def update_note(self, note: EventNote) -> None:
+        self.notes[note.id] = replace(note)
