@@ -1,7 +1,7 @@
 # Plan: Personal, disponibilidad y asignaciones
 
 - **Spec**: ./spec.md
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 25/11/2026)
 
 ## 1. Módulos y fronteras
 - `staff` (nuevo, hoy vacío): trabajadores, indisponibilidades y asignaciones.

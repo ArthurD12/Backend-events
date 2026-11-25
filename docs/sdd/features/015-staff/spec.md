@@ -1,7 +1,7 @@
 # Spec: Personal, disponibilidad y asignaciones
 
 - **ID**: 015-staff
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 25/11/2026)
 - **Módulos afectados**: `staff` (nuevo), `commercial` (consulta de eventos y liberar asignaciones al cancelar), `identity` (permisos nuevos)
 - **Historias**: HU15 (#16), HU16 (#17), HU17 (#18)
 

@@ -21,14 +21,15 @@ Entre la firma y el día del evento, el encargado prepara muchas cosas (confirma
 - **CA-13.3**: Una actividad se marca **completada** y se puede volver a **pendiente**. Cada cambio guarda quién y cuándo; la actividad muestra quién la completó y cuándo.
 - **CA-13.4**: Un usuario con `events:manage` agrega **observaciones**: texto obligatorio, hasta 1000 caracteres.
 - **CA-13.5**: Actividades y observaciones quedan **asociadas a su evento** y se consultan en el detalle del evento: actividades por orden de creación; observaciones de la más reciente a la más antigua.
-- **CA-13.6**: Un usuario con solo `events:read` las ve pero no las crea ni las cambia (`auth.forbidden`).
-- **CA-13.7**: En un evento **cancelado** o **finalizado** no se agregan actividades ni observaciones ni se cambia su estado; se siguen viendo (ver R-ACT-2).
+- **CA-13.6**: Un usuario con solo `events:read` (compras y almacén) ve todo y agrega o edita observaciones; no crea ni marca actividades (`auth.forbidden`).
+- **CA-13.7**: En un evento **cancelado** no se agrega ni se cambia nada; en uno **finalizado** solo se agregan o editan observaciones (R-ACT-2). Todo se sigue viendo.
 
 ## 5. Reglas
-- **R-ACT-1** *(propuesta del equipo, a validar)*: las **observaciones son una bitácora**: no se editan ni se eliminan. Para corregir, se agrega otra observación (RN03).
-- **R-ACT-2** *(propuesta, a validar)*: se registra en estado programado, confirmado y en ejecución. No en finalizado ni cancelado.
-- **R-ACT-3** *(propuesta, a validar)*: una actividad **no se elimina** en esta versión. Si sobra, se deja pendiente o se completa con una observación que lo explique.
-- **R-ACT-4** *(propuesta, a validar)*: una actividad no tiene responsable ni fecha límite (HU13 no lo pide).
+- **R-ACT-1** *(Harold, 25/11/2026)*: una observación **se puede editar** por quien tenga permiso; se guarda quién la editó por última vez y cuándo. No se elimina.
+- **R-ACT-2** *(Harold, 25/11/2026)*: las **actividades** se registran y marcan en programado, confirmado y en ejecución. Las **observaciones** (comentarios) también se agregan con el evento **finalizado**. En un evento cancelado no se agrega nada.
+- **R-ACT-3** *(equipo, provisional; sin respuesta)*: una actividad **no se elimina** en esta versión.
+- **R-ACT-4** *(Harold, 25/11/2026)*: cada actividad tiene un **responsable**: un usuario activo, administrador o encargado de eventos. Por defecto, quien la crea. Se puede cambiar. Sin fecha límite.
+- **R-ACT-5** *(Harold, 25/11/2026)*: el **encargado de compras y almacén** también agrega observaciones (p. ej., faltantes de material). No crea ni marca actividades.
 - El usuario se guarda como **ID** del módulo `identity`, sin clave foránea entre módulos (AGENTS.md, regla 3). El issue #14 propone una relación ORM con `Usuario`: no se hace así.
 
 ## 6. Fuera de alcance
@@ -44,8 +45,8 @@ Entre la firma y el día del evento, el encargado prepara muchas cosas (confirma
 - Requiere migración nueva: coordinar con Harold (`uv run alembic heads` con un solo head) antes de crearla.
 
 ## 8. Preguntas abiertas
-- [ ] R-ACT-1: ¿las observaciones son inmutables o se pueden editar o borrar?
-- [ ] R-ACT-2: ¿se registran observaciones después de finalizado el evento (cierre, incidencias)?
-- [ ] R-ACT-3: ¿se puede eliminar una actividad creada por error mientras está pendiente?
-- [ ] R-ACT-4: ¿una actividad necesita responsable o fecha límite?
-- [ ] ¿El encargado de compras y almacén puede agregar observaciones (p. ej., faltantes de material)? Hoy DOMAIN.md §9 le da solo lectura.
+- [x] Observaciones editables → sí (Harold, 25/11/2026).
+- [x] ¿Después de finalizado? → solo observaciones (Harold, 25/11/2026).
+- [ ] ¿Se elimina una actividad creada por error? → sin respuesta; provisional: no.
+- [x] ¿Responsable o fecha límite? → responsable sí, fecha no (Harold, 25/11/2026).
+- [x] ¿Compras agrega observaciones? → sí (Harold, 25/11/2026).
