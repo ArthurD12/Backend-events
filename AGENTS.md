@@ -50,6 +50,8 @@ Sin Redis, Celery ni Kafka. Detalle y dependencias: `docs/architecture/STACK.md`
 - Usar `gh` solo para **leer**. No comentar, cerrar, asignar ni editar issues sin que el usuario lo pida.
 - Este repo es SOLO backend: implementar las "Tareas Backend" y los criterios de aceptación que dependan del backend. Ignorar las "Tareas Frontend".
 - Un módulo nuevo solo usa a otros por su `public_api` (regla 3), también al integrarse con los módulos que el otro desarrollador está tocando.
+- **Antes de empezar cualquier tarea, leer `docs/sdd/COORDINACION.md`**: dueños por módulo, trabajo en curso, archivos compartidos, puntos de conexión y head de Alembic. Actualizarlo al tomar o terminar trabajo.
+- No se une un PR con el CI en rojo. Al resolver conflictos en archivos compartidos se conservan las dos partes.
 
 ## Comandos (justfile)
 `just check` (ruff + mypy + lint-imports + pytest) · `just test` · `just lint` · `just types` · `just arch` · `just migrate` · `just openapi` (exporta openapi.json) · `just docs`
