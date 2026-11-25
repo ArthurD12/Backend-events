@@ -15,9 +15,11 @@ from local_eventos.modules.catalog.presentation.errors import (
     register_error_handlers as register_catalog_errors,
 )
 from local_eventos.modules.commercial.presentation import (
+    activity_router,
     client_router,
     contract_router,
     event_router,
+    payment_router,
     quote_router,
 )
 from local_eventos.modules.commercial.presentation.errors import (
@@ -31,10 +33,14 @@ from local_eventos.modules.identity.presentation import (
 from local_eventos.modules.identity.presentation.errors import (
     register_error_handlers as register_identity_errors,
 )
-from local_eventos.modules.inventory.presentation import movement_router, product_router
+from local_eventos.modules.inventory.presentation import (
+    movement_router as inventory_movement_router,
+)
+from local_eventos.modules.inventory.presentation import product_router
 from local_eventos.modules.inventory.presentation.errors import (
     register_error_handlers as register_inventory_errors,
 )
+from local_eventos.modules.ledger.presentation import movement_router
 from local_eventos.modules.ledger.presentation.errors import (
     register_error_handlers as register_ledger_errors,
 )
@@ -42,7 +48,10 @@ from local_eventos.modules.purchasing.presentation import purchase_router, suppl
 from local_eventos.modules.purchasing.presentation.errors import (
     register_error_handlers as register_purchasing_errors,
 )
-from local_eventos.modules.reporting.presentation import dashboard_router
+from local_eventos.modules.reporting.presentation import dashboard_router, finance_router
+from local_eventos.modules.reporting.presentation.errors import (
+    register_error_handlers as register_reporting_errors,
+)
 from local_eventos.shared.infrastructure.config import CorsSettings, Settings
 from local_eventos.shared.infrastructure.db import check_database, create_engine
 from local_eventos.shared.presentation import health
@@ -91,17 +100,22 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     app.include_router(quote_router.router)
     app.include_router(contract_router.router)
     app.include_router(event_router.router)
+    app.include_router(payment_router.router)
+    app.include_router(movement_router.router)
+    app.include_router(activity_router.router)
     app.include_router(dashboard_router.router)
+    app.include_router(finance_router.router)
     app.include_router(category_router.router)
     app.include_router(service_router.router)
     app.include_router(product_router.router)
-    app.include_router(movement_router.router)
+    app.include_router(inventory_movement_router.router)
     app.include_router(supplier_router.router)
     app.include_router(purchase_router.router)
     register_identity_errors(app)
     register_commercial_errors(app)
     register_ledger_errors(app)
     register_catalog_errors(app)
+    register_reporting_errors(app)
     register_inventory_errors(app)
     register_purchasing_errors(app)
     return app

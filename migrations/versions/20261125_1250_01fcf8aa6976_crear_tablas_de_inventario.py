@@ -6,7 +6,7 @@
 - `inventory_stock`: suma de los movimientos por producto; nunca negativa (RN20).
 
 Revision ID: 01fcf8aa6976
-Revises: d0f713f5dc65
+Revises: 15d7a500ef97
 Create Date: 2026-11-25 12:50:52.571953
 """
 
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "01fcf8aa6976"
-down_revision: str | None = "d0f713f5dc65"
+down_revision: str | None = "15d7a500ef97"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

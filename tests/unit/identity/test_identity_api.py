@@ -138,6 +138,7 @@ def test_ca01_4_me_devuelve_solo_los_permisos_del_rol(api: Api) -> None:
     assert me.status_code == 200
     assert me.json()["permissions"] == [
         "catalog:read",
+        "event_notes:write",
         "events:read",
         "inventory:manage",
         "inventory:read",

@@ -18,7 +18,7 @@ from local_eventos.modules.identity.public_api import (
     get_current_user,
 )
 from local_eventos.modules.ledger.application.use_cases.payments import (
-    ContractPayments,
+    ContractPaymentEntries,
     RecordPayment,
 )
 from tests.unit.commercial.clients.fakes import InMemoryClientRepository
@@ -31,7 +31,7 @@ from tests.unit.commercial.quotes.fakes import (
 from tests.unit.current_user import signed_in_as
 from tests.unit.ledger.fakes import InMemoryPaymentRepository
 
-from .fakes import FakeCoordinators, InMemoryEventRepository
+from .fakes import FakeCoordinators, InMemoryEventLogRepository, InMemoryEventRepository
 
 
 async def _no_database() -> None:
@@ -128,10 +128,11 @@ def api() -> Iterator[Api]:
             deps.get_client_repository: dep(clients),
             deps.get_contract_repository: dep(contracts),
             deps.get_event_repository: dep(events),
+            deps.get_event_log_repository: dep(InMemoryEventLogRepository()),
             deps.get_coordinator_lookup: dep(coordinators),
             deps.get_service_lookup: dep(FakeServiceLookup()),
             deps.get_payment_recorder: dep(RecordPayment(payments)),
-            deps.get_payments_lookup: dep(ContractPayments(payments)),
+            deps.get_payments_lookup: dep(ContractPaymentEntries(payments)),
             deps.get_clock: lambda: clock,
             get_current_user: current,
         }
@@ -295,3 +296,144 @@ def test_ca12_calendario_por_api(api: Api) -> None:
     assert (too_long.status_code, too_long.json()["code"]) == (422, "event.range_invalid")
     assert missing.status_code == 422
     assert purchasing.status_code == 200
+
+
+def test_r_pag_1_el_evento_muestra_pagado_y_saldo_solo_a_quien_registra_pagos(api: Api) -> None:
+    event = api.convert(api.contract()).json()
+
+    mine = api.client.get(f"/v1/events/{event['id']}").json()
+    api.sign_in_as(Role.PURCHASING_MANAGER)
+    purchasing = api.client.get(f"/v1/events/{event['id']}").json()
+
+    assert (event["paid_cents"], event["balance_cents"]) == (257_500, 257_500)
+    assert (mine["paid_cents"], mine["balance_cents"]) == (257_500, 257_500)
+    assert (purchasing["paid_cents"], purchasing["balance_cents"]) == (None, None)
+
+
+def _event_id(api: Api) -> str:
+    event_id: str = api.convert(api.contract()).json()["id"]
+    return event_id
+
+
+def test_hu13_actividades_por_api(api: Api) -> None:
+    event_id = _event_id(api)
+    url = f"/v1/events/{event_id}/activities"
+
+    created = api.client.post(url, json={"description": "Confirmar vajilla"})
+    other = api.client.post(
+        url, json={"description": "Llamar al local", "responsible_id": str(api.other.id)}
+    )
+    activity_id = created.json()["id"]
+    done = api.client.post(f"/v1/activities/{activity_id}/complete")
+    twice = api.client.post(f"/v1/activities/{activity_id}/complete")
+    reopened = api.client.post(f"/v1/activities/{activity_id}/reopen")
+    responsible = api.client.put(
+        f"/v1/activities/{activity_id}/responsible", json={"responsible_id": str(api.other.id)}
+    )
+    listed = api.client.get(url).json()
+
+    assert created.status_code == 201, created.text
+    body = created.json()
+    assert (body["status"], body["description"]) == ("PENDING", "Confirmar vajilla")
+    assert (body["responsible_id"], body["responsible_name"]) == (str(api.me.id), api.me.name)
+    assert (body["created_by_name"], body["completed_by"]) == (api.me.name, None)
+    assert other.json()["responsible_name"] == "Harold Canaza"
+    assert done.status_code == 200
+    assert (done.json()["status"], done.json()["completed_by_name"]) == ("DONE", api.me.name)
+    assert done.json()["completed_at"] is not None
+    assert (twice.status_code, twice.json()["code"]) == (409, "activity.already_done")
+    assert (reopened.json()["status"], reopened.json()["completed_by"]) == ("PENDING", None)
+    assert responsible.json()["responsible_name"] == "Harold Canaza"
+    assert [a["description"] for a in listed] == ["Confirmar vajilla", "Llamar al local"]
+
+
+def test_hu13_errores_de_actividades(api: Api) -> None:
+    event_id = _event_id(api)
+    url = f"/v1/events/{event_id}/activities"
+
+    empty = api.client.post(url, json={"description": "  "})
+    bad_responsible = api.client.post(
+        url, json={"description": "Ok", "responsible_id": api.customer_id_unknown()}
+    )
+    missing_event = api.client.post(
+        "/v1/events/00000000-0000-0000-0000-000000000000/activities", json={"description": "Ok"}
+    )
+    missing = api.client.post("/v1/activities/00000000-0000-0000-0000-000000000000/complete")
+    api.client.post(f"/v1/events/{event_id}/cancel", json={"reason": "Canceló"})
+    closed = api.client.post(url, json={"description": "Ok"})
+    still_visible = api.client.get(url)
+
+    assert (empty.status_code, empty.json()["code"]) == (422, "activity.validation")
+    assert (bad_responsible.status_code, bad_responsible.json()["code"]) == (
+        422,
+        "activity.responsible_invalid",
+    )
+    assert (missing_event.status_code, missing_event.json()["code"]) == (404, "event.not_found")
+    assert (missing.status_code, missing.json()["code"]) == (404, "activity.not_found")
+    assert (closed.status_code, closed.json()["code"]) == (409, "event.activities_closed")
+    assert still_visible.status_code == 200
+
+
+def test_hu13_observaciones_por_api(api: Api) -> None:
+    event_id = _event_id(api)
+    url = f"/v1/events/{event_id}/notes"
+
+    first = api.client.post(url, json={"text": "Cliente pide mesa extra"})
+    api.client.post(url, json={"text": "Faltan copas"})
+    edited = api.client.put(f"/v1/notes/{first.json()['id']}", json={"text": "Dos mesas extra"})
+    empty = api.client.post(url, json={"text": " "})
+    missing = api.client.put("/v1/notes/00000000-0000-0000-0000-000000000000", json={"text": "Ok"})
+    listed = api.client.get(url).json()
+
+    assert first.status_code == 201, first.text
+    assert (first.json()["created_by_name"], first.json()["edited_by"]) == (api.me.name, None)
+    assert edited.status_code == 200
+    assert (edited.json()["text"], edited.json()["edited_by_name"]) == (
+        "Dos mesas extra",
+        api.me.name,
+    )
+    assert (empty.status_code, empty.json()["code"]) == (422, "note.validation")
+    assert (missing.status_code, missing.json()["code"]) == (404, "note.not_found")
+    assert {n["text"] for n in listed} == {"Dos mesas extra", "Faltan copas"}
+
+
+def test_ca13_6_compras_agrega_observaciones_pero_no_actividades(api: Api) -> None:
+    event_id = _event_id(api)
+    activity_id = api.client.post(
+        f"/v1/events/{event_id}/activities", json={"description": "Ok"}
+    ).json()["id"]
+    mine = api.client.post(f"/v1/events/{event_id}/notes", json={"text": "Del encargado"})
+    api.sign_in_as(Role.PURCHASING_MANAGER)
+
+    note = api.client.post(f"/v1/events/{event_id}/notes", json={"text": "Faltan 20 copas"})
+    own_edit = api.client.put(f"/v1/notes/{note.json()['id']}", json={"text": "Faltan 30"})
+    other_edit = api.client.put(f"/v1/notes/{mine.json()['id']}", json={"text": "No"})
+    activity = api.client.post(f"/v1/events/{event_id}/activities", json={"description": "No"})
+    complete = api.client.post(f"/v1/activities/{activity_id}/complete")
+    listed = api.client.get(f"/v1/events/{event_id}/activities")
+    api.sign_in_as(Role.ADMIN)
+    by_admin = api.client.put(f"/v1/notes/{mine.json()['id']}", json={"text": "Corregida"})
+
+    assert note.status_code == 201
+    assert note.json()["created_by_name"] == "Prueba PURCHASING_MANAGER"
+    assert own_edit.status_code == 200
+    assert (other_edit.status_code, other_edit.json()["code"]) == (403, "note.not_author")
+    assert (activity.status_code, activity.json()["code"]) == (403, "auth.forbidden")
+    assert (complete.status_code, complete.json()["code"]) == (403, "auth.forbidden")
+    assert listed.status_code == 200
+    assert (by_admin.status_code, by_admin.json()["text"]) == (200, "Corregida")
+
+
+def test_r_act_6_encargado_no_edita_nota_ajena_y_admin_si(api: Api) -> None:
+    event_id = _event_id(api)
+    api.sign_in_as(Role.PURCHASING_MANAGER)
+    note_id = api.client.post(f"/v1/events/{event_id}/notes", json={"text": "Faltan copas"}).json()[
+        "id"
+    ]
+    api.sign_in_as(Role.EVENTS_MANAGER)
+    by_manager = api.client.put(f"/v1/notes/{note_id}", json={"text": "No"})
+    api.sign_in_as(Role.ADMIN)
+    by_admin = api.client.put(f"/v1/notes/{note_id}", json={"text": "Faltan 20 copas"})
+
+    assert (by_manager.status_code, by_manager.json()["code"]) == (403, "note.not_author")
+    assert (by_admin.status_code, by_admin.json()["text"]) == (200, "Faltan 20 copas")

@@ -10,7 +10,7 @@ from local_eventos.modules.commercial.application.events.ports.event_repository 
     EventSummary,
 )
 from local_eventos.modules.commercial.application.events.use_cases.events import EventPage
-from local_eventos.modules.commercial.domain.contracts.contract import Contract
+from local_eventos.modules.commercial.domain.contracts.contract import Contract, ContractBalance
 from local_eventos.modules.commercial.domain.events.event import Event, EventStatus
 from local_eventos.modules.commercial.domain.quotes.quote import EventType, LineKind, LineUnit
 from local_eventos.modules.commercial.presentation.contract_schemas import PaymentIn
@@ -71,6 +71,12 @@ class EventOut(BaseModel):
     status: EventStatus
     services: list[EventServiceOut]
     cancellation: EventCancellationOut | None
+    paid_cents: int | None = Field(
+        description="Pagos vigentes del contrato (R-PAG-1). Vacío sin `payments:record`"
+    )
+    balance_cents: int | None = Field(
+        description="Saldo del contrato (RN15). Vacío sin `payments:record`"
+    )
     created_at: datetime
 
     @classmethod
@@ -82,6 +88,7 @@ class EventOut(BaseModel):
         quote_code: str,
         client_name: str,
         coordinator_name: str | None,
+        balance: ContractBalance | None = None,
     ) -> Self:
         return cls(
             id=event.id,
@@ -113,6 +120,8 @@ class EventOut(BaseModel):
                 for s in event.services
             ],
             cancellation=_cancellation(event, contract),
+            paid_cents=balance.paid_cents if balance else None,
+            balance_cents=balance.balance_cents if balance else None,
             created_at=event.created_at,
         )
 

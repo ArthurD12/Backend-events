@@ -134,3 +134,27 @@ def test_ca11_cancelar_evento_de_punta_a_punta(api: TestClient) -> None:
         ("REFUND", 300_000),
     ]
     assert (again.status_code, again.json()["code"]) == (409, "event.already_exists")
+
+
+def test_hu13_actividades_y_observaciones_de_punta_a_punta(api: TestClient) -> None:
+    contract_id = _signed_contract(api, "40000004")
+    event_id = api.post("/v1/events", json={"contract_id": contract_id}).json()["id"]
+
+    created = api.post(f"/v1/events/{event_id}/activities", json={"description": "Probar menú"})
+    activity_id = created.json()["id"]
+    done = api.post(f"/v1/activities/{activity_id}/complete")
+    note = api.post(f"/v1/events/{event_id}/notes", json={"text": "Faltan 20 copas"})
+    edited = api.put(f"/v1/notes/{note.json()['id']}", json={"text": "Faltan 30 copas"})
+    activities = api.get(f"/v1/events/{event_id}/activities").json()
+    notes = api.get(f"/v1/events/{event_id}/notes").json()
+
+    assert created.status_code == 201, created.text
+    assert created.json()["responsible_name"] == "Administrador Darze"
+    assert done.status_code == 200, done.text
+    assert edited.status_code == 200, edited.text
+    assert [(a["status"], a["completed_by_name"]) for a in activities] == [
+        ("DONE", "Administrador Darze")
+    ]
+    assert [(n["text"], n["edited_by_name"]) for n in notes] == [
+        ("Faltan 30 copas", "Administrador Darze")
+    ]

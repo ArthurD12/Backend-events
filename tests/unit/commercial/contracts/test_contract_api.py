@@ -8,13 +8,16 @@ import pytest
 from fastapi.testclient import TestClient
 
 from local_eventos.main import create_app
+from local_eventos.modules.commercial.application.quotes.ports.document import CompanyProfile
 from local_eventos.modules.commercial.domain.clients.client import Client, DocumentType
 from local_eventos.modules.commercial.presentation import dependencies as deps
 from local_eventos.modules.identity.domain.permissions import Role
 from local_eventos.modules.identity.public_api import get_current_user
 from local_eventos.modules.ledger.application.use_cases.payments import (
-    ContractPayments,
+    ContractPaymentEntries,
+    FindPayment,
     RecordPayment,
+    VoidPayment,
 )
 from tests.unit.commercial.clients.fakes import InMemoryClientRepository
 from tests.unit.commercial.events.fakes import InMemoryEventRepository
@@ -31,6 +34,10 @@ from .fakes import InMemoryContractRepository
 
 async def _no_database() -> None:
     return None
+
+
+async def _names(user_ids: Any) -> dict[Any, str]:
+    return {user_id: "Usuario de prueba" for user_id in user_ids}
 
 
 @dataclass
@@ -99,8 +106,8 @@ def api() -> Iterator[Api]:
     async def recorder_dep() -> RecordPayment:
         return RecordPayment(payments)
 
-    async def history_dep() -> ContractPayments:
-        return ContractPayments(payments)
+    async def history_dep() -> ContractPaymentEntries:
+        return ContractPaymentEntries(payments)
 
     async def events_dep() -> InMemoryEventRepository:
         return events
@@ -114,6 +121,10 @@ def api() -> Iterator[Api]:
             deps.get_service_lookup: catalog_dep,
             deps.get_payment_recorder: recorder_dep,
             deps.get_payments_lookup: history_dep,
+            deps.get_payment_finder: lambda: FindPayment(payments),
+            deps.get_payment_voider: lambda: VoidPayment(payments),
+            deps.get_user_names: lambda: _names,
+            deps.get_company_profile: lambda: CompanyProfile(name="Darze"),
             deps.get_event_repository: events_dep,
             deps.get_clock: lambda: clock,
             get_current_user: signed_in_as(Role.EVENTS_MANAGER),

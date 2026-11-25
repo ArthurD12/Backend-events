@@ -17,12 +17,21 @@ from local_eventos.modules.commercial.application.contracts.use_cases.contracts 
     SearchContracts,
     SignContract,
 )
+from local_eventos.modules.commercial.application.contracts.use_cases.payments import (
+    ContractAccount,
+    GetContractAccount,
+    RecordContractPayment,
+    balance_of,
+)
 from local_eventos.modules.commercial.domain.contracts.contract import Contract, ContractStatus
 from local_eventos.modules.commercial.presentation.contract_schemas import (
+    ContractAccountOut,
     ContractCancelIn,
     ContractGenerateIn,
     ContractOut,
     ContractPageOut,
+    ContractPaymentCreatedOut,
+    ContractPaymentIn,
     ContractSignIn,
 )
 from local_eventos.modules.commercial.presentation.dependencies import (
@@ -33,6 +42,7 @@ from local_eventos.modules.commercial.presentation.dependencies import (
     Payments,
     Quotes,
     Today,
+    UserNames,
 )
 from local_eventos.modules.identity.public_api import CurrentUser, Permission, require_permission
 from local_eventos.shared.presentation.problems import Problem
@@ -80,7 +90,7 @@ async def generate_contract(
     contract = await GenerateContract(contracts, quotes, clock)(
         body.quote_id, created_by=user.id, advance_cents=body.advance_cents
     )
-    return await _out(contract, quotes, clients, history, events)
+    return await _out(contract, user, quotes, clients, history, events)
 
 
 @router.get("", operation_id="contracts_search")
@@ -100,6 +110,7 @@ async def search_contracts(
 @router.get("/{contract_id}", operation_id="contracts_get", responses=_NOT_FOUND)
 async def get_contract(
     contract_id: UUID,
+    user: Manager,
     contracts: Contracts,
     quotes: Quotes,
     clients: Clients,
@@ -108,7 +119,7 @@ async def get_contract(
 ) -> ContractOut:
     """El contrato con su firma, su anulación, sus pagos y su evento, si ya lo es."""
     contract = await GetContract(contracts)(contract_id)
-    return await _out(contract, quotes, clients, history, events)
+    return await _out(contract, user, quotes, clients, history, events)
 
 
 @router.post(
@@ -140,7 +151,7 @@ async def sign_contract(
         advance=body.advance.to_payment(),
         recorded_by=user.id,
     )
-    return await _out(contract, quotes, clients, history, events)
+    return await _out(contract, user, quotes, clients, history, events)
 
 
 @router.post(
@@ -176,11 +187,65 @@ async def cancel_contract(
         refund=body.refund.to_payment() if body.refund else None,
         note=body.note,
     )
-    return await _out(contract, quotes, clients, history, events)
+    return await _out(contract, user, quotes, clients, history, events)
+
+
+@router.get(
+    "/{contract_id}/account",
+    operation_id="contracts_account_get",
+    responses=_NOT_FOUND,
+)
+async def get_contract_account(
+    contract_id: UUID,
+    _: Cashier,
+    contracts: Contracts,
+    history: PaymentHistory,
+    names: UserNames,
+    clock: Today,
+) -> ContractAccountOut:
+    """Total, pagado, saldo, fecha límite y pagos con quién los registró (HU19, CA-19.4)."""
+    account = await GetContractAccount(contracts, history, clock)(contract_id)
+    return await _account_out(account, names)
+
+
+@router.post(
+    "/{contract_id}/payments",
+    status_code=status.HTTP_201_CREATED,
+    operation_id="contracts_payments_create",
+    responses={
+        **_NOT_FOUND,
+        409: {"model": Problem, "description": "`contract.not_signed`"},
+        422: {"model": Problem, "description": "`payment.exceeds_balance`, `payment.*`"},
+    },
+)
+async def create_contract_payment(
+    contract_id: UUID,
+    body: ContractPaymentIn,
+    user: Cashier,
+    contracts: Contracts,
+    history: PaymentHistory,
+    payments: Payments,
+    names: UserNames,
+    clock: Today,
+) -> ContractPaymentCreatedOut:
+    """Registra un pago parcial de un contrato firmado, sin superar el saldo (HU19, RN14)."""
+    account, entry = await RecordContractPayment(contracts, history, payments, clock)(
+        contract_id, body.to_payment(), recorded_by=user.id
+    )
+    account_out = await _account_out(account, names)
+    created = next(p for p in account_out.payments if p.id == entry.payment.id)
+    return ContractPaymentCreatedOut(payment=created, account=account_out)
+
+
+async def _account_out(account: ContractAccount, names: UserNames) -> ContractAccountOut:
+    ids = {e.payment.recorded_by for e in account.entries}
+    ids |= {e.void.voided_by for e in account.entries if e.void}
+    return ContractAccountOut.from_account(account, await names(ids))
 
 
 async def _out(
     contract: Contract,
+    user: CurrentUser,
     quotes: Quotes,
     clients: Clients,
     history: PaymentHistory,
@@ -189,10 +254,13 @@ async def _out(
     quote = await quotes.get(contract.quote_id)
     client = await clients.get(contract.client_id)
     event = await events.get_by_contract(contract.id)
+    entries = await history(contract.id)
+    sees_money = Permission.PAYMENTS_RECORD in user.permissions
     return ContractOut.from_contract(
         contract,
         quote_code=quote.code if quote else "",
         client_name=client.name if client else "",
-        payments=await history(contract.id),
+        payments=entries,
+        balance=balance_of(contract, entries) if sees_money else None,
         event_id=event.id if event else None,
     )
