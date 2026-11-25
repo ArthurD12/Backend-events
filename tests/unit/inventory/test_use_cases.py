@@ -25,6 +25,7 @@ from local_eventos.modules.inventory.application.use_cases.lookups import (
 from local_eventos.modules.inventory.application.use_cases.movements import (
     MovementCommand,
     RecordEntries,
+    StockEntry,
 )
 from local_eventos.modules.inventory.application.use_cases.products import (
     ListProductMovements,
@@ -237,13 +238,7 @@ async def test_recibir_varias_entradas_en_orden_de_producto() -> None:
     sugar = await world.product("AZU-01", name="Azúcar", kind=ProductKind.CONSUMABLE)
     purchase = uuid4()
     commands = [
-        MovementCommand(
-            kind=MovementKind.ENTRY,
-            product_id=p.id,
-            quantity=Decimal(5),
-            unit_cost_cents=100,
-            purchase_id=purchase,
-        )  # fmt: skip
+        StockEntry(product_id=p.id, quantity=Decimal(5), unit_cost_cents=100, purchase_id=purchase)
         for p in (plate, sugar)
     ]
 

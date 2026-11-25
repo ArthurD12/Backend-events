@@ -119,6 +119,20 @@ class RecordMovement:
         return RecordedMovement(movement=movement, stock=new_level)
 
 
+@dataclass(frozen=True)
+class StockEntry:
+    """Entrada que otro módulo registra (una línea de compra recibida, HU29)."""
+
+    product_id: UUID
+    quantity: Decimal
+    unit_cost_cents: int
+    supplier_id: UUID | None = None
+    lot: str | None = None
+    expires_on: date | None = None
+    purchase_id: UUID | None = None
+    occurred_on: date | None = None
+
+
 class RecordEntries:
     """Varias entradas en la misma transacción (recepción de una compra, HU29).
 
@@ -129,9 +143,23 @@ class RecordEntries:
         self._record = record
 
     async def __call__(
-        self, commands: list[MovementCommand], *, recorded_by: UUID
+        self, entries: list[StockEntry], *, recorded_by: UUID
     ) -> list[RecordedMovement]:
-        if any(c.kind is not MovementKind.ENTRY for c in commands):
-            raise ValueError("Solo se reciben entradas.")
-        ordered = sorted(commands, key=lambda c: str(c.product_id))
-        return [await self._record(c, recorded_by=recorded_by) for c in ordered]
+        ordered = sorted(entries, key=lambda e: str(e.product_id))
+        return [
+            await self._record(
+                MovementCommand(
+                    kind=MovementKind.ENTRY,
+                    product_id=e.product_id,
+                    quantity=e.quantity,
+                    unit_cost_cents=e.unit_cost_cents,
+                    supplier_id=e.supplier_id,
+                    lot=e.lot,
+                    expires_on=e.expires_on,
+                    purchase_id=e.purchase_id,
+                    occurred_on=e.occurred_on,
+                ),
+                recorded_by=recorded_by,
+            )
+            for e in ordered
+        ]
