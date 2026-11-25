@@ -1,4 +1,5 @@
-"""Permisos por rol en la API de trabajadores (HU15): admin y eventos gestionan; compras no.
+"""Permisos por rol en la API de trabajadores (HU15): admin y encargado de eventos gestionan;
+compras/almacén **sin acceso, ni lectura**.
 
 Reutiliza el repositorio en memoria, el reloj fijo y los datos de `test_worker_api`
 para no duplicar infraestructura. Montan el router de personal en una app propia
@@ -97,7 +98,7 @@ def test_admin_y_eventos_obtienen_2xx_en_las_seis_rutas(
     assert activated.json()["status"] == "ACTIVE"
 
 
-def test_compras_recibe_403_en_las_seis_rutas_sin_alterar_datos(
+def test_compras_y_almacen_sin_acceso_ni_lectura_en_las_seis_rutas(
     api: tuple[TestClient, InMemoryWorkerRepository],
 ) -> None:
     client, repository = api
@@ -118,6 +119,7 @@ def test_compras_recibe_403_en_las_seis_rutas_sin_alterar_datos(
     deactivated = client.post(f"/v1/staff/{worker_id}/deactivate")
     activated = client.post(f"/v1/staff/{worker_id}/activate")
 
+    # Se deniegan también las rutas de lectura (listado y ficha): compras no ve personal.
     for response in (register, listed, fetched, updated, deactivated, activated):
         assert response.status_code == 403
         assert response.json()["code"] == "auth.forbidden"
