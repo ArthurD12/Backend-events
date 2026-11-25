@@ -55,3 +55,12 @@ modules =
 ignore_imports =
     local_eventos.modules.** -> local_eventos.modules.*.public_api
 unmatched_ignore_imports_alerting = none
+
+[importlinter:contract:commercial-sin-staff]
+name = commercial.application no depende de staff (usa el puerto AssignmentReleaser)
+type = forbidden
+source_modules =
+    local_eventos.modules.commercial.application
+    local_eventos.modules.commercial.domain
+forbidden_modules =
+    local_eventos.modules.staff

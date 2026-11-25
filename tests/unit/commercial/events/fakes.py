@@ -1,6 +1,7 @@
 """Eventos y responsables en memoria para probar sin base de datos."""
 
-from dataclasses import replace
+from dataclasses import dataclass, field, replace
+from datetime import datetime
 from uuid import UUID
 
 from local_eventos.modules.commercial.application.clients.search_text import normalize
@@ -80,3 +81,14 @@ class FakeCoordinators:
 
     async def __call__(self) -> list[Coordinator]:
         return list(self.coordinators)
+
+
+@dataclass
+class FakeReleaser:
+    """Puerto `AssignmentReleaser` (R-STF-5): anota a qué eventos se les liberó el personal."""
+
+    released: list[tuple[UUID, UUID, datetime]] = field(default_factory=list)
+
+    async def __call__(self, event_id: UUID, *, released_by: UUID, now: datetime) -> int:
+        self.released.append((event_id, released_by, now))
+        return 0

@@ -16,6 +16,9 @@ from local_eventos.modules.commercial.application.clients.ports.client_repositor
 from local_eventos.modules.commercial.application.contracts.ports.contract_repository import (
     ContractRepository,
 )
+from local_eventos.modules.commercial.application.events.ports.assignment_releaser import (
+    AssignmentReleaser,
+)
 from local_eventos.modules.commercial.application.events.ports.event_repository import (
     EventRepository,
 )
@@ -29,6 +32,7 @@ from local_eventos.modules.commercial.application.quotes.ports.quote_repository 
 )
 from local_eventos.modules.identity.public_api import CoordinatorLookup
 from local_eventos.modules.ledger.public_api import PaymentRecorder, PaymentsLookup
+from local_eventos.modules.staff.public_api import assignment_releaser
 from local_eventos.shared.presentation.database import get_session
 
 
@@ -111,3 +115,13 @@ async def get_coordinator_lookup(
 
 Events = Annotated[EventRepository, Depends(get_event_repository)]
 Coordinators = Annotated[CoordinatorLookup, Depends(get_coordinator_lookup)]
+
+
+async def get_assignment_releaser(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> AssignmentReleaser:
+    """Personal del evento, por la `public_api` de staff (R-STF-5, AGENTS.md regla 3)."""
+    return assignment_releaser(session)
+
+
+Releaser = Annotated[AssignmentReleaser, Depends(get_assignment_releaser)]

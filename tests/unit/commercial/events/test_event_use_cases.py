@@ -26,7 +26,9 @@ from local_eventos.modules.commercial.application.events.use_cases.events import
     CancelEvent,
     ConvertContractToEvent,
     EventCalendar,
+    EventInfo,
     GetEvent,
+    LookupEvent,
     SearchEvents,
 )
 from local_eventos.modules.commercial.application.quotes.use_cases.query_quotes import (
@@ -55,7 +57,7 @@ from tests.unit.commercial.contracts.fakes import InMemoryContractRepository
 from tests.unit.commercial.quotes.world import World, build_world
 from tests.unit.ledger.fakes import InMemoryPaymentRepository
 
-from .fakes import FakeCoordinators, InMemoryEventRepository
+from .fakes import FakeCoordinators, FakeReleaser, InMemoryEventRepository
 
 MANAGER = Coordinator(id=uuid4(), name="Rosa Huamán")
 ADMIN = Coordinator(id=uuid4(), name="Harold Canaza")
@@ -68,6 +70,7 @@ class Setup:
     events: InMemoryEventRepository
     payments: InMemoryPaymentRepository
     coordinators: FakeCoordinators
+    releaser: FakeReleaser
 
     def convert(self) -> ConvertContractToEvent:
         return ConvertContractToEvent(
@@ -81,8 +84,9 @@ class Setup:
 
     def cancel_event(self) -> CancelEvent:
         return CancelEvent(
-            self.events, self.contracts, RecordPayment(self.payments), self.world.clock
-        )
+            self.events, self.contracts, RecordPayment(self.payments), self.world.clock,
+            self.releaser,
+        )  # fmt: skip
 
     async def contract(
         self, *, signed: bool = True, changes: dict[str, object] | None = None
@@ -110,7 +114,7 @@ async def setup() -> Setup:
     names = {world.client.id: world.client.name}
     return Setup(
         world, InMemoryContractRepository(names), InMemoryEventRepository(names),
-        InMemoryPaymentRepository(), FakeCoordinators(MANAGER, ADMIN),
+        InMemoryPaymentRepository(), FakeCoordinators(MANAGER, ADMIN), FakeReleaser(),
     )  # fmt: skip
 
 
@@ -228,6 +232,8 @@ async def test_ca11_c4_cancelar_evento_anula_contrato_y_registra_devolucion(setu
     )
     assert stored.cancellation.refund_payment_id == refund.id
     assert (advance.kind, refund.kind) == (PaymentKind.ADVANCE, PaymentKind.REFUND)
+    # R-STF-5: en el mismo paso se libera al personal del evento.
+    assert setup.releaser.released == [(event.id, MANAGER.id, setup.world.clock.now())]
 
 
 async def test_ca11_c4_sin_devolucion(setup: Setup) -> None:
@@ -267,6 +273,7 @@ async def test_ca11_c4_si_algo_falla_no_cambia_nada(
     assert stored_event is not None and stored_event.status is EventStatus.SCHEDULED
     assert stored_contract is not None and stored_contract.status is ContractStatus.SIGNED
     assert len(setup.payments.payments) == 1
+    assert setup.releaser.released == []
 
 
 async def test_ca11_c1_no_se_cancela_dos_veces_ni_uno_inexistente(setup: Setup) -> None:
@@ -278,6 +285,21 @@ async def test_ca11_c1_no_se_cancela_dos_veces_ni_uno_inexistente(setup: Setup) 
     assert error.value.code == "event.not_cancellable"
     with pytest.raises(EventNotFoundError):
         await setup.cancel_event()(uuid4(), reason="x", cancelled_by=MANAGER.id)
+
+
+async def test_event_lookup_para_otros_modulos(setup: Setup) -> None:
+    event = await setup.convert()((await setup.contract()).id, created_by=MANAGER.id)
+    lookup = LookupEvent(setup.events)
+
+    assert await lookup(event.id) == EventInfo(
+        id=event.id,
+        code="EVT-2026-0001",
+        status=EventStatus.SCHEDULED,
+        event_date=date(2026, 12, 19),
+        start_time=time(20),
+        end_time=time(3),
+    )
+    assert await lookup(uuid4()) is None
 
 
 async def _event_on(setup: Setup, day: date, **changes: object) -> UUID:

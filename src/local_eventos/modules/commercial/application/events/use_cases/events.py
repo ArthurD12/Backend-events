@@ -2,7 +2,7 @@
 cancelarlos (HU11, parte)."""
 
 from dataclasses import dataclass, replace
-from datetime import date
+from datetime import date, time
 from uuid import UUID
 
 from local_eventos.modules.commercial.application.contracts.errors import ContractNotFoundError
@@ -18,6 +18,9 @@ from local_eventos.modules.commercial.application.events.errors import (
     EventNotFoundError,
     EventRangeInvalidError,
 )
+from local_eventos.modules.commercial.application.events.ports.assignment_releaser import (
+    AssignmentReleaser,
+)
 from local_eventos.modules.commercial.application.events.ports.event_repository import (
     EventFilters,
     EventRepository,
@@ -27,7 +30,11 @@ from local_eventos.modules.commercial.application.quotes.ports.clock import Cloc
 from local_eventos.modules.commercial.application.quotes.ports.quote_repository import (
     QuoteRepository,
 )
-from local_eventos.modules.commercial.domain.events.event import Event, format_event_code
+from local_eventos.modules.commercial.domain.events.event import (
+    Event,
+    EventStatus,
+    format_event_code,
+)
 from local_eventos.modules.identity.public_api import CoordinatorLookup
 from local_eventos.modules.ledger.public_api import (
     PaymentKind,
@@ -109,6 +116,38 @@ class GetEvent:
         return event
 
 
+@dataclass(frozen=True)
+class EventInfo:
+    """Lo que otro módulo necesita de un evento (p. ej. `staff`, para su horario por defecto)."""
+
+    id: UUID
+    code: str
+    status: EventStatus
+    event_date: date
+    start_time: time
+    end_time: time  # si es menor que el inicio, termina al día siguiente (R-COT-1)
+
+
+class LookupEvent:
+    """Consulta de solo lectura para `commercial.public_api.event_lookup`."""
+
+    def __init__(self, events: EventRepository) -> None:
+        self._events = events
+
+    async def __call__(self, event_id: UUID) -> EventInfo | None:
+        event = await self._events.get(event_id)
+        if event is None:
+            return None
+        return EventInfo(
+            id=event.id,
+            code=event.code,
+            status=event.status,
+            event_date=event.event_date,
+            start_time=event.start_time,
+            end_time=event.end_time,
+        )
+
+
 class SearchEvents:
     def __init__(self, events: EventRepository) -> None:
         self._events = events
@@ -150,7 +189,8 @@ class CancelEvent:
     """Cancela el evento y anula su contrato en un solo paso (CA-11.C4, R-EVT-4).
 
     Si hubo devolución, se registra en pagos dentro de la misma transacción: o se guarda todo,
-    o nada. Todo se valida antes de registrar el pago.
+    o nada. Todo se valida antes de registrar el pago. En el mismo paso retira las asignaciones
+    del personal del evento (R-STF-5).
     """
 
     def __init__(
@@ -159,11 +199,13 @@ class CancelEvent:
         contracts: ContractRepository,
         payments: PaymentRecorder,
         clock: Clock,
+        releaser: AssignmentReleaser,
     ) -> None:
         self._events = events
         self._contracts = contracts
         self._payments = payments
         self._clock = clock
+        self._releaser = releaser
 
     async def __call__(
         self,
@@ -210,4 +252,5 @@ class CancelEvent:
             now=now,
         )
         await self._contracts.update(contract)
+        await self._releaser(event.id, released_by=cancelled_by, now=now)  # R-STF-5
         return event

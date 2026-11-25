@@ -6,10 +6,12 @@ trabaja con los puertos.
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from local_eventos.modules.commercial.public_api import event_lookup as commercial_event_lookup
 from local_eventos.modules.staff.application.ports.assignment_repository import (
     AssignmentRepository,
 )
 from local_eventos.modules.staff.application.ports.clock import Clock
+from local_eventos.modules.staff.application.ports.event_lookup import EventLookup
 from local_eventos.modules.staff.application.ports.unavailability_repository import (
     UnavailabilityRepository,
 )
@@ -40,3 +42,8 @@ def assignment_repository(session: AsyncSession) -> AssignmentRepository:
 
 def clock() -> Clock:
     return SystemClock()
+
+
+def event_lookup(session: AsyncSession) -> EventLookup:
+    """Eventos de `commercial`, consultados por su `public_api` (AGENTS.md, regla 3)."""
+    return commercial_event_lookup(session)

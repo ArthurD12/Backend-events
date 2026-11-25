@@ -29,6 +29,7 @@ from local_eventos.modules.commercial.presentation.dependencies import (
     Events,
     Payments,
     Quotes,
+    Releaser,
     Today,
 )
 from local_eventos.modules.commercial.presentation.event_schemas import (
@@ -177,13 +178,15 @@ async def cancel_event(
     events: Events,
     contracts: Contracts,
     payments: Payments,
+    releaser: Releaser,
     quotes: Quotes,
     clients: Clients,
     coordinators: Coordinators,
     clock: Today,
 ) -> EventOut:
-    """Cancela el evento y anula su contrato; si hubo devolución, la registra (R-EVT-4)."""
-    event = await CancelEvent(events, contracts, payments, clock)(
+    """Cancela el evento y anula su contrato; si hubo devolución, la registra (R-EVT-4).
+    También retira las asignaciones de su personal (R-STF-5)."""
+    event = await CancelEvent(events, contracts, payments, clock, releaser)(
         event_id,
         reason=body.reason,
         cancelled_by=user.id,

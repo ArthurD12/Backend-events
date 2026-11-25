@@ -31,7 +31,7 @@ from tests.unit.commercial.quotes.fakes import (
 from tests.unit.current_user import signed_in_as
 from tests.unit.ledger.fakes import InMemoryPaymentRepository
 
-from .fakes import FakeCoordinators, InMemoryEventRepository
+from .fakes import FakeCoordinators, FakeReleaser, InMemoryEventRepository
 
 
 async def _no_database() -> None:
@@ -132,6 +132,7 @@ def api() -> Iterator[Api]:
             deps.get_service_lookup: dep(FakeServiceLookup()),
             deps.get_payment_recorder: dep(RecordPayment(payments)),
             deps.get_payments_lookup: dep(ContractPayments(payments)),
+            deps.get_assignment_releaser: dep(FakeReleaser()),
             deps.get_clock: lambda: clock,
             get_current_user: current,
         }
