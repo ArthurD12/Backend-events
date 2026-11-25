@@ -1524,7 +1524,9 @@
           "contracts:manage",
           "payments:record",
           "events:manage",
-          "events:read"
+          "events:read",
+          "staff:manage",
+          "staff:read"
         ],
         "title": "Permission",
         "type": "string"
