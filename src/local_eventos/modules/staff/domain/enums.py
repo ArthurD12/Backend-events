@@ -1,4 +1,4 @@
-"""Enumeraciones del personal de Darze (HU15, R-STF-11/R-STF-12).
+"""Enumeraciones del personal de Darze (HU15, HU17, R-STF-11/R-STF-12/R-ASG-8).
 
 Python puro: este archivo no importa FastAPI, SQLAlchemy ni Pydantic (AGENTS.md, regla 2).
 """
@@ -31,3 +31,10 @@ class WorkerStatus(StrEnum):
 
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
+
+
+class AssignmentStatus(StrEnum):
+    """Estado de la asignación: se anula lógicamente, no se borra ni se reactiva (R-ASG-8)."""
+
+    ACTIVE = "ACTIVE"
+    CANCELLED = "CANCELLED"
