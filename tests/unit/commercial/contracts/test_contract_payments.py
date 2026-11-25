@@ -184,3 +184,18 @@ def test_rn15_saldo_con_anulados_y_devoluciones() -> None:
     assert balance.balance_cents == pending.total_cents - 300_000 + 50_000
     assert balance.is_overdue(pending.balance_due_date) is False
     assert balance.is_overdue(pending.balance_due_date + timedelta(days=1)) is True
+
+
+def test_rn15_contrato_anulado_sin_saldo_por_cobrar() -> None:
+    from tests.unit.commercial.contracts.test_contract import _contract
+
+    contract = _contract(advance_cents=100_000)
+    contract.status = contract.status.CANCELLED
+    balance = ContractBalance.of(contract, paid_cents=300_000, refunded_cents=50_000)
+
+    assert (balance.paid_cents, balance.refunded_cents, balance.balance_cents) == (
+        300_000,
+        50_000,
+        0,
+    )
+    assert balance.is_overdue(contract.balance_due_date + timedelta(days=1)) is False
