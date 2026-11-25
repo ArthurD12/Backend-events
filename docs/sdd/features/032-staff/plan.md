@@ -54,8 +54,10 @@ class WorkerRef:
     function_description: str | None
     status: WorkerStatus
 
+
 class WorkerLookup(Protocol):
     async def get(self, worker_id: UUID) -> WorkerRef | None: ...
+
 
 def worker_lookup(session: AsyncSession) -> WorkerLookup: ...
 ```
