@@ -293,6 +293,8 @@ Campos: `id`, `name`, `document`, `phone`, `function`, `function_description`, `
 
 ### 8.4 Mapeo CA-15.x → test
 
+Los nombres de test son orientativos; la suite real cubre los CA.
+
 | CA | Test(s) |
 |---|---|
 | CA-15.1 | `unit/staff/test_worker.py::test_ca15_1_alta_activa_con_obligatorios`; `unit/staff/test_worker_api.py::test_ca15_1_registra`; `integration/staff/test_worker_repository.py::test_ca15_1_guarda_y_lee` |
