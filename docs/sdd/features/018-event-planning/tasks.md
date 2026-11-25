@@ -1,6 +1,6 @@
 # Tasks: Planificación y estado del evento (HU11)
 
-- [ ] T-01 [domain] `update_planning`, `confirm`, `start`, `finish`, `EventChange` + tests
+- [x] T-01 [domain] `update_planning`, `confirm`, `start`, `finish`, `EventChange` + tests
 - [ ] T-02 [application] Casos de uso (incluye que `CancelEvent` escriba su cambio) + tests con fakes
 - [ ] T-03 [infra] `commercial_event_changes` (solo inserción), migración + integración
 - [ ] T-04 [presentation] Rutas + tests de API + `just openapi`
