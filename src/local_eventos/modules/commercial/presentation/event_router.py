@@ -8,6 +8,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, status
 
+from local_eventos.modules.commercial.application.contracts.use_cases.payments import balance_of
 from local_eventos.modules.commercial.application.events.ports.event_repository import (
     EventFilters,
 )
@@ -27,6 +28,7 @@ from local_eventos.modules.commercial.presentation.dependencies import (
     Contracts,
     Coordinators,
     Events,
+    PaymentHistory,
     Payments,
     Quotes,
     Today,
@@ -52,6 +54,7 @@ router = APIRouter(
     },
 )
 
+Reader = Annotated[CurrentUser, Depends(require_permission(Permission.EVENTS_READ))]
 Manager = Annotated[CurrentUser, Depends(require_permission(Permission.EVENTS_MANAGE))]
 Cashier = Annotated[CurrentUser, Depends(require_permission(Permission.PAYMENTS_RECORD))]
 
@@ -77,13 +80,14 @@ async def convert_contract(
     quotes: Quotes,
     clients: Clients,
     coordinators: Coordinators,
+    history: PaymentHistory,
     clock: Today,
 ) -> EventOut:
     """Convierte un contrato firmado y con adelanto en evento programado (HU10)."""
     event = await ConvertContractToEvent(events, contracts, quotes, coordinators, clock)(
         body.contract_id, created_by=user.id, coordinator_id=body.coordinator_id
     )
-    return await _out(event, contracts, quotes, clients, coordinators)
+    return await _out(event, user, contracts, quotes, clients, coordinators, history)
 
 
 @router.get("", operation_id="events_search")
@@ -148,13 +152,17 @@ async def list_coordinators(_: Manager, coordinators: Coordinators) -> list[Coor
 )
 async def get_event(
     event_id: UUID,
+    viewer: Reader,
     events: Events,
     contracts: Contracts,
     quotes: Quotes,
     clients: Clients,
     coordinators: Coordinators,
+    history: PaymentHistory,
 ) -> EventOut:
-    return await _out(await GetEvent(events)(event_id), contracts, quotes, clients, coordinators)
+    """El evento; pagado y saldo solo para quien registra pagos (compras no ve dinero)."""
+    event = await GetEvent(events)(event_id)
+    return await _out(event, viewer, contracts, quotes, clients, coordinators, history)
 
 
 @router.post(
@@ -180,6 +188,7 @@ async def cancel_event(
     quotes: Quotes,
     clients: Clients,
     coordinators: Coordinators,
+    history: PaymentHistory,
     clock: Today,
 ) -> EventOut:
     """Cancela el evento y anula su contrato; si hubo devolución, la registra (R-EVT-4)."""
@@ -191,17 +200,22 @@ async def cancel_event(
         refund=body.refund.to_payment() if body.refund else None,
         note=body.note,
     )
-    return await _out(event, contracts, quotes, clients, coordinators)
+    return await _out(event, user, contracts, quotes, clients, coordinators, history)
 
 
 async def _out(
     event: Event,
+    viewer: CurrentUser,
     contracts: Contracts,
     quotes: Quotes,
     clients: Clients,
     coordinators: Coordinators,
+    history: PaymentHistory,
 ) -> EventOut:
     contract = await contracts.get(event.contract_id)
+    balance = None
+    if contract is not None and Permission.PAYMENTS_RECORD in viewer.permissions:
+        balance = balance_of(contract, await history(contract.id))
     quote = await quotes.get(event.quote_id)
     client = await clients.get(event.client_id)
     names = {c.id: c.name for c in await coordinators()}
@@ -211,4 +225,5 @@ async def _out(
         quote_code=quote.code if quote else "",
         client_name=client.name if client else "",
         coordinator_name=names.get(event.coordinator_id),
+        balance=balance,
     )

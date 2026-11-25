@@ -51,13 +51,11 @@ from local_eventos.modules.ledger.public_api import (
     PaymentEntriesLookup,
     PaymentFinder,
     PaymentRecorder,
-    PaymentsLookup,
     PaymentVoider,
     payment_entries,
     payment_finder,
     payment_recorder,
     payment_voider,
-    payments_lookup,
 )
 
 
@@ -94,10 +92,6 @@ def contract_repository(session: AsyncSession) -> ContractRepository:
 def payments(session: AsyncSession) -> PaymentRecorder:
     """Registro de pagos del módulo ledger, por su `public_api` (AGENTS.md, regla 3)."""
     return payment_recorder(session)
-
-
-def contract_payments(session: AsyncSession) -> PaymentsLookup:
-    return payments_lookup(session)
 
 
 def contract_payment_entries(session: AsyncSession) -> PaymentEntriesLookup:
