@@ -42,15 +42,6 @@ Sin Redis, Celery ni Kafka. Detalle y dependencias: `docs/architecture/STACK.md`
 - No pegar archivos grandes en el chat; referenciar por ruta.
 - **Pregunta antes de asumir** cuando falte una regla de negocio; no inventes políticas (cancelaciones, descuentos, costos).
 
-## Flujo de equipo y GitHub
-- Repo: `darze-dev/Backend-events`. Ramas `feat/...` salen de `developer-b`; los PR van hacia `developer-b`. Nunca hacer PR directo a `main`.
-- Al unir `developer-b` con `main`, no marcar "Delete branch".
-- **Migraciones:** antes de crear una migración de Alembic, avisar al usuario y esperar su confirmación. Dos migraciones simultáneas dejan dos "heads" y falla el despliegue. Antes de crearla, correr `uv run alembic heads` y confirmar que hay un solo head.
-- Los issues del repo son las historias de usuario: el número del issue es el de la HU más 1 (HU15 = #16). Leer con `gh issue view <n> -R darze-dev/Backend-events`.
-- Usar `gh` solo para **leer**. No comentar, cerrar, asignar ni editar issues sin que el usuario lo pida.
-- Este repo es SOLO backend: implementar las "Tareas Backend" y los criterios de aceptación que dependan del backend. Ignorar las "Tareas Frontend".
-- Un módulo nuevo solo usa a otros por su `public_api` (regla 3), también al integrarse con los módulos que el otro desarrollador está tocando.
-
 ## Comandos (justfile)
 `just check` (ruff + mypy + lint-imports + pytest) · `just test` · `just lint` · `just types` · `just arch` · `just migrate` · `just openapi` (exporta openapi.json) · `just docs`
 

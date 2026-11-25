@@ -13,8 +13,8 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 - **Cotización:** propuesta económica para un cliente: tipo de evento, fecha, horario, lugar, invitados, servicios con cantidades y precios, total y **vigencia**.
 - **Contrato:** formaliza una cotización aceptada. Copia sus datos sin permitir editarlos, fija el **adelanto pactado** y la **fecha límite del saldo**, y registra la firma.
 - **Evento:** el servicio programado que se ejecuta en una fecha, horario y lugar. Nace de un contrato firmado.
-- **Trabajador:** persona que cumple una función en un evento (cocinero, mozo, bartender, ayudante, coordinador u "otro" con descripción). Se registra con **nombre** y **documento** (DNI o CE, único por tipo + número), **teléfono** opcional, **función**, **tipo** `fijo`/`eventual`, **estado** activo/inactivo y **tarifa referencial por evento** en céntimos de sol, con la marca de **hora extra** y su monto referencial opcional. No es usuario del sistema y no se borra: la baja es lógica (HU15).
-- **Asignación:** un trabajador asignado a un evento, con función (la que se trabajó), horario y **pago acordado**. No es lo mismo que la ficha del trabajador: su tarifa es solo referencial y el pago se fija en la asignación (RN13, HU17).
+- **Trabajador:** persona que cumple una función en un evento (cocinero, mozo, ayudante, coordinador…).
+- **Asignación:** un trabajador asignado a un evento, con función, horario y pago acordado.
 - **Producto:** insumo, material o utensilio del almacén, con unidad de medida y stock mínimo.
 - **Requerimiento:** cálculo de los materiales que necesita un evento, comparado con el stock para identificar faltantes.
 - **Compra:** adquisición a un **proveedor** a partir de los faltantes; incrementa el stock solo al recibirse.
@@ -53,22 +53,6 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 1. Solo se asignan trabajadores **activos y disponibles** (RN11).
 2. Un trabajador **no puede tener dos asignaciones con horarios que se superpongan** (RN12). Se garantiza con una restricción de exclusión en PostgreSQL, no solo en el código.
 3. Toda asignación indica evento, función, horario y pago acordado (RN13).
-
-### 5.1 Datos del personal (HU15)
-- **R-STF-1** Documento: `DNI` (8 dígitos) o `CE` (9 a 12 dígitos, solo dígitos), normalizado sin espacios ni guiones. Es único por **tipo + número**, también entre inactivos; un DNI y un CE con el mismo número sí coexisten.
-- **R-STF-2 / R-STF-3** Baja **lógica**: nunca se borra la ficha; se conservan sus datos y su historial de eventos.
-- **R-STF-4** Solo se asignan trabajadores **activos y disponibles**; el rechazo al asignar lo aplica HU17.
-- **R-STF-5 / R-STF-16** Se autoriza por permiso `staff:manage`: lo tienen administrador y encargado de eventos; el **encargado de compras y almacén no tiene acceso**, ni de lectura.
-- **R-STF-6** Alta, edición, activación y desactivación guardan **usuario y fecha-hora**; el motivo es opcional.
-- **R-STF-7 / R-STF-8** La tarifa es **referencial**, por evento y en céntimos de `PEN`, y es opcional; si la ficha marca que **aplica hora extra**, el monto referencial por hora es mayor que cero y variable. El pago real se acuerda en cada asignación (RN13).
-- **R-STF-9** Dos trabajadores pueden repetir nombre; los distingue el documento.
-- **R-STF-10** Todo alta queda **activa**; no se registra directamente como inactivo.
-- **R-STF-11** Tipo de trabajador: solo `fijo` o `eventual`; no se registra interno/externo.
-- **R-STF-12 / R-STF-17** Función de una **lista fija** (cocinero, mozo, bartender, ayudante, coordinador) más **"otro"**, que exige una descripción breve obligatoria; con las demás no se registra descripción. Es editable con auditoría y la asignación conserva la función con la que se trabajó.
-- **R-STF-13** Obligatorios: **nombre y documento** (tipo + número). Función, tipo, teléfono y tarifa son opcionales; el teléfono, si se informa, solo admite dígitos, sin longitud fija.
-- **R-STF-14** Hora extra **condicional**: si aplica, monto referencial mayor que cero; si no aplica, sin monto.
-- **R-STF-15** Se puede **reactivar** a un trabajador inactivo; la reactivación se audita igual que la baja.
-- **Listado:** filtros por función y estado, búsqueda por nombre o documento y resultado paginado.
 
 ## 6. Dinero (pagos y flujo de caja)
 - Moneda `PEN`, enteros en céntimos. Sin pasarela: los cobros se **registran** (efectivo, transferencia, tarjeta, Yape/Plin) con referencia y usuario.
@@ -111,16 +95,14 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 | Catálogo de servicios | ✔ | lectura | lectura |
 | Clientes | ✔ | ✔ | – |
 | Cotizaciones y contratos | ✔ | ✔ | – |
-| Eventos y asignaciones | ✔ | ✔ | lectura |
-| Personal (trabajadores) | ✔ | ✔ | – |
+| Eventos, personal y asignaciones | ✔ | ✔ | lectura |
+| Observaciones del evento (bitácora) | ✔ | ✔ | ✔ (R-ACT-5) |
 | Pagos, ingresos y egresos | ✔ | ✔ | – |
 | Productos, almacén, requerimientos y compras | ✔ | lectura del almacén y materiales de sus eventos (`inventory:read`) | ✔ |
 | Reportes financieros | ✔ | – | – |
 | Agente de IA | ✔ | ✔ | ✔ |
 
 Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. ej. `quotes:create`), no por nombre de rol. Los registros con operaciones relacionadas no se eliminan: se desactivan (RN02). Correcciones y anulaciones guardan usuario, fecha, hora y motivo (RN03).
-
-La gestión del **personal (trabajadores)** exige el permiso `staff:manage`; el encargado de compras y almacén **no lo tiene**, ni siquiera de lectura (decisión del 24/11/2026, §5 R-STF-5/R-STF-16). En el negocio, **"vendedor"** designa al encargado de eventos: es el mismo rol, no uno nuevo.
 
 ## 10. Preguntas abiertas para el negocio
 1. ~~Política de cancelación y devolución del adelanto.~~ Resuelta: sin reglas automáticas (§11).
@@ -164,11 +146,16 @@ La gestión del **personal (trabajadores)** exige el permiso `staff:manage`; el 
 | 25/11/2026 | Avanzar el estado del evento | Un paso a la vez, sin volver atrás. En ejecución solo el día del evento en Lima (si el horario cruza la medianoche, también el día siguiente); finalizado solo desde en ejecución y sin exigir saldo en cero (R-EVT-8) | Equipo **(provisional)** |
 | 25/11/2026 | Cambio de fecha u horario del evento | El sistema avisa que el personal asignado puede tener otro horario; revisar las asignaciones es del módulo de personal (R-EVT-9) | Equipo **(provisional)** |
 | 22/11/2026 | Sesión | Termina tras 30 minutos sin actividad; no se puede desactivar al último administrador activo (R-ID-4) | Equipo, según HU01 **(provisional)** |
-| 24/11/2026 | Tipo de trabajador (HU15) | Solo `fijo` o `eventual`; no se registra interno/externo (R-STF-11) | Product Owner |
-| 24/11/2026 | Función del trabajador (HU15) | Lista fija más "otro" con descripción breve obligatoria; editable con auditoría y la asignación conserva la función trabajada (R-STF-12, R-STF-17) | Product Owner |
-| 24/11/2026 | Tarifa y hora extra (HU15) | Tarifa referencial por evento en céntimos de `PEN`, opcional; hora extra condicional con monto referencial variable; el pago se acuerda en la asignación (R-STF-7, R-STF-8, R-STF-14) | Product Owner |
-| 24/11/2026 | Documento del trabajador (HU15) | DNI u CE, normalizado; único por tipo + número, también entre inactivos (R-STF-1) | Product Owner |
-| 24/11/2026 | Datos obligatorios del trabajador (HU15) | Solo nombre y documento; función, tipo, teléfono y tarifa opcionales (R-STF-13) | Product Owner |
-| 24/11/2026 | Baja y reactivación del trabajador (HU15) | Baja lógica sin borrado, reactivación permitida, motivo opcional, usuario y fecha-hora siempre (R-STF-2, R-STF-15) | Product Owner |
-| 24/11/2026 | Listado de personal (HU15) | Filtros por función y estado, búsqueda por nombre o documento y paginación | Product Owner |
-| 24/11/2026 | Permisos de personal (HU15) | Administrador y encargado de eventos; el encargado de compras y almacén sin acceso, ni de lectura (R-STF-5, R-STF-16) | Product Owner |
+| 25/11/2026 | Editar observaciones del evento | Se editan; queda quién la editó por última vez y cuándo. No se eliminan (R-ACT-1) | Product Owner |
+| 25/11/2026 | Actividades y observaciones según el estado del evento | Actividades: se registran y marcan en programado, confirmado y en ejecución. Observaciones: también con el evento finalizado. En un evento cancelado no se agrega ni se cambia nada; todo se sigue viendo (R-ACT-2) | Product Owner |
+| 25/11/2026 | Eliminar una actividad creada por error | No se elimina en esta versión (R-ACT-3) | Equipo **(provisional; sin respuesta)** |
+| 25/11/2026 | Responsable de la actividad | Un usuario activo, administrador o encargado de eventos; por defecto quien la crea; se puede cambiar. Sin fecha límite (R-ACT-4) | Product Owner |
+| 25/11/2026 | ¿Compras y almacén agrega observaciones? | Sí (p. ej., faltantes de material), con el permiso `event_notes:write`; no crea ni marca actividades (R-ACT-5) | Product Owner |
+| 25/11/2026 | ¿Quién edita una observación? | Su autor o un administrador (permiso `event_notes:edit_any`, solo administrador) (R-ACT-6) | Equipo **(provisional)** |
+| 25/11/2026 | Unidades y cantidades | Lista fija: unidad, kg, g, litro, ml, docena, paquete, caja; cantidades con hasta 3 decimales (R-INV-1) | Equipo **(provisional)** |
+| 25/11/2026 | Categorías de producto | Lista fija: Insumos, Bebidas, Vajilla, Cristalería, Cubiertos, Mantelería, Mobiliario, Descartables, Limpieza, Otros (R-INV-2) | Equipo **(provisional)** |
+| 25/11/2026 | Costeo del inventario | Costo promedio ponderado para el valor del stock; lote y vencimiento solo para alertas; las salidas no se asignan a lotes (R-INV-3, responde §10.3) | Equipo **(provisional, a confirmar con Darze)** |
+| 25/11/2026 | Vencimiento próximo | 15 días o menos, o ya vencido (R-INV-4) | Equipo **(provisional)** |
+| 25/11/2026 | Corregir un movimiento | No se edita ni se borra (lo impide la base de datos): se corrige con un ajuste positivo o negativo con motivo (R-INV-5) | Equipo **(provisional)** |
+| 25/11/2026 | Pago al proveedor | Se registra aparte como egreso de insumos (HU21); recibir la compra no crea el egreso (R-COM-1) | Equipo **(provisional)** |
+| 25/11/2026 | Recepción de compras | Completa, sin recepciones parciales: si llegó menos, se recibe la cantidad real (puede ser 0 en una línea, no en todas) (R-COM-2) | Equipo **(provisional)** |
