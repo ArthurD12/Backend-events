@@ -40,7 +40,7 @@ El repositorio del backend es público, así que Render lo lee sin instalar nada
 
 1. Entra a <https://render.com> e inicia sesión con GitHub.
 2. **New → Web Service → Public Git Repository** y pega:
-   `https://github.com/ArthurD12/Backend-events`
+   `https://github.com/darze-dev/Backend-events`
 3. Configuración:
    - **Name**: `darze-api` (la dirección será `https://darze-api.onrender.com` o parecida).
    - **Branch**: `main`.
@@ -63,8 +63,20 @@ El repositorio del backend es público, así que Render lo lee sin instalar nada
    `Application startup complete`.
 6. Comprueba en el navegador: `https://<tu-servicio>.onrender.com/ready` → `{"status":"ready"}`.
 
-**Actualizar después**: como Render lee el repositorio público sin la app de GitHub, **no se
-redespliega solo**. Cada vez que se une algo a `main`: Render → `darze-api` →
+**Actualizar después**: Render lee el repositorio público sin la app de GitHub, así que no ve
+los cambios por sí mismo. Lo avisa GitHub Actions: en cada push a `main`, si el CI pasa, el job
+`deploy` de `.github/workflows/ci.yml` llama al **deploy hook** de Render.
+
+Configuración (una sola vez):
+
+1. Render → `darze-api` → **Settings → Deploy Hook** → copiar la URL.
+2. GitHub → repositorio del backend → **Settings → Secrets and variables → Actions** → secret
+   `RENDER_DEPLOY_HOOK_URL` con esa URL. La URL es una clave: quien la tenga puede desplegar.
+3. Si Render → `darze-api` → **Settings** muestra **Auto-Deploy**, dejarlo en **Off**, para que
+   no haya dos despliegues por commit.
+
+El hook solo encola el despliegue: que el job salga en verde no garantiza que Render haya
+arrancado bien. Revisar Render → **Events**. Si hace falta desplegar a mano:
 **Manual Deploy → Deploy latest commit**.
 
 ## 3. Frontend en Vercel
