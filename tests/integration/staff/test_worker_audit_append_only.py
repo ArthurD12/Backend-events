@@ -109,9 +109,9 @@ async def _registered_worker(
 ) -> UUID:
     clock = _SequenceClock(_CREATED_AT)
     async with sessions.begin() as session:
-        worker = await RegisterWorker(
-            SqlAlchemyWorkerRepository(session), clock
-        ).execute(_data(), _CREATOR)
+        worker = await RegisterWorker(SqlAlchemyWorkerRepository(session), clock).execute(
+            _data(), _CREATOR
+        )
     return worker.id
 
 
@@ -145,9 +145,9 @@ async def test_hu15_las_cuatro_operaciones_escriben_su_fila_de_auditoria(
     clock = _SequenceClock(_CREATED_AT, _UPDATED_AT, _DEACTIVATED_AT, _ACTIVATED_AT)
 
     async with sessions.begin() as session:
-        worker = await RegisterWorker(
-            SqlAlchemyWorkerRepository(session), clock
-        ).execute(_data(), _CREATOR)
+        worker = await RegisterWorker(SqlAlchemyWorkerRepository(session), clock).execute(
+            _data(), _CREATOR
+        )
 
     async with sessions.begin() as session:
         await UpdateWorker(SqlAlchemyWorkerRepository(session), clock).execute(
@@ -172,8 +172,7 @@ async def test_hu15_las_cuatro_operaciones_escriben_su_fila_de_auditoria(
         ).all()
 
     assert [
-        (row.worker_id, row.action, row.changed_by, row.changed_at, row.reason)
-        for row in rows
+        (row.worker_id, row.action, row.changed_by, row.changed_at, row.reason) for row in rows
     ] == [
         (worker.id, "CREATED", _CREATOR, _CREATED_AT, None),
         (worker.id, "UPDATED", _EDITOR, _UPDATED_AT, None),

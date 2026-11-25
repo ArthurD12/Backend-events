@@ -96,9 +96,7 @@ def upgrade() -> None:
             name=op.f("ck_staff_workers_status_valid"),
         ),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_staff_workers")),
-        sa.UniqueConstraint(
-            "document_type", "document_number", name="uq_staff_workers_document"
-        ),
+        sa.UniqueConstraint("document_type", "document_number", name="uq_staff_workers_document"),
     )
     op.create_index(
         "ix_staff_workers_status_function",

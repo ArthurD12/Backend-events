@@ -40,9 +40,7 @@ def apply_worker_to_row(worker: Worker, row: StaffWorkerRow) -> None:
     row.worker_type = None if worker.worker_type is None else worker.worker_type.value
     row.rate_cents = None if worker.rate is None else worker.rate.cents
     row.overtime_applies = worker.overtime_applies
-    row.overtime_rate_cents = (
-        None if worker.overtime_rate is None else worker.overtime_rate.cents
-    )
+    row.overtime_rate_cents = None if worker.overtime_rate is None else worker.overtime_rate.cents
     row.status = worker.status.value
 
 
@@ -58,9 +56,7 @@ def worker_from_row(row: StaffWorkerRow) -> Worker:
         worker_type=None if row.worker_type is None else WorkerType(row.worker_type),
         rate=None if row.rate_cents is None else Money(row.rate_cents),
         overtime_applies=row.overtime_applies,
-        overtime_rate=None
-        if row.overtime_rate_cents is None
-        else Money(row.overtime_rate_cents),
+        overtime_rate=None if row.overtime_rate_cents is None else Money(row.overtime_rate_cents),
         status=WorkerStatus(row.status),
     )
 

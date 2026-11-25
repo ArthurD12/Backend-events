@@ -51,14 +51,10 @@ class StaffWorkerRow(Base):
     __tablename__ = "staff_workers"
     __table_args__ = (
         # El documento no se repite aunque dos altas pasen la comprobación de la aplicación.
-        UniqueConstraint(
-            "document_type", "document_number", name="uq_staff_workers_document"
-        ),
+        UniqueConstraint("document_type", "document_number", name="uq_staff_workers_document"),
         CheckConstraint("btrim(name) <> ''", name="name_not_empty"),
         CheckConstraint(_DOCUMENT_VALID, name="document_valid"),
-        CheckConstraint(
-            "phone IS NULL OR phone ~ '^[0-9]+$'", name="phone_digits"
-        ),
+        CheckConstraint("phone IS NULL OR phone ~ '^[0-9]+$'", name="phone_digits"),
         CheckConstraint(
             "worker_function IS NULL OR worker_function IN"
             " ('COOK', 'WAITER', 'BARTENDER', 'ASSISTANT', 'COORDINATOR', 'OTHER')",
@@ -87,9 +83,7 @@ class StaffWorkerRow(Base):
         Boolean, nullable=False, server_default=text("false")
     )
     overtime_rate_cents: Mapped[int | None] = mapped_column(Integer)
-    status: Mapped[str] = mapped_column(
-        String(8), nullable=False, server_default=text("'ACTIVE'")
-    )
+    status: Mapped[str] = mapped_column(String(8), nullable=False, server_default=text("'ACTIVE'"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -116,9 +110,7 @@ class StaffWorkerAuditRow(Base):
     )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
-    worker_id: Mapped[UUID] = mapped_column(
-        ForeignKey("staff_workers.id", ondelete="RESTRICT")
-    )
+    worker_id: Mapped[UUID] = mapped_column(ForeignKey("staff_workers.id", ondelete="RESTRICT"))
     action: Mapped[str] = mapped_column(String(12))
     reason: Mapped[str | None] = mapped_column(Text)
     changed_by: Mapped[UUID]  # usuario de identity: sin FK entre módulos (regla 3)
