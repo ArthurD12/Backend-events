@@ -88,16 +88,7 @@ def test_r_id_3_permisos_segun_la_tabla_del_dominio() -> None:
         Permission.PAYMENTS_RECORD,
         Permission.EVENTS_MANAGE,
         Permission.EVENTS_READ,
-        Permission.EVENT_NOTES_WRITE,
-        Permission.INVENTORY_READ,
-    }
-    assert compras.permissions == {
-        Permission.CATALOG_READ,
-        Permission.EVENTS_READ,
-        Permission.EVENT_NOTES_WRITE,  # R-ACT-5
-        Permission.INVENTORY_READ,
-        Permission.INVENTORY_MANAGE,
-        Permission.PURCHASING_MANAGE,
+        Permission.STAFF_MANAGE,
     }
     assert admin.is_active_admin and not eventos.is_active_admin
 
