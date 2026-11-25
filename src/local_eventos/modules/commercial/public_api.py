@@ -13,6 +13,10 @@ from local_eventos.modules.commercial import composition
 from local_eventos.modules.commercial.application.clients.use_cases.get_client_summary import (
     ClientSummary,
 )
+from local_eventos.modules.commercial.application.events.use_cases.event_finance import (
+    EventFinance,
+    GetEventFinance,
+)
 from local_eventos.modules.commercial.application.quotes.ports.quote_repository import (
     QuoteSummary,
 )
@@ -34,6 +38,22 @@ class QuoteStatsLookup(Protocol):
     async def __call__(self, year: int | None = None, month: int | None = None) -> QuoteStats: ...
 
 
+class EventFinanceLookup(Protocol):
+    """Total contratado, cobrado y saldo del evento por su contrato. `None` si no existe."""
+
+    async def __call__(self, event_id: UUID) -> EventFinance | None: ...
+
+
+def event_finance(session: AsyncSession) -> EventFinanceLookup:
+    """Consulta de solo lectura para el resultado económico del evento (HU22)."""
+    return GetEventFinance(
+        composition.event_repository(session),
+        composition.contract_repository(session),
+        composition.client_repository(session),
+        composition.contract_payment_entries(session),
+    )
+
+
 def quote_stats(session: AsyncSession) -> QuoteStatsLookup:
     """Consulta de solo lectura para el panel (HU31), dentro de la transacción de la petición."""
     return GetQuoteStats(composition.quote_repository(session), composition.clock())
@@ -42,8 +62,11 @@ def quote_stats(session: AsyncSession) -> QuoteStatsLookup:
 __all__ = [
     "ClientLookup",
     "ClientSummary",
+    "EventFinance",
+    "EventFinanceLookup",
     "QuoteStats",
     "QuoteStatsLookup",
     "QuoteSummary",
+    "event_finance",
     "quote_stats",
 ]

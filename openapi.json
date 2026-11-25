@@ -95,6 +95,98 @@
         "title": "AccessResult",
         "type": "string"
       },
+      "AccountPaymentOut": {
+        "properties": {
+          "amount_cents": {
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PaymentKind"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "number": {
+            "description": "PAG-AAAA-NNNN (CA-20.1)",
+            "title": "Number",
+            "type": "string"
+          },
+          "paid_on": {
+            "format": "date",
+            "title": "Paid On",
+            "type": "string"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "recorded_by": {
+            "format": "uuid",
+            "title": "Recorded By",
+            "type": "string"
+          },
+          "recorded_by_name": {
+            "description": "Vacío si el usuario no existe",
+            "title": "Recorded By Name",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "void": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentVoidOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "voidable": {
+            "description": "Solo un pago parcial vigente se anula (CA-19.5)",
+            "title": "Voidable",
+            "type": "boolean"
+          },
+          "voided": {
+            "description": "Anulado: no cuenta en el saldo (CA-19.3)",
+            "title": "Voided",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "kind",
+          "amount_cents",
+          "method",
+          "reference",
+          "paid_on",
+          "voided",
+          "recorded_by",
+          "recorded_by_name",
+          "recorded_at",
+          "voidable",
+          "void"
+        ],
+        "title": "AccountPaymentOut",
+        "type": "object"
+      },
       "ActivityIn": {
         "properties": {
           "description": {
@@ -297,6 +389,138 @@
           "cancelled_at"
         ],
         "title": "CancellationOut",
+        "type": "object"
+      },
+      "CashFlowMonthOut": {
+        "properties": {
+          "client_payments_cents": {
+            "description": "Pagos de clientes netos de devoluciones",
+            "title": "Client Payments Cents",
+            "type": "integer"
+          },
+          "expense_cents": {
+            "title": "Expense Cents",
+            "type": "integer"
+          },
+          "expenses": {
+            "$ref": "#/components/schemas/ExpensesOut"
+          },
+          "income_cents": {
+            "title": "Income Cents",
+            "type": "integer"
+          },
+          "month": {
+            "description": "AAAA-MM",
+            "title": "Month",
+            "type": "string"
+          },
+          "net_cents": {
+            "description": "Saldo del periodo: ingresos − egresos",
+            "title": "Net Cents",
+            "type": "integer"
+          },
+          "other_income_cents": {
+            "title": "Other Income Cents",
+            "type": "integer"
+          },
+          "refunds_cents": {
+            "title": "Refunds Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "client_payments_cents",
+          "refunds_cents",
+          "other_income_cents",
+          "income_cents",
+          "expenses",
+          "expense_cents",
+          "net_cents",
+          "month"
+        ],
+        "title": "CashFlowMonthOut",
+        "type": "object"
+      },
+      "CashFlowOut": {
+        "properties": {
+          "currency": {
+            "default": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "date_from": {
+            "format": "date",
+            "title": "Date From",
+            "type": "string"
+          },
+          "date_to": {
+            "format": "date",
+            "title": "Date To",
+            "type": "string"
+          },
+          "months": {
+            "description": "Solo los meses con movimiento",
+            "items": {
+              "$ref": "#/components/schemas/CashFlowMonthOut"
+            },
+            "title": "Months",
+            "type": "array"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/CashSummaryOut"
+          }
+        },
+        "required": [
+          "date_from",
+          "date_to",
+          "totals",
+          "months"
+        ],
+        "title": "CashFlowOut",
+        "type": "object"
+      },
+      "CashSummaryOut": {
+        "properties": {
+          "client_payments_cents": {
+            "description": "Pagos de clientes netos de devoluciones",
+            "title": "Client Payments Cents",
+            "type": "integer"
+          },
+          "expense_cents": {
+            "title": "Expense Cents",
+            "type": "integer"
+          },
+          "expenses": {
+            "$ref": "#/components/schemas/ExpensesOut"
+          },
+          "income_cents": {
+            "title": "Income Cents",
+            "type": "integer"
+          },
+          "net_cents": {
+            "description": "Saldo del periodo: ingresos − egresos",
+            "title": "Net Cents",
+            "type": "integer"
+          },
+          "other_income_cents": {
+            "title": "Other Income Cents",
+            "type": "integer"
+          },
+          "refunds_cents": {
+            "title": "Refunds Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "client_payments_cents",
+          "refunds_cents",
+          "other_income_cents",
+          "income_cents",
+          "expenses",
+          "expense_cents",
+          "net_cents"
+        ],
+        "title": "CashSummaryOut",
         "type": "object"
       },
       "CategoryIn": {
@@ -521,6 +745,77 @@
         "title": "ClientOut",
         "type": "object"
       },
+      "ContractAccountOut": {
+        "description": "CA-19.4: total, pagado, saldo, fecha límite y pagos con quién los registró.",
+        "properties": {
+          "balance_cents": {
+            "description": "Total − pagos vigentes + devoluciones (RN15)",
+            "title": "Balance Cents",
+            "type": "integer"
+          },
+          "balance_due_date": {
+            "format": "date",
+            "title": "Balance Due Date",
+            "type": "string"
+          },
+          "contract_code": {
+            "title": "Contract Code",
+            "type": "string"
+          },
+          "contract_id": {
+            "format": "uuid",
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "currency": {
+            "default": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "overdue": {
+            "description": "Saldo vencido: solo un aviso (R-PAG-2)",
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "paid_cents": {
+            "description": "Pagos vigentes (adelanto incluido)",
+            "title": "Paid Cents",
+            "type": "integer"
+          },
+          "payments": {
+            "items": {
+              "$ref": "#/components/schemas/AccountPaymentOut"
+            },
+            "title": "Payments",
+            "type": "array"
+          },
+          "refunded_cents": {
+            "title": "Refunded Cents",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContractStatus"
+          },
+          "total_cents": {
+            "title": "Total Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "contract_id",
+          "contract_code",
+          "status",
+          "total_cents",
+          "paid_cents",
+          "refunded_cents",
+          "balance_cents",
+          "balance_due_date",
+          "overdue",
+          "payments"
+        ],
+        "title": "ContractAccountOut",
+        "type": "object"
+      },
       "ContractCancelIn": {
         "properties": {
           "note": {
@@ -601,8 +896,16 @@
             "type": "integer"
           },
           "balance_cents": {
-            "title": "Balance Cents",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pendiente de firma: total − adelanto; firmado: total − pagos vigentes + devoluciones (RN15). Vacío sin `payments:record`",
+            "title": "Balance Cents"
           },
           "balance_due_date": {
             "format": "date",
@@ -670,6 +973,18 @@
             "title": "Id",
             "type": "string"
           },
+          "paid_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pagos vigentes. Vacío sin `payments:record`",
+            "title": "Paid Cents"
+          },
           "payments": {
             "items": {
               "$ref": "#/components/schemas/PaymentOut"
@@ -714,6 +1029,7 @@
           "event_date",
           "total_cents",
           "advance_cents",
+          "paid_cents",
           "balance_cents",
           "balance_due_date",
           "status",
@@ -756,6 +1072,59 @@
           "page_size"
         ],
         "title": "ContractPageOut",
+        "type": "object"
+      },
+      "ContractPaymentCreatedOut": {
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/ContractAccountOut"
+          },
+          "payment": {
+            "$ref": "#/components/schemas/AccountPaymentOut"
+          }
+        },
+        "required": [
+          "payment",
+          "account"
+        ],
+        "title": "ContractPaymentCreatedOut",
+        "type": "object"
+      },
+      "ContractPaymentIn": {
+        "properties": {
+          "amount_cents": {
+            "description": "Mayor que cero y sin superar el saldo (RN14)",
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "paid_on": {
+            "description": "No puede ser futura (R-PAG-4)",
+            "format": "date",
+            "title": "Paid On",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "N.º de operación, voucher, etc.",
+            "title": "Reference"
+          }
+        },
+        "required": [
+          "amount_cents",
+          "paid_on",
+          "method"
+        ],
+        "title": "ContractPaymentIn",
         "type": "object"
       },
       "ContractSignIn": {
@@ -1114,6 +1483,18 @@
       },
       "EventOut": {
         "properties": {
+          "balance_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Saldo del contrato (RN15). Vacío sin `payments:record`",
+            "title": "Balance Cents"
+          },
           "cancellation": {
             "anyOf": [
               {
@@ -1194,6 +1575,18 @@
             "title": "Id",
             "type": "string"
           },
+          "paid_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pagos vigentes del contrato (R-PAG-1). Vacío sin `payments:record`",
+            "title": "Paid Cents"
+          },
           "quote_code": {
             "title": "Quote Code",
             "type": "string"
@@ -1244,6 +1637,8 @@
           "status",
           "services",
           "cancellation",
+          "paid_cents",
+          "balance_cents",
           "created_at"
         ],
         "title": "EventOut",
@@ -1278,6 +1673,90 @@
           "page_size"
         ],
         "title": "EventPageOut",
+        "type": "object"
+      },
+      "EventResultOut": {
+        "properties": {
+          "balance_cents": {
+            "description": "Saldo por cobrar (RN15)",
+            "title": "Balance Cents",
+            "type": "integer"
+          },
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "collected_cents": {
+            "description": "Cobrado al cliente, neto de devoluciones",
+            "title": "Collected Cents",
+            "type": "integer"
+          },
+          "contract_code": {
+            "title": "Contract Code",
+            "type": "string"
+          },
+          "contract_id": {
+            "format": "uuid",
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "currency": {
+            "default": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "event_code": {
+            "title": "Event Code",
+            "type": "string"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_status": {
+            "title": "Event Status",
+            "type": "string"
+          },
+          "expense_cents": {
+            "title": "Expense Cents",
+            "type": "integer"
+          },
+          "expenses": {
+            "$ref": "#/components/schemas/ExpensesOut"
+          },
+          "result_cents": {
+            "description": "Cobrado − egresos asociados al evento",
+            "title": "Result Cents",
+            "type": "integer"
+          },
+          "total_cents": {
+            "description": "Total contratado",
+            "title": "Total Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "event_id",
+          "event_code",
+          "event_date",
+          "event_status",
+          "client_name",
+          "contract_id",
+          "contract_code",
+          "total_cents",
+          "balance_cents",
+          "collected_cents",
+          "expenses",
+          "expense_cents",
+          "result_cents"
+        ],
+        "title": "EventResultOut",
         "type": "object"
       },
       "EventServiceOut": {
@@ -1427,6 +1906,34 @@
         ],
         "title": "EventType",
         "type": "string"
+      },
+      "ExpensesOut": {
+        "properties": {
+          "other_cents": {
+            "title": "Other Cents",
+            "type": "integer"
+          },
+          "staff_cents": {
+            "title": "Staff Cents",
+            "type": "integer"
+          },
+          "supplies_cents": {
+            "title": "Supplies Cents",
+            "type": "integer"
+          },
+          "transport_cents": {
+            "title": "Transport Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "supplies_cents",
+          "staff_cents",
+          "transport_cents",
+          "other_cents"
+        ],
+        "title": "ExpensesOut",
+        "type": "object"
       },
       "HTTPValidationError": {
         "properties": {
@@ -1580,6 +2087,272 @@
         "title": "MeOut",
         "type": "object"
       },
+      "MovementCategory": {
+        "enum": [
+          "SUPPLIES",
+          "STAFF",
+          "TRANSPORT",
+          "OTHER_EXPENSE",
+          "OTHER_INCOME"
+        ],
+        "title": "MovementCategory",
+        "type": "string"
+      },
+      "MovementIn": {
+        "properties": {
+          "amount_cents": {
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "category": {
+            "$ref": "#/components/schemas/MovementCategory",
+            "description": "Egreso: SUPPLIES, STAFF, TRANSPORT u OTHER_EXPENSE. Ingreso: OTHER_INCOME"
+          },
+          "concept": {
+            "title": "Concept",
+            "type": "string"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Evento asociado, si lo hay (RN16)",
+            "title": "Event Id"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "occurred_on": {
+            "description": "No puede ser futura (R-PAG-4)",
+            "format": "date",
+            "title": "Occurred On",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "type": {
+            "$ref": "#/components/schemas/MovementType"
+          }
+        },
+        "required": [
+          "type",
+          "category",
+          "concept",
+          "amount_cents",
+          "method",
+          "occurred_on"
+        ],
+        "title": "MovementIn",
+        "type": "object"
+      },
+      "MovementOut": {
+        "properties": {
+          "amount_cents": {
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "category": {
+            "$ref": "#/components/schemas/MovementCategory"
+          },
+          "concept": {
+            "title": "Concept",
+            "type": "string"
+          },
+          "currency": {
+            "default": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "occurred_on": {
+            "format": "date",
+            "title": "Occurred On",
+            "type": "string"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "recorded_by": {
+            "format": "uuid",
+            "title": "Recorded By",
+            "type": "string"
+          },
+          "recorded_by_name": {
+            "description": "Vacío si el usuario no existe",
+            "title": "Recorded By Name",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "type": {
+            "$ref": "#/components/schemas/MovementType"
+          },
+          "void": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MovementVoidOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Anulado: no entra en los cálculos"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "category",
+          "concept",
+          "amount_cents",
+          "method",
+          "reference",
+          "occurred_on",
+          "event_id",
+          "recorded_by",
+          "recorded_by_name",
+          "recorded_at",
+          "void"
+        ],
+        "title": "MovementOut",
+        "type": "object"
+      },
+      "MovementPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MovementOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "MovementPageOut",
+        "type": "object"
+      },
+      "MovementState": {
+        "enum": [
+          "ACTIVE",
+          "VOIDED"
+        ],
+        "title": "MovementState",
+        "type": "string"
+      },
+      "MovementType": {
+        "enum": [
+          "INCOME",
+          "EXPENSE"
+        ],
+        "title": "MovementType",
+        "type": "string"
+      },
+      "MovementVoidIn": {
+        "properties": {
+          "reason": {
+            "description": "Motivo obligatorio (RN17)",
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "MovementVoidIn",
+        "type": "object"
+      },
+      "MovementVoidOut": {
+        "properties": {
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "voided_at": {
+            "format": "date-time",
+            "title": "Voided At",
+            "type": "string"
+          },
+          "voided_by": {
+            "format": "uuid",
+            "title": "Voided By",
+            "type": "string"
+          },
+          "voided_by_name": {
+            "title": "Voided By Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "voided_by",
+          "voided_by_name",
+          "voided_at"
+        ],
+        "title": "MovementVoidOut",
+        "type": "object"
+      },
       "NoteIn": {
         "properties": {
           "text": {
@@ -1717,6 +2490,7 @@
       "PaymentKind": {
         "enum": [
           "ADVANCE",
+          "INSTALLMENT",
           "REFUND"
         ],
         "title": "PaymentKind",
@@ -1749,6 +2523,11 @@
           "method": {
             "$ref": "#/components/schemas/PaymentMethod"
           },
+          "number": {
+            "description": "PAG-AAAA-NNNN (CA-20.1)",
+            "title": "Number",
+            "type": "string"
+          },
           "paid_on": {
             "format": "date",
             "title": "Paid On",
@@ -1764,17 +2543,54 @@
               }
             ],
             "title": "Reference"
+          },
+          "voided": {
+            "description": "Anulado: no cuenta en el saldo (CA-19.3)",
+            "title": "Voided",
+            "type": "boolean"
           }
         },
         "required": [
           "id",
+          "number",
           "kind",
           "amount_cents",
           "method",
           "reference",
-          "paid_on"
+          "paid_on",
+          "voided"
         ],
         "title": "PaymentOut",
+        "type": "object"
+      },
+      "PaymentVoidOut": {
+        "properties": {
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "voided_at": {
+            "format": "date-time",
+            "title": "Voided At",
+            "type": "string"
+          },
+          "voided_by": {
+            "format": "uuid",
+            "title": "Voided By",
+            "type": "string"
+          },
+          "voided_by_name": {
+            "title": "Voided By Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "voided_by",
+          "voided_by_name",
+          "voided_at"
+        ],
+        "title": "PaymentVoidOut",
         "type": "object"
       },
       "Permission": {
@@ -1790,6 +2606,7 @@
           "payments:record",
           "events:manage",
           "events:read",
+          "finance:read",
           "event_notes:write",
           "event_notes:edit_any"
         ],
@@ -2605,6 +3422,20 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "VoidIn": {
+        "properties": {
+          "reason": {
+            "description": "Motivo obligatorio (RN17)",
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "VoidIn",
         "type": "object"
       }
     },
@@ -4969,6 +5800,85 @@
         ]
       }
     },
+    "/v1/contracts/{contract_id}/account": {
+      "get": {
+        "description": "Total, pagado, saldo, fecha límite y pagos con quién los registró (HU19, CA-19.4).",
+        "operationId": "contracts_account_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contract_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Contract Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractAccountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`contract.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Contract Account",
+        "tags": [
+          "contratos"
+        ]
+      }
+    },
     "/v1/contracts/{contract_id}/cancel": {
       "post": {
         "description": "Anula con motivo; si hubo devolución, se registra su monto (R-CON-3).",
@@ -5063,6 +5973,105 @@
           }
         ],
         "summary": "Cancel Contract",
+        "tags": [
+          "contratos"
+        ]
+      }
+    },
+    "/v1/contracts/{contract_id}/payments": {
+      "post": {
+        "description": "Registra un pago parcial de un contrato firmado, sin superar el saldo (HU19, RN14).",
+        "operationId": "contracts_payments_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "contract_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Contract Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContractPaymentIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractPaymentCreatedOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`contract.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`contract.not_signed`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`payment.exceeds_balance`, `payment.*`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Contract Payment",
         "tags": [
           "contratos"
         ]
@@ -5672,6 +6681,7 @@
     },
     "/v1/events/{event_id}": {
       "get": {
+        "description": "El evento; pagado y saldo solo para quien registra pagos (compras no ve dinero).",
         "operationId": "events_get",
         "parameters": [
           {
@@ -6207,6 +7217,351 @@
         ]
       }
     },
+    "/v1/movements": {
+      "get": {
+        "description": "Movimientos de la fecha más reciente a la más antigua, con filtros (CA-21.4).",
+        "operationId": "movements_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/MovementType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/MovementCategory"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "event_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/MovementState"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovementPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Movements",
+        "tags": [
+          "caja"
+        ]
+      },
+      "post": {
+        "description": "Registra un ingreso o egreso; un egreso puede asociarse a un evento (CA-21.1, CA-21.2).",
+        "operationId": "movements_create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovementIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`movement.*`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Movement",
+        "tags": [
+          "caja"
+        ]
+      }
+    },
+    "/v1/movements/{movement_id}/void": {
+      "post": {
+        "description": "Anula con motivo; queda el movimiento y su anulación, no se edita (CA-21.3, RN17).",
+        "operationId": "movements_void",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movement_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Movement Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovementVoidIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`movement.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`movement.already_voided`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`movement.reason_required`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Void Movement",
+        "tags": [
+          "caja"
+        ]
+      }
+    },
     "/v1/notes/{note_id}": {
       "put": {
         "description": "Edita una observación: su autor o quien tenga `event_notes:edit_any`, solo el\nadministrador (R-ACT-1, R-ACT-6).",
@@ -6303,6 +7658,180 @@
         "summary": "Update Note",
         "tags": [
           "eventos"
+        ]
+      }
+    },
+    "/v1/payments/{payment_id}/receipt.pdf": {
+      "get": {
+        "description": "Comprobante interno del pago en PDF (HU20). Si está anulado, sale con la marca.",
+        "operationId": "payments_receipt_pdf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "payment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Payment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "El comprobante"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`payment.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Payment Receipt",
+        "tags": [
+          "pagos"
+        ]
+      }
+    },
+    "/v1/payments/{payment_id}/void": {
+      "post": {
+        "description": "Anula un pago parcial con motivo; queda el pago y su anulación (CA-19.5, RN17).",
+        "operationId": "payments_void",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "payment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Payment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoidIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContractAccountOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`payment.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`payment.not_voidable`, `payment.already_voided`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`payment.reason_required`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Void Payment",
+        "tags": [
+          "pagos"
         ]
       }
     },
@@ -6909,6 +8438,166 @@
         "summary": "Change Quote Status",
         "tags": [
           "cotizaciones"
+        ]
+      }
+    },
+    "/v1/reports/cash-flow": {
+      "get": {
+        "description": "Ingresos, egresos por categoría y saldo del periodo, por mes; sin anulados (CA-22.1).",
+        "operationId": "reports_cash_flow",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Hasta 366 días",
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "description": "Hasta 366 días",
+              "format": "date",
+              "title": "To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashFlowOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`report.range_invalid`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cash Flow",
+        "tags": [
+          "reportes"
+        ]
+      }
+    },
+    "/v1/reports/events/{event_id}/result": {
+      "get": {
+        "description": "Cobrado al cliente, egresos del evento por categoría y resultado (CA-22.3).",
+        "operationId": "reports_event_result",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Event Result",
+        "tags": [
+          "reportes"
         ]
       }
     },

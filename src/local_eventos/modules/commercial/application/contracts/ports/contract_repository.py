@@ -30,6 +30,11 @@ class ContractSummary:
 class ContractRepository(Protocol):
     async def get(self, contract_id: UUID) -> Contract | None: ...
 
+    async def get_for_update(self, contract_id: UUID) -> Contract | None:
+        """Lee y bloquea la fila hasta el fin de la transacción (`SELECT … FOR UPDATE`): dos
+        pagos simultáneos al mismo contrato se registran uno tras otro."""
+        ...
+
     async def get_by_quote(self, quote_id: UUID) -> Contract | None: ...
 
     async def add(self, contract: Contract) -> None:

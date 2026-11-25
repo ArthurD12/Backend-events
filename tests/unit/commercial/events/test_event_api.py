@@ -18,7 +18,7 @@ from local_eventos.modules.identity.public_api import (
     get_current_user,
 )
 from local_eventos.modules.ledger.application.use_cases.payments import (
-    ContractPayments,
+    ContractPaymentEntries,
     RecordPayment,
 )
 from tests.unit.commercial.clients.fakes import InMemoryClientRepository
@@ -132,7 +132,7 @@ def api() -> Iterator[Api]:
             deps.get_coordinator_lookup: dep(coordinators),
             deps.get_service_lookup: dep(FakeServiceLookup()),
             deps.get_payment_recorder: dep(RecordPayment(payments)),
-            deps.get_payments_lookup: dep(ContractPayments(payments)),
+            deps.get_payments_lookup: dep(ContractPaymentEntries(payments)),
             deps.get_clock: lambda: clock,
             get_current_user: current,
         }
@@ -296,6 +296,18 @@ def test_ca12_calendario_por_api(api: Api) -> None:
     assert (too_long.status_code, too_long.json()["code"]) == (422, "event.range_invalid")
     assert missing.status_code == 422
     assert purchasing.status_code == 200
+
+
+def test_r_pag_1_el_evento_muestra_pagado_y_saldo_solo_a_quien_registra_pagos(api: Api) -> None:
+    event = api.convert(api.contract()).json()
+
+    mine = api.client.get(f"/v1/events/{event['id']}").json()
+    api.sign_in_as(Role.PURCHASING_MANAGER)
+    purchasing = api.client.get(f"/v1/events/{event['id']}").json()
+
+    assert (event["paid_cents"], event["balance_cents"]) == (257_500, 257_500)
+    assert (mine["paid_cents"], mine["balance_cents"]) == (257_500, 257_500)
+    assert (purchasing["paid_cents"], purchasing["balance_cents"]) == (None, None)
 
 
 def _event_id(api: Api) -> str:

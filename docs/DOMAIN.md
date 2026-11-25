@@ -57,9 +57,13 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 ## 6. Dinero (pagos y flujo de caja)
 - Moneda `PEN`, enteros en céntimos. Sin pasarela: los cobros se **registran** (efectivo, transferencia, tarjeta, Yape/Plin) con referencia y usuario.
 - El importe de un pago es mayor que cero y no supera el saldo pendiente (RN14). **Saldo = total contratado − pagos + anulaciones** (RN15).
-- El adelanto se registra desde el contrato (HU42) y se guarda como **el primer pago del evento**; los pagos parciales posteriores se registran en el módulo de pagos (HU19).
-- Todo ingreso o egreso registra fecha, concepto, monto y usuario (RN16). Los egresos se clasifican (insumos, personal, transporte, otros) y pueden asociarse a un evento.
-- **Append-only:** un pago o movimiento no se elimina; se anula con una operación autorizada que conserva el historial (RN17).
+- El adelanto se registra desde el contrato (HU42) y se guarda como **el primer pago del evento**; los pagos parciales posteriores se registran contra el contrato (HU19, R-PAG-1).
+- **Saldo del contrato:** pendiente de firma = total − adelanto pactado; firmado = total − pagos vigentes + devoluciones. Un pago anulado no cuenta. Dos pagos simultáneos no superan el saldo: se bloquea la fila del contrato.
+- Cada pago tiene un número único `PAG-AAAA-NNNN` (correlativo por año) y un **comprobante interno** en PDF; no es boleta ni factura (HU20). El de un pago anulado sale con la marca ANULADO y el motivo.
+- Solo un **pago parcial** se anula por su cuenta, con motivo; el adelanto se anula con el contrato (R-CON-3) y una devolución no se anula. Sin pagos en un contrato pendiente de firma o anulado.
+- Todo ingreso o egreso registra fecha, concepto, monto, medio y usuario (RN16). Los egresos se clasifican (insumos, personal, transporte, otros) y pueden asociarse a un evento; un ingreso que no es pago de cliente va como "otros ingresos".
+- **Append-only:** un pago o movimiento no se elimina; se anula con una operación autorizada que conserva el historial (RN17). La anulación es una fila aparte y la base rechaza `UPDATE` y `DELETE`.
+- **Flujo de caja** (solo administrador, `finance:read`): por fecha del pago o movimiento, ingresos (pagos de clientes netos de devoluciones + otros ingresos), egresos por categoría y saldo del periodo, por mes; hasta 366 días. **Resultado de un evento:** cobrado (neto de devoluciones) − egresos asociados, más el total contratado y el saldo por cobrar. Nada anulado entra en los cálculos.
 
 ## 7. Almacén, requerimientos y compras
 - Todo movimiento indica producto, cantidad (> 0), fecha, tipo y usuario (RN18, RN19). Movimientos **append-only**; stock = suma de movimientos.
@@ -124,6 +128,10 @@ Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. e
 | 22/11/2026 | Responsable de coordinación del evento | Un usuario del sistema (administrador o encargado de eventos) hasta que exista el módulo de personal (R-EVT-2) | Product Owner |
 | 22/11/2026 | Anular un contrato que ya es evento | No se anula desde el contrato: se cancela el evento (R-EVT-3); también lo impide la base de datos | Equipo **(provisional)** |
 | 23/11/2026 | Cancelar un evento | Cancelar el evento anula su contrato con el mismo motivo y registra la devolución si la hubo, en un solo paso (R-EVT-4). Para cambiar algo de un contrato firmado, se anula y se hace una cotización nueva | Scrum Master **(provisional, a validar por el Product Owner)** |
+| 25/11/2026 | Pagos parciales | Se registran contra el **contrato**; el evento los muestra por su contrato (R-PAG-1) | Equipo **(provisional)** |
+| 25/11/2026 | Pago después de la fecha límite | Se permite, también después del evento; el sistema solo avisa "saldo vencido" (R-PAG-2) | Equipo **(provisional)** |
+| 25/11/2026 | Pago acordado al personal (HU17) | No es egreso hasta que se registra como egreso de categoría "personal" (R-PAG-3) | Equipo **(provisional)** |
+| 25/11/2026 | Fecha de un pago o movimiento | No puede ser futura, como el adelanto (R-PAG-4) | Equipo **(provisional)** |
 | 23/11/2026 | ¿Desde qué estado se cancela un evento? | Desde programado o confirmado; no desde en ejecución ni finalizado (R-EVT-5) | Equipo **(provisional)** |
 | 22/11/2026 | Sesión | Termina tras 30 minutos sin actividad; no se puede desactivar al último administrador activo (R-ID-4) | Equipo, según HU01 **(provisional)** |
 | 25/11/2026 | Editar observaciones del evento | Se editan; queda quién la editó por última vez y cuándo. No se eliminan (R-ACT-1) | Product Owner |

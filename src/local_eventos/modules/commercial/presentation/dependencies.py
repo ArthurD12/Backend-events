@@ -16,6 +16,9 @@ from local_eventos.modules.commercial.application.clients.ports.client_repositor
 from local_eventos.modules.commercial.application.contracts.ports.contract_repository import (
     ContractRepository,
 )
+from local_eventos.modules.commercial.application.contracts.ports.receipt import (
+    PaymentReceiptRenderer,
+)
 from local_eventos.modules.commercial.application.events.ports.event_log_repository import (
     EventLogRepository,
 )
@@ -30,8 +33,13 @@ from local_eventos.modules.commercial.application.quotes.ports.document import (
 from local_eventos.modules.commercial.application.quotes.ports.quote_repository import (
     QuoteRepository,
 )
-from local_eventos.modules.identity.public_api import CoordinatorLookup
-from local_eventos.modules.ledger.public_api import PaymentRecorder, PaymentsLookup
+from local_eventos.modules.identity.public_api import CoordinatorLookup, UserNamesLookup
+from local_eventos.modules.ledger.public_api import (
+    PaymentEntriesLookup,
+    PaymentFinder,
+    PaymentRecorder,
+    PaymentVoider,
+)
 from local_eventos.shared.presentation.database import get_session
 
 
@@ -91,13 +99,40 @@ async def get_payment_recorder(
 
 async def get_payments_lookup(
     session: Annotated[AsyncSession, Depends(get_session)],
-) -> PaymentsLookup:
-    return composition.contract_payments(session)
+) -> PaymentEntriesLookup:
+    """Pagos del contrato con su anulación: con ellos se calcula el saldo (RN15)."""
+    return composition.contract_payment_entries(session)
+
+
+async def get_payment_finder(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> PaymentFinder:
+    return composition.find_payment(session)
+
+
+async def get_payment_voider(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> PaymentVoider:
+    return composition.void_payment(session)
+
+
+def get_receipt_renderer() -> PaymentReceiptRenderer:
+    return composition.receipt_renderer()
+
+
+async def get_user_names(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> UserNamesLookup:
+    return composition.user_names(session)
 
 
 Contracts = Annotated[ContractRepository, Depends(get_contract_repository)]
 Payments = Annotated[PaymentRecorder, Depends(get_payment_recorder)]
-PaymentHistory = Annotated[PaymentsLookup, Depends(get_payments_lookup)]
+PaymentHistory = Annotated[PaymentEntriesLookup, Depends(get_payments_lookup)]
+PaymentFind = Annotated[PaymentFinder, Depends(get_payment_finder)]
+PaymentVoid = Annotated[PaymentVoider, Depends(get_payment_voider)]
+ReceiptRenderer = Annotated[PaymentReceiptRenderer, Depends(get_receipt_renderer)]
+UserNames = Annotated[UserNamesLookup, Depends(get_user_names)]
 
 
 async def get_event_repository(
