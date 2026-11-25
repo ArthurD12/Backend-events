@@ -23,7 +23,7 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 ## 3. Ciclos de vida
 - **Cotización:** `borrador → enviada → aceptada | rechazada | vencida`. Solo se edita en borrador (RN05). Vence al terminar su vigencia sin ser aceptada (RN06).
 - **Contrato:** `pendiente de firma → firmado | anulado`. Solo se genera desde una cotización aceptada y sin contrato previo (HU41). Un contrato firmado no se edita; la anulación exige motivo (HU42).
-- **Evento:** `programado → confirmado → en ejecución → finalizado` · `cancelado`. Solo un contrato firmado y con el adelanto pagado se convierte en evento, y una sola vez (RN07, RN08, HU42).
+- **Evento:** `programado → confirmado → en ejecución → finalizado` · `cancelado`. Solo un contrato firmado y con el adelanto pagado se convierte en evento, y una sola vez (RN07, RN08, HU42). Avanza un estado a la vez y no vuelve atrás; pasa a en ejecución solo el día del evento (o el siguiente, si el horario cruza la medianoche) (R-EVT-8). La planificación (fecha, horario, lugar, invitados y responsable) se edita en programado y confirmado (R-EVT-6) sin cambiar el contrato ni la cotización (R-EVT-7). Cada cambio de planificación y de estado, y la cancelación, queda en un historial de solo inserción (CA-11.5, RN03).
 
 ## 4. Reglas de cotizaciones, contratos y eventos
 1. Cada cotización, contrato y evento tiene un **código único** generado por el sistema (RN04).
@@ -141,6 +141,10 @@ Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. e
 | 25/11/2026 | Pago acordado al personal (HU17) | No es egreso hasta que se registra como egreso de categoría "personal" (R-PAG-3) | Equipo **(provisional)** |
 | 25/11/2026 | Fecha de un pago o movimiento | No puede ser futura, como el adelanto (R-PAG-4) | Equipo **(provisional)** |
 | 23/11/2026 | ¿Desde qué estado se cancela un evento? | Desde programado o confirmado; no desde en ejecución ni finalizado (R-EVT-5) | Equipo **(provisional)** |
+| 25/11/2026 | ¿Cuándo se edita la planificación del evento? | En programado y confirmado; en ejecución, finalizado o cancelado, no (R-EVT-6) | Equipo **(provisional)** |
+| 25/11/2026 | Editar el evento y el contrato | Editar el evento no cambia el contrato ni la cotización; más invitados no recalcula el total: si el cliente paga más, se registra aparte (R-EVT-7) | Equipo **(provisional)** |
+| 25/11/2026 | Avanzar el estado del evento | Un paso a la vez, sin volver atrás. En ejecución solo el día del evento en Lima (si el horario cruza la medianoche, también el día siguiente); finalizado solo desde en ejecución y sin exigir saldo en cero (R-EVT-8) | Equipo **(provisional)** |
+| 25/11/2026 | Cambio de fecha u horario del evento | El sistema avisa que el personal asignado puede tener otro horario; revisar las asignaciones es del módulo de personal (R-EVT-9) | Equipo **(provisional)** |
 | 22/11/2026 | Sesión | Termina tras 30 minutos sin actividad; no se puede desactivar al último administrador activo (R-ID-4) | Equipo, según HU01 **(provisional)** |
 | 25/11/2026 | Editar observaciones del evento | Se editan; queda quién la editó por última vez y cuándo. No se eliminan (R-ACT-1) | Product Owner |
 | 25/11/2026 | Actividades y observaciones según el estado del evento | Actividades: se registran y marcan en programado, confirmado y en ejecución. Observaciones: también con el evento finalizado. En un evento cancelado no se agrega ni se cambia nada; todo se sigue viendo (R-ACT-2) | Product Owner |

@@ -1,7 +1,7 @@
 """API de eventos (HU10) con piezas en memoria. Sin base de datos."""
 
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 from uuid import uuid4
 
@@ -36,6 +36,10 @@ from .fakes import FakeCoordinators, InMemoryEventLogRepository, InMemoryEventRe
 
 async def _no_database() -> None:
     return None
+
+
+async def _names(user_ids: Any) -> dict[Any, str]:
+    return {user_id: "Usuario de prueba" for user_id in user_ids}
 
 
 @dataclass
@@ -83,6 +87,7 @@ class Api:
         self.client.app.dependency_overrides[get_current_user] = signed_in_as(role)  # type: ignore[attr-defined]
 
     customer_id: str = ""
+    clock: FakeClock = field(default_factory=FakeClock)
 
     @staticmethod
     def customer_id_unknown() -> str:
@@ -134,11 +139,12 @@ def api() -> Iterator[Api]:
             deps.get_payment_recorder: dep(RecordPayment(payments)),
             deps.get_payments_lookup: dep(ContractPaymentEntries(payments)),
             deps.get_clock: lambda: clock,
+            deps.get_user_names: lambda: _names,
             get_current_user: current,
         }
     )
     with TestClient(app) as client:
-        yield Api(client, me, other, customer_id=str(customer.id))
+        yield Api(client, me, other, customer_id=str(customer.id), clock=clock)
 
 
 def test_ca10_convierte_y_relaciona_contrato_y_evento(api: Api) -> None:
@@ -437,3 +443,125 @@ def test_r_act_6_encargado_no_edita_nota_ajena_y_admin_si(api: Api) -> None:
 
     assert (by_manager.status_code, by_manager.json()["code"]) == (403, "note.not_author")
     assert (by_admin.status_code, by_admin.json()["text"]) == (200, "Faltan 20 copas")
+
+
+# --- HU11: planificación, estados e historial ---
+
+
+def _planning(event: dict[str, Any], **changes: Any) -> dict[str, Any]:
+    keys = ("event_date", "start_time", "end_time", "venue", "guests", "coordinator_id")
+    return {key: event[key] for key in keys} | changes
+
+
+def test_ca11_2_editar_planificacion_por_api(api: Api) -> None:
+    event = api.convert(api.contract()).json()
+    url = f"/v1/events/{event['id']}"
+
+    same_time = api.client.put(
+        f"{url}/planning",
+        json=_planning(event, venue="Local El Olivar", guests=120,
+                       coordinator_id=str(api.other.id)),
+    )  # fmt: skip
+    new_time = api.client.put(
+        f"{url}/planning", json=_planning(same_time.json(), start_time="19:00")
+    )
+    changes = api.client.get(f"{url}/changes").json()
+
+    assert same_time.status_code == 200
+    body = same_time.json()
+    assert (body["venue"], body["guests"], body["coordinator_name"]) == (
+        "Local El Olivar",
+        120,
+        "Harold Canaza",
+    )
+    assert body["warnings"] == []
+    assert new_time.json()["warnings"] == ["staff_may_need_review"]
+    assert api.client.get(url).json()["start_time"] == "19:00:00"
+    assert [c["action"] for c in changes] == ["PLANNING_UPDATED", "PLANNING_UPDATED"]
+    assert changes[0]["fields"][1] == {"field": "guests", "before": 80, "after": 120}
+    assert changes[1]["fields"] == [
+        {"field": "start_time", "before": "20:00:00", "after": "19:00:00"}
+    ]
+    assert (changes[0]["changed_by"], changes[0]["changed_by_name"]) == (
+        str(api.me.id),
+        "Usuario de prueba",
+    )
+
+
+def test_ca11_2_errores_de_planificacion(api: Api) -> None:
+    event = api.convert(api.contract()).json()
+    url = f"/v1/events/{event['id']}/planning"
+
+    past = api.client.put(url, json=_planning(event, event_date="2026-11-21"))
+    no_guests = api.client.put(url, json=_planning(event, guests=0))
+    bad_coordinator = api.client.put(
+        url, json=_planning(event, coordinator_id=api.customer_id_unknown())
+    )
+    missing_field = api.client.put(url, json={"venue": "Otro"})
+    missing = api.client.put(
+        "/v1/events/00000000-0000-0000-0000-000000000000/planning", json=_planning(event)
+    )
+    api.client.post(f"/v1/events/{event['id']}/cancel", json={"reason": "Canceló"})
+    cancelled = api.client.put(url, json=_planning(event, guests=90))
+
+    assert (past.status_code, past.json()["code"]) == (422, "event.date_past")
+    assert (no_guests.status_code, no_guests.json()["code"]) == (422, "event.guests_invalid")
+    assert (bad_coordinator.status_code, bad_coordinator.json()["code"]) == (
+        422,
+        "event.coordinator_invalid",
+    )
+    assert missing_field.status_code == 422
+    assert (missing.status_code, missing.json()["code"]) == (404, "event.not_found")
+    assert (cancelled.status_code, cancelled.json()["code"]) == (409, "event.not_editable")
+
+
+def test_ca11_4_estados_por_api(api: Api) -> None:
+    event = api.convert(api.contract()).json()  # 19/12/2026 de 20:00 a 02:00
+    url = f"/v1/events/{event['id']}"
+
+    skip = api.client.post(f"{url}/finish")
+    confirmed = api.client.post(f"{url}/confirm")
+    early = api.client.post(f"{url}/start")
+    api.clock.current = api.clock.current.replace(month=12, day=20, hour=6)  # 01:00 en Lima
+    started = api.client.post(f"{url}/start")
+    finished = api.client.post(f"{url}/finish")
+    again = api.client.post(f"{url}/confirm")
+    changes = api.client.get(f"{url}/changes").json()
+
+    assert (skip.status_code, skip.json()["code"]) == (409, "event.invalid_transition")
+    assert confirmed.json()["status"] == "CONFIRMED"
+    assert (early.status_code, early.json()["code"]) == (409, "event.not_event_day")
+    assert started.json()["status"] == "IN_PROGRESS"
+    assert finished.json()["status"] == "FINISHED"
+    assert (again.status_code, again.json()["code"]) == (409, "event.invalid_transition")
+    assert [c["action"] for c in changes] == ["CONFIRMED", "STARTED", "FINISHED"]
+    assert changes[1]["fields"] == [
+        {"field": "status", "before": "CONFIRMED", "after": "IN_PROGRESS"}
+    ]
+
+
+def test_ca11_5_cancelar_aparece_en_el_historial(api: Api) -> None:
+    event = api.convert(api.contract()).json()
+    url = f"/v1/events/{event['id']}"
+
+    api.client.post(f"{url}/confirm")
+    api.client.post(f"{url}/cancel", json={"reason": "Canceló"})
+
+    actions = [c["action"] for c in api.client.get(f"{url}/changes").json()]
+    assert actions == ["CONFIRMED", "CANCELLED"]
+
+
+def test_hu11_compras_consulta_el_historial_pero_no_planifica(api: Api) -> None:
+    event = api.convert(api.contract()).json()
+    url = f"/v1/events/{event['id']}"
+    api.client.post(f"{url}/confirm")
+    api.sign_in_as(Role.PURCHASING_MANAGER)
+
+    planning = api.client.put(f"{url}/planning", json=_planning(event, guests=90))
+    moves = [api.client.post(f"{url}/{step}") for step in ("confirm", "start", "finish")]
+    changes = api.client.get(f"{url}/changes")
+
+    assert planning.status_code == 403
+    assert [m.status_code for m in moves] == [403, 403, 403]
+    assert changes.status_code == 200
+    assert len(changes.json()) == 1

@@ -14,7 +14,7 @@ from local_eventos.modules.commercial.domain.events.activity import (
     EventActivity,
     EventNote,
 )
-from local_eventos.modules.commercial.domain.events.event import Event
+from local_eventos.modules.commercial.domain.events.event import Event, EventChange
 from local_eventos.modules.identity.public_api import Coordinator
 
 
@@ -22,6 +22,7 @@ class InMemoryEventRepository:
     def __init__(self, client_names: dict[UUID, str] | None = None) -> None:
         self.events: dict[UUID, Event] = {}
         self.counters: dict[int, int] = {}
+        self.changes: list[EventChange] = []
         self._client_names = client_names or {}
 
     async def get(self, event_id: UUID) -> Event | None:
@@ -38,8 +39,13 @@ class InMemoryEventRepository:
             raise EventAlreadyExistsError()
         self.events[event.id] = replace(event)
 
-    async def update(self, event: Event) -> None:
+    async def update(self, event: Event, change: EventChange | None = None) -> None:
         self.events[event.id] = replace(event)
+        if change is not None:
+            self.changes.append(change)
+
+    async def list_changes(self, event_id: UUID) -> list[EventChange]:
+        return [c for c in self.changes if c.event_id == event_id]
 
     async def next_number(self, year: int) -> int:
         self.counters[year] = self.counters.get(year, 0) + 1

@@ -88,7 +88,8 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
     async with engine.begin() as connection:
         await connection.execute(
             text(
-                "TRUNCATE commercial_event_activity_changes, commercial_event_activities,"
+                "TRUNCATE commercial_event_changes, commercial_event_activity_changes,"
+                " commercial_event_activities,"
                 " commercial_event_notes, commercial_event_services, commercial_events,"
                 " commercial_event_counters,"
                 " ledger_payment_voids, ledger_payments, ledger_payment_counters,"
