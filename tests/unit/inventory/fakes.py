@@ -99,6 +99,15 @@ class InMemoryMovementRepository:
             if m.event_id == event_id and (product_id is None or m.product_id == product_id)
         ]
 
+    async def list_between(
+        self, date_from: date, date_to: date, kind: MovementKind | None = None
+    ) -> list[Movement]:
+        return [
+            m
+            for m in sorted(self.movements, key=lambda m: (m.occurred_on, m.recorded_at))
+            if date_from <= m.occurred_on <= date_to and (kind is None or m.kind is kind)
+        ]
+
     async def entries_for(self, product_ids: list[UUID]) -> list[Movement]:
         return [
             m

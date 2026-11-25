@@ -69,3 +69,7 @@ class MovementRepository(Protocol):
     async def event_totals(self, event_id: UUID) -> dict[MovementCategory, int]:
         """Movimientos vigentes asociados al evento, sumados por categoría."""
         ...
+
+    async def entries_between(self, date_from: date, date_to: date) -> list[MovementEntry]:
+        """Movimientos del rango con su anulación, del más antiguo al más reciente."""
+        ...

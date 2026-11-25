@@ -200,6 +200,24 @@ class SqlAlchemyEventRepository:
         ]
         return items, int(total or 0)
 
+    async def codes(self, event_ids: list[UUID]) -> dict[UUID, str]:
+        if not event_ids:
+            return {}
+        rows = await self._session.execute(
+            select(EventRow.id, EventRow.code).where(EventRow.id.in_(event_ids))
+        )
+        return {event_id: code for event_id, code in rows}
+
+    async def codes_by_contract(self, contract_ids: list[UUID]) -> dict[UUID, str]:
+        if not contract_ids:
+            return {}
+        rows = await self._session.execute(
+            select(EventRow.contract_id, EventRow.code).where(
+                EventRow.contract_id.in_(contract_ids)
+            )
+        )
+        return {contract_id: code for contract_id, code in rows}
+
     async def _to_event(self, row: EventRow) -> Event:
         services = await self._session.scalars(
             select(EventServiceRow)

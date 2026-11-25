@@ -5,6 +5,7 @@ dentro de la misma transacción de la petición; `reporting` lee los materiales 
 (AGENTS.md, regla 3).
 """
 
+from datetime import date
 from typing import Protocol
 from uuid import UUID
 
@@ -15,21 +16,27 @@ from local_eventos.modules.inventory.application.use_cases.lookups import (
     EventMaterialInfo,
     ListEventMaterials,
     ListLowStock,
+    ListMovementsBetween,
+    ListStock,
     LookupProduct,
     LowStockItem,
+    MovementItem,
     ProductInfo,
+    StockItem,
 )
 from local_eventos.modules.inventory.application.use_cases.movements import (
     RecordedMovement,
     RecordEntries,
     StockEntry,
 )
+from local_eventos.modules.inventory.application.use_cases.products import ProductViews
 from local_eventos.modules.inventory.domain.errors import (
     InsufficientStockError,
     InventoryRuleError,
     InventoryValidationError,
 )
-from local_eventos.modules.inventory.domain.product import ProductKind, Unit
+from local_eventos.modules.inventory.domain.movement import MovementKind
+from local_eventos.modules.inventory.domain.product import Category, ProductKind, Unit
 
 
 class ProductLookup(Protocol):
@@ -58,6 +65,22 @@ class StockReceiver(Protocol):
     ) -> list[RecordedMovement]: ...
 
 
+class StockReportLookup(Protocol):
+    """Stock actual por producto con costo, valor y alertas (reporte de almacén y panel)."""
+
+    async def __call__(
+        self, category: Category | None = None, *, include_inactive: bool = False
+    ) -> list[StockItem]: ...
+
+
+class MovementsReportLookup(Protocol):
+    """Movimientos de almacén del rango, con su producto (reporte de movimientos)."""
+
+    async def __call__(
+        self, date_from: date, date_to: date, kind: MovementKind | None = None
+    ) -> list[MovementItem]: ...
+
+
 def product_lookup(session: AsyncSession) -> ProductLookup:
     return LookupProduct(composition.product_repository(session))
 
@@ -79,7 +102,25 @@ def stock_receiver(session: AsyncSession) -> StockReceiver:
     return RecordEntries(composition.record_movement(session))
 
 
+def stock_report(session: AsyncSession) -> StockReportLookup:
+    """Consulta de solo lectura para `reporting` (CA-32.3, CA-31.10)."""
+    views = ProductViews(
+        composition.stock_repository(session),
+        composition.movement_repository(session),
+        composition.clock(),
+    )
+    return ListStock(composition.product_repository(session), views)
+
+
+def movements_report(session: AsyncSession) -> MovementsReportLookup:
+    """Consulta de solo lectura para `reporting` (CA-32.3)."""
+    return ListMovementsBetween(
+        composition.product_repository(session), composition.movement_repository(session)
+    )
+
+
 __all__ = [
+    "Category",
     "EventMaterialInfo",
     "EventMaterialsLookup",
     "InsufficientStockError",
@@ -87,15 +128,22 @@ __all__ = [
     "InventoryValidationError",
     "LowStockItem",
     "LowStockLookup",
+    "MovementItem",
+    "MovementKind",
+    "MovementsReportLookup",
     "ProductInfo",
     "ProductKind",
     "ProductLookup",
     "RecordedMovement",
     "StockEntry",
+    "StockItem",
     "StockReceiver",
+    "StockReportLookup",
     "Unit",
     "event_materials",
     "low_stock_lookup",
+    "movements_report",
     "product_lookup",
     "stock_receiver",
+    "stock_report",
 ]

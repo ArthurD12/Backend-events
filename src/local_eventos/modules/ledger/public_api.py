@@ -13,9 +13,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from local_eventos.modules.ledger import composition
 from local_eventos.modules.ledger.application.errors import PaymentNotFoundError
-from local_eventos.modules.ledger.application.ports.payment_repository import PaymentEntry
+from local_eventos.modules.ledger.application.ports.payment_repository import (
+    ContractPaidTotals,
+    PaymentEntry,
+)
 from local_eventos.modules.ledger.application.use_cases.cash import (
+    CashEntries,
+    CashEntry,
+    CashEntryKind,
     CashTotals,
+    ContractPaidTotalsQuery,
     EventCash,
     MonthlyCash,
 )
@@ -76,6 +83,18 @@ class EventCashLookup(Protocol):
     async def __call__(self, event_id: UUID) -> dict[MovementCategory, int]: ...
 
 
+class ContractPaidTotalsLookup(Protocol):
+    """Pagado y devuelto vigentes de varios contratos (reportes y panel, HU31–HU34)."""
+
+    async def __call__(self, contract_ids: list[UUID]) -> dict[UUID, ContractPaidTotals]: ...
+
+
+class CashEntriesLookup(Protocol):
+    """Pagos y movimientos del rango, anulados incluidos y marcados (reporte de caja, CA-32.2)."""
+
+    async def __call__(self, date_from: date, date_to: date) -> list[CashEntry]: ...
+
+
 def payment_recorder(session: AsyncSession) -> PaymentRecorder:
     return RecordPayment(composition.payment_repository(session))
 
@@ -106,8 +125,25 @@ def event_cash(session: AsyncSession) -> EventCashLookup:
     return EventCash(composition.movement_repository(session))
 
 
+def contract_paid_totals(session: AsyncSession) -> ContractPaidTotalsLookup:
+    """Consulta de solo lectura para `commercial` (saldo de varios contratos a la vez)."""
+    return ContractPaidTotalsQuery(composition.payment_repository(session))
+
+
+def cash_entries(session: AsyncSession) -> CashEntriesLookup:
+    """Consulta de solo lectura para el reporte de caja (`reporting`)."""
+    return CashEntries(
+        composition.payment_repository(session), composition.movement_repository(session)
+    )
+
+
 __all__ = [
+    "CashEntriesLookup",
+    "CashEntry",
+    "CashEntryKind",
     "CashTotalsLookup",
+    "ContractPaidTotals",
+    "ContractPaidTotalsLookup",
     "EventCashLookup",
     "LedgerValidationError",
     "MonthlyCash",
@@ -124,7 +160,9 @@ __all__ = [
     "PaymentVoid",
     "PaymentVoider",
     "PaymentsLookup",
+    "cash_entries",
     "cash_totals",
+    "contract_paid_totals",
     "event_cash",
     "payment_entries",
     "payment_finder",

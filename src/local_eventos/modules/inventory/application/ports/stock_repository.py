@@ -1,9 +1,10 @@
 """Puertos del stock y de los movimientos. Los movimientos solo se agregan y se leen."""
 
+from datetime import date
 from typing import Protocol
 from uuid import UUID
 
-from local_eventos.modules.inventory.domain.movement import Movement
+from local_eventos.modules.inventory.domain.movement import Movement, MovementKind
 from local_eventos.modules.inventory.domain.stock import StockLevel
 
 
@@ -39,4 +40,10 @@ class MovementRepository(Protocol):
 
     async def entries_for(self, product_ids: list[UUID]) -> list[Movement]:
         """Entradas de esos productos (para las alertas de vencimiento)."""
+        ...
+
+    async def list_between(
+        self, date_from: date, date_to: date, kind: MovementKind | None = None
+    ) -> list[Movement]:
+        """Movimientos del rango (por fecha del movimiento), del más antiguo al más reciente."""
         ...
