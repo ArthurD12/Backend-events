@@ -1,8 +1,10 @@
 """Ensamblaje de dependencias del módulo staff.
 
 Es el único lugar que conoce las clases concretas de `infrastructure`: el resto del
-módulo trabaja con los puertos (`WorkerRepository`, `Clock`). La presentación solo
-adapta HTTP y delega aquí la construcción de repositorio, reloj y casos de uso.
+módulo trabaja con los puertos (`WorkerRepository`, `Clock`). Construye el
+repositorio sobre la sesión de la petición, el reloj del sistema y los casos de uso
+(`RegisterWorker`, `UpdateWorker`, `GetWorker`, `SearchWorkers`, `DeactivateWorker`,
+`ActivateWorker`); la presentación solo adapta HTTP y delega aquí.
 
 `worker_lookup` es la fábrica del puerto público que usarán otros módulos (por
 ejemplo HU17) para consultar estado y función sin acceder a datos sensibles.

@@ -29,7 +29,7 @@ Un solo despliegue (API FastAPI + PostgreSQL), dividido en **módulos de negocio
 │     ├─ identity/           # usuarios, roles, permisos, auth, historial de accesos
 │     ├─ commercial/         # clientes, cotizaciones, contratos y eventos (ADR 0003)
 │     ├─ catalog/            # catálogo de servicios y precios referenciales
-│     ├─ staff/              # trabajadores, disponibilidad, asignaciones sin cruces
+│     ├─ staff/              # trabajadores (HU15); disponibilidad y asignaciones sin cruces en HU17
 │     ├─ ledger/             # pagos, ingresos, egresos, saldos (append-only)
 │     ├─ inventory/          # productos, lotes, movimientos, requerimientos por evento
 │     ├─ purchasing/         # proveedores, solicitudes de compra, recepción
@@ -114,6 +114,7 @@ modules =
 - **Concurrencia:** restricción de exclusión para asignaciones de personal (sin cruces de horario); bloqueo de filas (`FOR UPDATE`) al descontar lotes de inventario.
 - **Idempotencia:** `Idempotency-Key` al registrar pagos y movimientos, y al convertir un contrato en evento.
 - **Auditoría:** cada cambio sensible guarda quién, cuándo, qué y el motivo (ledger, contratos, anulaciones, ajustes de inventario, consultas al agente).
+- **Tablas append-only:** los historiales que no se corrigen se escriben en tablas de solo inserción protegidas con trigger `BEFORE UPDATE OR DELETE` en PostgreSQL. Ejemplos: `identity_access_log`, `ledger_payments` y `staff_worker_audit` (esta última guarda alta, edición, activación y desactivación de un trabajador con actor y fecha-hora; plan §4 de `032-staff`).
 - **Observabilidad:** logs JSON con `request_id` (structlog), errores a Sentry, `/health` y `/ready`.
 - **Seguridad:** authn/authz en `presentation` por permiso; reglas de negocio de autorización en `application`.
 

@@ -1,8 +1,9 @@
 """Endpoints de trabajadores (HU15). Traducen HTTP ⇄ casos de uso; sin reglas de negocio.
 
-Todas las rutas exigen `staff:manage` (administrador y encargado de eventos; compras
-no tiene acceso). No existe `DELETE`: la baja es lógica mediante `deactivate`
-(plan §5.1, CA-15.11). `PUT` es reemplazo completo de los campos editables.
+Todas las rutas exigen el permiso `staff:manage` (administrador y encargado de
+eventos; compras no tiene acceso, ni siquiera lectura). No existe `DELETE`: la baja
+es lógica mediante `deactivate` y la fila se conserva (plan §5.1, CA-15.11).
+`PUT` es reemplazo completo de los campos editables.
 """
 
 from typing import Annotated, Any, Literal
