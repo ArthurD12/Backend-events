@@ -208,7 +208,8 @@ class ContractBalance:
 
     - Pendiente de firma: saldo = total − adelanto pactado (aún no hay pagos; el adelanto se
       paga al firmar, R-CON-1).
-    - Firmado o anulado: saldo = total − pagos + devoluciones.
+    - Firmado: saldo = total − pagos + devoluciones.
+    - Anulado: no hay saldo por cobrar (0). Lo pagado y lo devuelto se siguen mostrando.
     """
 
     status: ContractStatus
@@ -222,6 +223,8 @@ class ContractBalance:
     def of(cls, contract: Contract, *, paid_cents: int, refunded_cents: int) -> ContractBalance:
         if contract.status is ContractStatus.PENDING_SIGNATURE:
             balance = contract.balance_cents
+        elif contract.status is ContractStatus.CANCELLED:
+            balance = 0  # un contrato anulado no tiene nada por cobrar
         else:
             balance = contract.total_cents - paid_cents + refunded_cents
         return cls(
