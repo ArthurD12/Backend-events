@@ -3,7 +3,7 @@
 Formato: `- [ ] T-NN [capa] descripción — archivos — hecho cuando …`
 
 - [x] T-01 [domain] `Worker`, `Period`, `Unavailability`, `Assignment`, `Availability` + tests — `modules/staff/domain/**` — tests unitarios verdes
-- [ ] T-02 [application] Casos de uso y puertos (repos, `EventLookup`, reloj) + tests con fakes — `modules/staff/application/**`
+- [x] T-02 [application] Casos de uso y puertos (repos, `EventLookup`, reloj) + tests con fakes — `modules/staff/application/**`
 - [ ] T-03 [commercial] `commercial.public_api.event_lookup` + puerto `AssignmentReleaser` en `CancelEvent` (R-STF-5) + tests — `modules/commercial/**`
 - [ ] T-04 [identity] Permisos `staff:manage` y `staff:read` + test de roles — `modules/identity/domain/permissions.py`
 - [ ] T-05 [infra] ORM, repositorios, migración (btree_gist + EXCLUDE) + tests de integración — `modules/staff/infrastructure/**`, `migrations/versions/**`
