@@ -13,7 +13,7 @@ El objetivo es tener un **registro único de trabajadores** con sus datos de con
 ## 2. Actores
 - **Administrador**: registra, consulta, modifica, activa y desactiva trabajadores.
 - **Encargado de eventos**: también registra, consulta, modifica, activa y desactiva trabajadores. En el negocio se le llama **"vendedor"**: es el mismo rol, no uno nuevo.
-- **Encargado de compras y almacén**: **sin acceso** al módulo de personal, ni siquiera de lectura (decisión de negocio 24/11/2026; sustituye la *lectura* de DOMAIN.md §9, ver nota en §8).
+- **Encargado de compras y almacén**: **sin acceso** al módulo de personal, ni siquiera de lectura (decisión de negocio 24/11/2026; coherente con DOMAIN.md §9, fila «Personal (trabajadores)»).
 - **Trabajador**: *no* es usuario del sistema. No inicia sesión, no consulta ni edita sus datos; sus cuentas de acceso serían otra historia (identity).
 
 ## 3. Historia
@@ -53,7 +53,7 @@ El objetivo es tener un **registro único de trabajadores** con sus datos de con
 - **R-STF-2** *(HU15)*: la baja es **lógica** (cambio de estado), nunca borrado físico; se aplica para no romper la integridad referencial con el historial de eventos.
 - **R-STF-3** *(HU15)*: desactivar **no elimina** el historial de eventos del trabajador.
 - **R-STF-4** *(DOMAIN.md §5, RN11)*: solo se asignan trabajadores **activos y disponibles**. En esta historia se garantiza el estado; el rechazo al asignar lo aplica HU17.
-- **R-STF-5** *(DOMAIN.md §9; negocio, 24/11/2026)*: la autorización es por **permiso** ligado a una capacidad, no por nombre de rol; el acceso al personal exige un permiso nuevo en `identity` (nombre a fijar en el plan). Lo tienen administrador y encargado de eventos; el encargado de compras y almacén **no lo tiene**.
+- **R-STF-5** *(DOMAIN.md §9; negocio, 24/11/2026)*: la autorización es por **permiso** ligado a una capacidad, no por nombre de rol; el acceso al personal exige el permiso `staff:manage` en `identity`. Lo tienen administrador y encargado de eventos; el encargado de compras y almacén **no lo tiene**.
 - **R-STF-6** *(DOMAIN.md §9, RN02 y RN03)*: los registros con operaciones relacionadas no se eliminan, se desactivan; correcciones, altas, activaciones y bajas guardan usuario, fecha y hora (el motivo, solo si se informa).
 - **R-STF-7** *(DOMAIN.md §2 y §5)*: la **tarifa referencial** no es el pago. El pago acordado se fija en cada asignación (RN13, HU17); cambiar la tarifa de un trabajador no altera asignaciones ni pagos ya acordados.
 - **R-STF-8** *(DOMAIN.md §4.1, regla 3; negocio, 24/11/2026)*: la tarifa es **por evento**, en céntimos de sol (`PEN`), **opcional y referencial**. La ficha indica si **aplica hora extra** y, solo en ese caso, un **monto referencial por hora extra**, que es **variable** y puede ajustarse en cada asignación (HU17); el pago real se acuerda ahí.
@@ -97,6 +97,6 @@ El objetivo es tener un **registro único de trabajadores** con sus datos de con
 - [x] **Q10 — Descripción de la función "otro"**: cuando la función es "otro" se exige una **descripción breve obligatoria** de la función real; con las demás funciones no se registra descripción.
 - [x] **Q11 — Formato del documento**: **DNI de 8 dígitos**; **CE solo dígitos, entre 9 y 12**; se normaliza quitando espacios y guiones.
 
-> **Pendiente de documentación (no en esta spec)**: DOMAIN.md §9 debe actualizarse porque la fila "Eventos, personal y asignaciones" da *lectura* al encargado de compras y esta spec decide **sin acceso al personal**. El cambio se hará en la fase de docs.
+> **Nota de cierre**: DOMAIN.md §9 ya refleja que el encargado de compras y almacén **no tiene acceso al personal**, ni de lectura (fila «Personal (trabajadores)»). Coherente con §2, CA-15.23, R-STF-16 y Q8.
 >
 > **Nota de validación**: la respuesta fue "obligatorios: solo nombre y documento", así que **función y tipo** quedan como datos opcionales. Si negocio prefiere exigirlos, debe confirmarlo; aquí no se asume.

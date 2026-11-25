@@ -310,7 +310,7 @@ Los nombres de test son orientativos; la suite real cubre los CA.
 | CA-15.11 | `unit/staff/test_worker_api.py::test_ca15_11_no_existe_delete`; `unit/staff/test_worker.py::test_ca15_11_sin_metodo_delete` |
 | CA-15.12 | `unit/staff/test_worker_use_cases.py::test_ca15_12_worker_lookup_estado_y_funcion`; `integration/staff/test_worker_repository.py::test_ca15_12_lookup_inactivo` |
 | CA-15.13 | `integration/staff/test_worker_repository.py::test_ca15_13_baja_logica_conserva_fila_y_auditoria` (el historial de eventos se probará en HU17) |
-| CA-15.14 | `unit/staff/test_worker_api.py::test_ca15_14_permisos_por_rol` (admin/eventos 2xx, compras 403, sin sesión 401) |
+| CA-15.14 | `unit/staff/test_worker_api_roles.py::test_admin_y_eventos_obtienen_2xx_en_las_seis_rutas`; `unit/staff/test_worker_api_roles.py::test_compras_recibe_403_en_las_seis_rutas_sin_alterar_datos`; `unit/staff/test_worker_api_roles.py::test_sin_sesion_responde_401_en_las_seis_rutas_sin_alterar_datos` |
 | CA-15.15 | `unit/staff/test_worker.py::test_ca15_15_matriz_validacion`; `unit/staff/test_worker_api.py::test_ca15_15_422`; `integration/staff/test_worker_repository.py::test_ca15_15_checks` |
 | CA-15.16 | `unit/staff/test_worker_use_cases.py::test_ca15_16_auditoria_en_las_cuatro_operaciones`; `integration/staff/test_worker_repository.py::test_ca15_16_filas_auditoria` |
 | CA-15.17 | `unit/staff/test_worker.py::test_ca15_17_tipo_fijo_o_eventual`; `unit/staff/test_worker_api.py::test_ca15_17_enum` |
@@ -319,7 +319,7 @@ Los nombres de test son orientativos; la suite real cubre los CA.
 | CA-15.20 | `unit/staff/test_worker.py::test_ca15_20_tarifa_centimos_opcional`; `unit/staff/test_worker_api.py::test_ca15_20_rate_cents` |
 | CA-15.21 | `unit/staff/test_worker.py::test_ca15_21_hora_extra_condicional`; `integration/staff/test_worker_repository.py::test_ca15_21_check_hora_extra` |
 | CA-15.22 | `unit/staff/test_worker.py::test_ca15_22_telefono_solo_digitos_sin_longitud`; `integration/staff/test_worker_repository.py::test_ca15_22_check_telefono` |
-| CA-15.23 | `unit/staff/test_worker_api.py::test_ca15_23_compras_403_en_todas_las_rutas` |
+| CA-15.23 | `unit/staff/test_worker_api_roles.py::test_compras_recibe_403_en_las_seis_rutas_sin_alterar_datos` (403 en las seis rutas: registrar, listar, ver ficha, modificar, activar y desactivar) |
 | CA-15.24 | `unit/staff/test_worker_use_cases.py::test_ca15_24_reactivacion_auditada`; `integration/staff/test_worker_repository.py::test_ca15_24_auditoria_activacion` |
 | CA-15.25 | `unit/staff/test_worker.py::test_ca15_25_otro_exige_descripcion`; `unit/staff/test_worker_api.py::test_ca15_25_422`; `integration/staff/test_worker_repository.py::test_ca15_25_check_funcion` |
 
@@ -342,7 +342,7 @@ Los nombres de test son orientativos; la suite real cubre los CA.
 - **`docs/DOMAIN.md`**:
   - §2: precisar el glosario de **Trabajador** (documento, función, tipo, estado, tarifa referencial).
   - §5: agregar las reglas R-STF-1..17 (o un resumen que remita a la spec).
-  - §9: **dividir** la fila `Eventos, personal y asignaciones` en `Eventos y asignaciones` (compras: lectura, como hoy) y `Personal (trabajadores)` (admin/eventos: ✔; compras: –), con la nota de `staff:manage` (24/11/2026).
+  - §9: **hecho** — la fila `Eventos, personal y asignaciones` se dividió en `Eventos y asignaciones` (compras: lectura) y `Personal (trabajadores)` (admin/eventos: ✔; compras: –), con la nota de `staff:manage` (24/11/2026).
   - §11: registrar las decisiones del 24/11/2026 (tipo, función/otro, tarifa y hora extra, documento, obligatorios, baja/reactivación, listado, permisos, unicidad, formato).
 - **`docs/architecture/ARCHITECTURE.md`**: agregar personal a los ejemplos de auditoría (§6); opcionalmente aclarar en el mapa que HU15 solo trabajadores y HU17 asignaciones.
 - **`openapi.json`**: regenerar con `just openapi`.
