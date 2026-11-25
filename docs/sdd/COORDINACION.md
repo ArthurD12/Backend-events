@@ -17,7 +17,8 @@ Un agente **no modifica** un módulo de otro dueño. Si necesita algo de él, lo
 | Trabajo | Dueño | Rama | Estado |
 |---|---|---|---|
 | HU17 (asignaciones) | Harold | `feat/hu17-asignaciones` (desde `developer-b`) | spec/plan aprobados; implementación |
-| HU16 (disponibilidad) y HU18 (asistencia) | Harold | — | por empezar, después de HU17 |
+| HU16 (disponibilidad) | Harold | `feat/hu16-disponibilidad` (solo docs, otra sesión) | spec/plan en paralelo; implementación bloqueada por HU17 (necesita asignaciones) |
+| HU18 (asistencia) | Harold | — | después de HU17 |
 | Lote 6: reportes (HU31 completo, HU32–HU34) | César | `feat/reportes` | spec |
 | Lote 7: HU24, HU25, HU30 | César | — | después del lote 6 |
 
@@ -48,3 +49,4 @@ Cuando un punto pase a "listo", avisar al otro dueño para que lo conecte.
 2. **No se une un PR con el CI en rojo**, aunque GitHub lo permita.
 3. Después de resolver conflictos, volver a correr todo: un merge puede romper lo que antes pasaba.
 4. Un PR por historia o lote; `developer-b` → `main` solo después de una prueba de punta a punta.
+5. Dos features del **mismo módulo** no se implementan en paralelo: comparten dominio, ORM, composición y migraciones. El spec/plan sí puede ir en paralelo; el código espera a que la primera tenga su migración mergeada y `alembic heads` con un solo head.
