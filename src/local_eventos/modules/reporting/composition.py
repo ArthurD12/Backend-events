@@ -2,10 +2,13 @@
 
 from local_eventos.modules.reporting.application.ports.clock import Clock
 from local_eventos.modules.reporting.application.ports.event_staff import EventStaffLookup
+from local_eventos.modules.reporting.application.ports.exporter import ReportExporter
 from local_eventos.modules.reporting.application.ports.workers import WorkersReportLookup
 from local_eventos.modules.reporting.infrastructure.clock import SystemClock
+from local_eventos.modules.reporting.infrastructure.csv_exporter import CsvExporter
 from local_eventos.modules.reporting.infrastructure.no_event_staff import NoEventStaff
 from local_eventos.modules.reporting.infrastructure.no_workers import no_workers
+from local_eventos.modules.reporting.infrastructure.pdf_exporter import PdfExporter
 
 
 def event_staff() -> EventStaffLookup:
@@ -20,3 +23,11 @@ def workers_report() -> WorkersReportLookup | None:
 
 def clock() -> Clock:
     return SystemClock()
+
+
+def csv_exporter() -> ReportExporter:
+    return CsvExporter()
+
+
+def pdf_exporter() -> ReportExporter:
+    return PdfExporter()
