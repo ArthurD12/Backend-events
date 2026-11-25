@@ -48,9 +48,17 @@ from local_eventos.modules.purchasing.presentation import purchase_router, suppl
 from local_eventos.modules.purchasing.presentation.errors import (
     register_error_handlers as register_purchasing_errors,
 )
-from local_eventos.modules.reporting.presentation import dashboard_router, finance_router
+from local_eventos.modules.reporting.presentation import (
+    dashboard_router,
+    finance_router,
+    sheet_router,
+)
 from local_eventos.modules.reporting.presentation.errors import (
     register_error_handlers as register_reporting_errors,
+)
+from local_eventos.modules.staff.presentation import worker_router
+from local_eventos.modules.staff.presentation.errors import (
+    register_error_handlers as register_staff_errors,
 )
 from local_eventos.shared.infrastructure.config import CorsSettings, Settings
 from local_eventos.shared.infrastructure.db import check_database, create_engine
@@ -105,12 +113,14 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     app.include_router(activity_router.router)
     app.include_router(dashboard_router.router)
     app.include_router(finance_router.router)
+    app.include_router(sheet_router.router)
     app.include_router(category_router.router)
     app.include_router(service_router.router)
     app.include_router(product_router.router)
     app.include_router(inventory_movement_router.router)
     app.include_router(supplier_router.router)
     app.include_router(purchase_router.router)
+    app.include_router(worker_router.router)
     register_identity_errors(app)
     register_commercial_errors(app)
     register_ledger_errors(app)
@@ -118,6 +128,7 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     register_reporting_errors(app)
     register_inventory_errors(app)
     register_purchasing_errors(app)
+    register_staff_errors(app)
     return app
 
 

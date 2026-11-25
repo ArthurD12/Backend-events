@@ -19,6 +19,7 @@ from local_eventos.modules.inventory.application.errors import (
 )
 from local_eventos.modules.inventory.application.ports.product_repository import ProductFilters
 from local_eventos.modules.inventory.application.use_cases.lookups import (
+    ListEventMaterials,
     ListLowStock,
     LookupProduct,
 )
@@ -230,6 +231,27 @@ async def test_ca26_6_materiales_del_evento_por_producto() -> None:
     assert world.stock.levels[plate.id].quantity == Decimal(95)  # la merma del evento no resta
     with pytest.raises(EventNotFoundError):
         await world.materials()(uuid4())
+
+
+async def test_hu14_materiales_del_evento_para_la_ficha() -> None:
+    world = World()
+    plate = await world.product()
+    sugar = await world.product("AZU-01", name="Azúcar", kind=ProductKind.CONSUMABLE)
+    event = world.events.add()
+    await world.entry(plate, "100")
+    await world.entry(sugar, "10")
+    await world.move(EXIT, plate, "50", event_id=event)
+    await world.move(EXIT, sugar, "2.5", event_id=event)
+    await world.move(RETURN, plate, "45", event_id=event)
+    await world.move(WASTE, plate, "1", event_id=event, reason="roto")
+
+    lines = await ListEventMaterials(world.products, world.movements)(event)
+
+    assert [(m.product.code, m.out, m.returned, m.wasted, m.pending_return) for m in lines] == [
+        ("AZU-01", Decimal("2.5"), 0, 0, 0),
+        ("PLA-01", Decimal(50), Decimal(45), Decimal(1), Decimal(4)),
+    ]
+    assert await ListEventMaterials(world.products, world.movements)(uuid4()) == []
 
 
 async def test_recibir_varias_entradas_en_orden_de_producto() -> None:
