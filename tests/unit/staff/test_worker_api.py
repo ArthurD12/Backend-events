@@ -194,6 +194,16 @@ def test_ca15_25_422_funcion_otro_sin_descripcion(api: TestClient) -> None:
     assert response.json()["code"] == "staff.function_description_required"
 
 
+def test_ca15_25_422_descripcion_de_funcion_demasiado_larga(api: TestClient) -> None:
+    response = api.post(
+        "/v1/staff",
+        json={**ANA, "function": "OTHER", "function_description": "x" * 121},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["code"] == "staff.function_description_too_long"
+
+
 def test_ca15_8_query_filtros_y_paginacion(api: TestClient) -> None:
     ana = _register(api, ANA)
     _register(api, BETO)

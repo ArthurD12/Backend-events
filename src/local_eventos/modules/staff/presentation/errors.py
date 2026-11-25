@@ -6,7 +6,10 @@ Todas las respuestas usan el formato Problem Details del resto de la API.
 """
 
 from fastapi import FastAPI, Request
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.responses import Response
 
 from local_eventos.modules.staff.application.errors import (
     DuplicateDocumentError,
@@ -20,6 +23,20 @@ from local_eventos.shared.presentation.problems import problem_response
 async def _validation_error(request: Request, error: Exception) -> JSONResponse:
     assert isinstance(error, StaffValidationError)
     return problem_response(status=422, title="Dato inválido", code=error.code, detail=str(error))
+
+
+async def _request_validation_error(request: Request, error: Exception) -> Response:
+    assert isinstance(error, RequestValidationError)
+    for item in error.errors():
+        loc = item.get("loc", ())
+        if item.get("type") == "string_too_long" and loc and loc[-1] == "function_description":
+            return problem_response(
+                status=422,
+                title="Dato inválido",
+                code="staff.function_description_too_long",
+                detail="La descripción de la función no puede superar 120 caracteres.",
+            )
+    return await request_validation_exception_handler(request, error)
 
 
 async def _not_found_error(request: Request, error: Exception) -> JSONResponse:
@@ -47,6 +64,7 @@ async def _application_error(request: Request, error: Exception) -> JSONResponse
 def register_error_handlers(app: FastAPI) -> None:
     """Registra los manejadores de personal en la aplicación FastAPI."""
     app.add_exception_handler(StaffValidationError, _validation_error)
+    app.add_exception_handler(RequestValidationError, _request_validation_error)
     app.add_exception_handler(DuplicateDocumentError, _duplicate_document_error)
     app.add_exception_handler(WorkerNotFoundError, _not_found_error)
     app.add_exception_handler(StaffApplicationError, _application_error)

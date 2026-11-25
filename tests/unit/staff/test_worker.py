@@ -106,6 +106,21 @@ def test_otro_sin_descripcion_falla(description: str | None) -> None:
     assert error.value.code == "staff.function_description_required"
 
 
+def test_otro_descripcion_de_120_valida() -> None:
+    description = "x" * 120
+
+    worker = _register(function=WorkerFunction.OTHER, function_description=description)
+
+    assert worker.function_description == description
+
+
+def test_otro_descripcion_de_121_falla() -> None:
+    with pytest.raises(StaffValidationError) as error:
+        _register(function=WorkerFunction.OTHER, function_description="x" * 121)
+
+    assert error.value.code == "staff.function_description_too_long"
+
+
 @pytest.mark.parametrize(
     "function",
     [

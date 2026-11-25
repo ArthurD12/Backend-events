@@ -21,6 +21,7 @@ from local_eventos.modules.staff.domain.errors import StaffValidationError
 from local_eventos.modules.staff.domain.money import Money
 
 _NAME_MAX_LENGTH = 150
+_FUNCTION_DESCRIPTION_MAX_LENGTH = 120
 _PHONE_PATTERN = re.compile(r"^[0-9]+$")
 
 
@@ -162,6 +163,12 @@ def _clean_function_description(
             raise StaffValidationError(
                 "staff.function_description_required",
                 "La función «otro» exige una descripción.",
+            )
+        if len(cleaned) > _FUNCTION_DESCRIPTION_MAX_LENGTH:
+            raise StaffValidationError(
+                "staff.function_description_too_long",
+                "La descripción de la función no puede superar "
+                f"{_FUNCTION_DESCRIPTION_MAX_LENGTH} caracteres.",
             )
         return cleaned
     if cleaned is not None:
