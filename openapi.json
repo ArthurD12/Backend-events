@@ -2350,6 +2350,71 @@
         "title": "EventServiceOut",
         "type": "object"
       },
+      "EventSheetOut": {
+        "properties": {
+          "account": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SheetAccountOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío sin el permiso `payments:record`"
+          },
+          "client": {
+            "$ref": "#/components/schemas/SheetClientOut"
+          },
+          "event": {
+            "$ref": "#/components/schemas/SheetEventOut"
+          },
+          "follow_up": {
+            "$ref": "#/components/schemas/SheetFollowUpOut"
+          },
+          "materials": {
+            "description": "Por producto, ordenado por nombre",
+            "items": {
+              "$ref": "#/components/schemas/SheetMaterialOut"
+            },
+            "title": "Materials",
+            "type": "array"
+          },
+          "services": {
+            "items": {
+              "$ref": "#/components/schemas/SheetServiceOut"
+            },
+            "title": "Services",
+            "type": "array"
+          },
+          "staff": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SheetStaffOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío (`null`): sin información de personal (CA-14.3)",
+            "title": "Staff"
+          }
+        },
+        "required": [
+          "event",
+          "client",
+          "services",
+          "staff",
+          "materials",
+          "account",
+          "follow_up"
+        ],
+        "title": "EventSheetOut",
+        "type": "object"
+      },
       "EventStatus": {
         "description": "DOMAIN.md §3: programado → confirmado → en ejecución → finalizado · cancelado.",
         "enum": [
@@ -4412,6 +4477,524 @@
           "active"
         ],
         "title": "ServiceOut",
+        "type": "object"
+      },
+      "SheetAccountOut": {
+        "description": "CA-14.5: total, pagado, saldo, fecha límite y pagos del contrato.",
+        "properties": {
+          "balance_cents": {
+            "description": "Saldo por cobrar (RN15)",
+            "title": "Balance Cents",
+            "type": "integer"
+          },
+          "balance_due_date": {
+            "format": "date",
+            "title": "Balance Due Date",
+            "type": "string"
+          },
+          "contract_code": {
+            "title": "Contract Code",
+            "type": "string"
+          },
+          "contract_id": {
+            "format": "uuid",
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "contract_status": {
+            "$ref": "#/components/schemas/ContractStatus"
+          },
+          "currency": {
+            "default": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "overdue": {
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "paid_cents": {
+            "description": "Pagos vigentes (adelanto incluido)",
+            "title": "Paid Cents",
+            "type": "integer"
+          },
+          "payments": {
+            "items": {
+              "$ref": "#/components/schemas/SheetPaymentOut"
+            },
+            "title": "Payments",
+            "type": "array"
+          },
+          "refunded_cents": {
+            "title": "Refunded Cents",
+            "type": "integer"
+          },
+          "total_cents": {
+            "title": "Total Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "contract_id",
+          "contract_code",
+          "contract_status",
+          "total_cents",
+          "paid_cents",
+          "refunded_cents",
+          "balance_cents",
+          "balance_due_date",
+          "overdue",
+          "payments"
+        ],
+        "title": "SheetAccountOut",
+        "type": "object"
+      },
+      "SheetActivityOut": {
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "responsible_id": {
+            "format": "uuid",
+            "title": "Responsible Id",
+            "type": "string"
+          },
+          "responsible_name": {
+            "description": "Vacío si el usuario no existe",
+            "title": "Responsible Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ActivityStatus"
+          }
+        },
+        "required": [
+          "id",
+          "description",
+          "status",
+          "responsible_id",
+          "responsible_name",
+          "created_at",
+          "completed_at"
+        ],
+        "title": "SheetActivityOut",
+        "type": "object"
+      },
+      "SheetClientOut": {
+        "properties": {
+          "document_number": {
+            "title": "Document Number",
+            "type": "string"
+          },
+          "document_type": {
+            "title": "Document Type",
+            "type": "string"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "title": "Phone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "document_type",
+          "document_number",
+          "phone",
+          "email"
+        ],
+        "title": "SheetClientOut",
+        "type": "object"
+      },
+      "SheetEventOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "contract_id": {
+            "format": "uuid",
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "coordinator_id": {
+            "format": "uuid",
+            "title": "Coordinator Id",
+            "type": "string"
+          },
+          "coordinator_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío si el usuario no existe",
+            "title": "Coordinator Name"
+          },
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "ends_next_day": {
+            "title": "Ends Next Day",
+            "type": "boolean"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "event_type": {
+            "$ref": "#/components/schemas/EventType"
+          },
+          "guests": {
+            "title": "Guests",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventStatus"
+          },
+          "venue": {
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "status",
+          "event_type",
+          "event_date",
+          "start_time",
+          "end_time",
+          "ends_next_day",
+          "venue",
+          "guests",
+          "coordinator_id",
+          "coordinator_name",
+          "contract_id"
+        ],
+        "title": "SheetEventOut",
+        "type": "object"
+      },
+      "SheetFollowUpOut": {
+        "description": "CA-14.6: actividades pendientes y completadas, y las últimas observaciones.",
+        "properties": {
+          "done": {
+            "description": "Por orden de creación",
+            "items": {
+              "$ref": "#/components/schemas/SheetActivityOut"
+            },
+            "title": "Done",
+            "type": "array"
+          },
+          "pending": {
+            "description": "Por orden de creación",
+            "items": {
+              "$ref": "#/components/schemas/SheetActivityOut"
+            },
+            "title": "Pending",
+            "type": "array"
+          },
+          "recent_notes": {
+            "description": "De la más reciente a la más antigua",
+            "items": {
+              "$ref": "#/components/schemas/SheetNoteOut"
+            },
+            "title": "Recent Notes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "pending",
+          "done",
+          "recent_notes"
+        ],
+        "title": "SheetFollowUpOut",
+        "type": "object"
+      },
+      "SheetMaterialOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ProductKind"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "out": {
+            "description": "Salió para el evento (3 decimales)",
+            "title": "Out",
+            "type": "string"
+          },
+          "pending_return": {
+            "description": "Reutilizable que falta devolver",
+            "title": "Pending Return",
+            "type": "string"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "returned": {
+            "description": "Volvió al almacén",
+            "title": "Returned",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "wasted": {
+            "description": "Se perdió o se dañó en el evento",
+            "title": "Wasted",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "code",
+          "name",
+          "unit",
+          "kind",
+          "out",
+          "returned",
+          "wasted",
+          "pending_return"
+        ],
+        "title": "SheetMaterialOut",
+        "type": "object"
+      },
+      "SheetNoteOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "format": "uuid",
+            "title": "Created By",
+            "type": "string"
+          },
+          "created_by_name": {
+            "description": "Vacío si el usuario no existe",
+            "title": "Created By Name",
+            "type": "string"
+          },
+          "edited_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edited At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "created_by",
+          "created_by_name",
+          "created_at",
+          "edited_at"
+        ],
+        "title": "SheetNoteOut",
+        "type": "object"
+      },
+      "SheetPaymentOut": {
+        "properties": {
+          "amount_cents": {
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PaymentKind"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "number": {
+            "title": "Number",
+            "type": "string"
+          },
+          "paid_on": {
+            "format": "date",
+            "title": "Paid On",
+            "type": "string"
+          },
+          "voided": {
+            "description": "Anulado: no cuenta en el saldo",
+            "title": "Voided",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "kind",
+          "amount_cents",
+          "method",
+          "paid_on",
+          "voided"
+        ],
+        "title": "SheetPaymentOut",
+        "type": "object"
+      },
+      "SheetServiceOut": {
+        "description": "Servicio contratado, sin precios (CA-14.2).",
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/LineKind"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "service_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Id"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/LineUnit"
+          }
+        },
+        "required": [
+          "kind",
+          "service_id",
+          "description",
+          "unit",
+          "quantity"
+        ],
+        "title": "SheetServiceOut",
+        "type": "object"
+      },
+      "SheetStaffOut": {
+        "properties": {
+          "ends_at": {
+            "format": "date-time",
+            "title": "Ends At",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "description": "Función en el evento",
+            "title": "Role",
+            "type": "string"
+          },
+          "starts_at": {
+            "format": "date-time",
+            "title": "Starts At",
+            "type": "string"
+          },
+          "worker_id": {
+            "format": "uuid",
+            "title": "Worker Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "worker_id",
+          "name",
+          "role",
+          "starts_at",
+          "ends_at"
+        ],
+        "title": "SheetStaffOut",
         "type": "object"
       },
       "ShortageOut": {
@@ -13075,6 +13658,85 @@
           }
         ],
         "summary": "Event Result",
+        "tags": [
+          "reportes"
+        ]
+      }
+    },
+    "/v1/reports/events/{event_id}/sheet": {
+      "get": {
+        "description": "Evento, cliente, servicios, personal, materiales, pagos y seguimiento en una petición.\n\nSe arma en el momento con lo que cada módulo sabe (CA-14.7). `account` va vacío sin\n`payments:record` (CA-14.5); `staff`, vacío mientras no haya información de personal.",
+        "operationId": "reports_event_sheet",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSheetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Event Sheet",
         "tags": [
           "reportes"
         ]
