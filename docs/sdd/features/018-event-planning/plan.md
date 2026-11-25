@@ -1,7 +1,7 @@
 # Plan: Planificación y estado del evento
 
 - **Spec**: ./spec.md
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 25/11/2026)
 
 ## 1. Módulos
 - `commercial` (eventos). `identity.public_api.CoordinatorLookup` para el responsable.

@@ -1,7 +1,7 @@
 # Plan: Ficha consolidada del evento
 
 - **Spec**: ./spec.md
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 25/11/2026)
 
 ## 1. Módulos
 - `reporting.GetEventSheet(event_id, viewer_permissions)`: el único que junta módulos (como el dashboard).

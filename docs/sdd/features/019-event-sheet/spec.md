@@ -1,7 +1,7 @@
 # Spec: Ficha consolidada del evento
 
 - **ID**: 019-event-sheet
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 25/11/2026)
 - **Módulos afectados**: `reporting` (agregación), `commercial`, `inventory`, `staff` (de Harold) y `commercial` (pagos) por su `public_api`
 - **Historia**: HU14 (#15)
 

@@ -1,7 +1,7 @@
 # Spec: Planificación y estado del evento
 
 - **ID**: 018-event-planning
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 25/11/2026)
 - **Módulos afectados**: `commercial` (eventos)
 - **Historia**: HU11 (#12), el resto: la cancelación ya está hecha (011-cancel-event)
 
