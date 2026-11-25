@@ -233,7 +233,7 @@
             "type": "string"
           },
           "document_type": {
-            "$ref": "#/components/schemas/DocumentType"
+            "$ref": "#/components/schemas/local_eventos__modules__commercial__domain__clients__client__DocumentType"
           },
           "email": {
             "anyOf": [
@@ -320,7 +320,7 @@
             "type": "string"
           },
           "document_type": {
-            "$ref": "#/components/schemas/DocumentType"
+            "$ref": "#/components/schemas/local_eventos__modules__commercial__domain__clients__client__DocumentType"
           },
           "email": {
             "anyOf": [
@@ -824,14 +824,6 @@
         ],
         "title": "DashboardQuotesOut",
         "type": "object"
-      },
-      "DocumentType": {
-        "enum": [
-          "DNI",
-          "RUC"
-        ],
-        "title": "DocumentType",
-        "type": "string"
       },
       "EventCancelIn": {
         "properties": {
@@ -1524,7 +1516,8 @@
           "contracts:manage",
           "payments:record",
           "events:manage",
-          "events:read"
+          "events:read",
+          "staff:manage"
         ],
         "title": "Permission",
         "type": "string"
@@ -2339,6 +2332,495 @@
         ],
         "title": "ValidationError",
         "type": "object"
+      },
+      "WorkerCreate": {
+        "description": "Cuerpo de `POST /v1/staff`: alta de un trabajador.",
+        "properties": {
+          "document_number": {
+            "description": "Número de documento; el dominio lo normaliza",
+            "title": "Document Number",
+            "type": "string"
+          },
+          "document_type": {
+            "$ref": "#/components/schemas/local_eventos__modules__staff__domain__document__DocumentType",
+            "description": "DNI o CE"
+          },
+          "function": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkerFunction"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Función fija; OTHER exige descripción"
+          },
+          "function_description": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo con la función OTHER",
+            "title": "Function Description"
+          },
+          "name": {
+            "description": "Nombre completo del trabajador",
+            "title": "Name",
+            "type": "string"
+          },
+          "overtime_applies": {
+            "default": false,
+            "description": "Si corresponde pago de hora extra",
+            "title": "Overtime Applies",
+            "type": "boolean"
+          },
+          "overtime_rate_cents": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Monto por hora extra en céntimos; obligatorio si aplica",
+            "title": "Overtime Rate Cents"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo dígitos",
+            "title": "Phone"
+          },
+          "rate_cents": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tarifa referencial en céntimos: S/ 45.00 = 4500",
+            "title": "Rate Cents"
+          },
+          "worker_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkerType"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "FIXED o EVENTUAL"
+          }
+        },
+        "required": [
+          "name",
+          "document_type",
+          "document_number"
+        ],
+        "title": "WorkerCreate",
+        "type": "object"
+      },
+      "WorkerFunction": {
+        "description": "Función del trabajador: lista fija del sistema más `OTHER` con descripción.",
+        "enum": [
+          "COOK",
+          "WAITER",
+          "BARTENDER",
+          "ASSISTANT",
+          "COORDINATOR",
+          "OTHER"
+        ],
+        "title": "WorkerFunction",
+        "type": "string"
+      },
+      "WorkerOut": {
+        "description": "Ficha completa devuelta por la API, incluido el estado actual.",
+        "properties": {
+          "currency": {
+            "const": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "document_number": {
+            "title": "Document Number",
+            "type": "string"
+          },
+          "document_type": {
+            "$ref": "#/components/schemas/local_eventos__modules__staff__domain__document__DocumentType"
+          },
+          "function": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkerFunction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "function_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Function Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "overtime_applies": {
+            "title": "Overtime Applies",
+            "type": "boolean"
+          },
+          "overtime_rate_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overtime Rate Cents"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          },
+          "rate_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate Cents"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WorkerStatus"
+          },
+          "worker_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkerType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "document_type",
+          "document_number",
+          "phone",
+          "function",
+          "function_description",
+          "worker_type",
+          "rate_cents",
+          "overtime_applies",
+          "overtime_rate_cents",
+          "status",
+          "currency"
+        ],
+        "title": "WorkerOut",
+        "type": "object"
+      },
+      "WorkerPageOut": {
+        "description": "Página del listado con el total que cumple el filtro.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WorkerSummaryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "WorkerPageOut",
+        "type": "object"
+      },
+      "WorkerStatus": {
+        "description": "Estado del trabajador: la baja es lógica, nunca borrado físico (R-STF-2).",
+        "enum": [
+          "ACTIVE",
+          "INACTIVE"
+        ],
+        "title": "WorkerStatus",
+        "type": "string"
+      },
+      "WorkerStatusChange": {
+        "description": "Cuerpo opcional de baja y reactivación: motivo libre, no obligatorio.",
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Motivo de la baja o reactivación",
+            "title": "Reason"
+          }
+        },
+        "title": "WorkerStatusChange",
+        "type": "object"
+      },
+      "WorkerSummaryOut": {
+        "description": "Fila del listado: incluye el documento, que comparte el permiso `staff:manage`.",
+        "properties": {
+          "document_number": {
+            "title": "Document Number",
+            "type": "string"
+          },
+          "document_type": {
+            "$ref": "#/components/schemas/local_eventos__modules__staff__domain__document__DocumentType"
+          },
+          "function": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkerFunction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "function_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Function Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/WorkerStatus"
+          },
+          "worker_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkerType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "document_type",
+          "document_number",
+          "function",
+          "function_description",
+          "worker_type",
+          "status"
+        ],
+        "title": "WorkerSummaryOut",
+        "type": "object"
+      },
+      "WorkerType": {
+        "description": "Tipo de trabajador: `FIXED` o `EVENTUAL`; opcional, sin interno/externo (R-STF-11).",
+        "enum": [
+          "FIXED",
+          "EVENTUAL"
+        ],
+        "title": "WorkerType",
+        "type": "string"
+      },
+      "WorkerUpdate": {
+        "description": "Cuerpo de `PUT /v1/staff/{worker_id}`: reemplazo completo de los editables.",
+        "properties": {
+          "document_number": {
+            "description": "Número de documento; el dominio lo normaliza",
+            "title": "Document Number",
+            "type": "string"
+          },
+          "document_type": {
+            "$ref": "#/components/schemas/local_eventos__modules__staff__domain__document__DocumentType",
+            "description": "DNI o CE"
+          },
+          "function": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkerFunction"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Función fija; OTHER exige descripción"
+          },
+          "function_description": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo con la función OTHER",
+            "title": "Function Description"
+          },
+          "name": {
+            "description": "Nombre completo del trabajador",
+            "title": "Name",
+            "type": "string"
+          },
+          "overtime_applies": {
+            "default": false,
+            "description": "Si corresponde pago de hora extra",
+            "title": "Overtime Applies",
+            "type": "boolean"
+          },
+          "overtime_rate_cents": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Monto por hora extra en céntimos; obligatorio si aplica",
+            "title": "Overtime Rate Cents"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo dígitos",
+            "title": "Phone"
+          },
+          "rate_cents": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Tarifa referencial en céntimos: S/ 45.00 = 4500",
+            "title": "Rate Cents"
+          },
+          "worker_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkerType"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "FIXED o EVENTUAL"
+          }
+        },
+        "required": [
+          "name",
+          "document_type",
+          "document_number"
+        ],
+        "title": "WorkerUpdate",
+        "type": "object"
+      },
+      "local_eventos__modules__commercial__domain__clients__client__DocumentType": {
+        "enum": [
+          "DNI",
+          "RUC"
+        ],
+        "title": "DocumentType",
+        "type": "string"
+      },
+      "local_eventos__modules__staff__domain__document__DocumentType": {
+        "enum": [
+          "DNI",
+          "CE"
+        ],
+        "title": "DocumentType",
+        "type": "string"
       }
     },
     "securitySchemes": {
@@ -5906,6 +6388,576 @@
         "summary": "Change Quote Status",
         "tags": [
           "cotizaciones"
+        ]
+      }
+    },
+    "/v1/staff": {
+      "get": {
+        "description": "Lista trabajadores por función y estado, con búsqueda por nombre o documento.",
+        "operationId": "staff_search",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "function",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkerFunction"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Function"
+            }
+          },
+          {
+            "description": "ACTIVE por defecto; ALL incluye ambos",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "ACTIVE",
+              "description": "ACTIVE por defecto; ALL incluye ambos",
+              "enum": [
+                "ACTIVE",
+                "INACTIVE",
+                "ALL"
+              ],
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Parte del nombre o del documento",
+            "in": "query",
+            "name": "text",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "Parte del nombre o del documento",
+              "title": "Text",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search Workers",
+        "tags": [
+          "personal"
+        ]
+      },
+      "post": {
+        "description": "Registra un trabajador nuevo, siempre activo. El documento no puede repetirse.",
+        "operationId": "staff_register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkerCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.document_duplicated`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Dato inválido: `staff.name_required`, etc."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Register Worker",
+        "tags": [
+          "personal"
+        ]
+      }
+    },
+    "/v1/staff/{worker_id}": {
+      "get": {
+        "description": "Ficha completa de un trabajador, activo o inactivo (la baja es lógica).",
+        "operationId": "staff_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "worker_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Worker Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Worker",
+        "tags": [
+          "personal"
+        ]
+      },
+      "put": {
+        "description": "Reemplazo completo de los datos editables: si un opcional se omite, se limpia.",
+        "operationId": "staff_update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "worker_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Worker Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkerUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.document_duplicated`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Dato inválido: `staff.name_required`, etc."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Worker",
+        "tags": [
+          "personal"
+        ]
+      }
+    },
+    "/v1/staff/{worker_id}/activate": {
+      "post": {
+        "description": "Reactiva a un trabajador dado de baja, con motivo opcional.",
+        "operationId": "staff_activate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "worker_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Worker Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/WorkerStatusChange"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Activate Worker",
+        "tags": [
+          "personal"
+        ]
+      }
+    },
+    "/v1/staff/{worker_id}/deactivate": {
+      "post": {
+        "description": "Baja lógica con motivo opcional. Repetir la operación no audita otra vez.",
+        "operationId": "staff_deactivate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "worker_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Worker Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/WorkerStatusChange"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Deactivate Worker",
+        "tags": [
+          "personal"
         ]
       }
     },
