@@ -31,6 +31,10 @@ from local_eventos.modules.identity.presentation import (
 from local_eventos.modules.identity.presentation.errors import (
     register_error_handlers as register_identity_errors,
 )
+from local_eventos.modules.inventory.presentation import movement_router, product_router
+from local_eventos.modules.inventory.presentation.errors import (
+    register_error_handlers as register_inventory_errors,
+)
 from local_eventos.modules.ledger.presentation.errors import (
     register_error_handlers as register_ledger_errors,
 )
@@ -86,10 +90,13 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     app.include_router(dashboard_router.router)
     app.include_router(category_router.router)
     app.include_router(service_router.router)
+    app.include_router(product_router.router)
+    app.include_router(movement_router.router)
     register_identity_errors(app)
     register_commercial_errors(app)
     register_ledger_errors(app)
     register_catalog_errors(app)
+    register_inventory_errors(app)
     return app
 
 
