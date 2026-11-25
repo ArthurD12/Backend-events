@@ -1,4 +1,5 @@
-"""Evento de punta a punta: cotización → contrato → firma → evento, con PostgreSQL real (HU10).
+"""Evento de punta a punta: cotización → contrato → firma → evento, con PostgreSQL real (HU10,
+HU11 y HU13).
 
 HTTP → casos de uso → `commercial` e `identity` (responsables) → PostgreSQL. Necesita Docker.
 """
@@ -134,3 +135,59 @@ def test_ca11_cancelar_evento_de_punta_a_punta(api: TestClient) -> None:
         ("REFUND", 300_000),
     ]
     assert (again.status_code, again.json()["code"]) == (409, "event.already_exists")
+
+
+def test_hu13_actividades_y_observaciones_de_punta_a_punta(api: TestClient) -> None:
+    contract_id = _signed_contract(api, "40000004")
+    event_id = api.post("/v1/events", json={"contract_id": contract_id}).json()["id"]
+
+    created = api.post(f"/v1/events/{event_id}/activities", json={"description": "Probar menú"})
+    activity_id = created.json()["id"]
+    done = api.post(f"/v1/activities/{activity_id}/complete")
+    note = api.post(f"/v1/events/{event_id}/notes", json={"text": "Faltan 20 copas"})
+    edited = api.put(f"/v1/notes/{note.json()['id']}", json={"text": "Faltan 30 copas"})
+    activities = api.get(f"/v1/events/{event_id}/activities").json()
+    notes = api.get(f"/v1/events/{event_id}/notes").json()
+
+    assert created.status_code == 201, created.text
+    assert created.json()["responsible_name"] == "Administrador Darze"
+    assert done.status_code == 200, done.text
+    assert edited.status_code == 200, edited.text
+    assert [(a["status"], a["completed_by_name"]) for a in activities] == [
+        ("DONE", "Administrador Darze")
+    ]
+    assert [(n["text"], n["edited_by_name"]) for n in notes] == [
+        ("Faltan 30 copas", "Administrador Darze")
+    ]
+
+
+def test_hu11_planificar_y_confirmar_de_punta_a_punta(api: TestClient) -> None:
+    contract_id = _signed_contract(api, "40000005")
+    event = api.post("/v1/events", json={"contract_id": contract_id}).json()
+    url = f"/v1/events/{event['id']}"
+    keys = ("event_date", "start_time", "end_time", "venue", "guests", "coordinator_id")
+
+    planned = api.put(
+        f"{url}/planning", json={k: event[k] for k in keys} | {"guests": 180, "end_time": "05:00"}
+    )
+    confirmed = api.post(f"{url}/confirm")
+    early = api.post(f"{url}/start")
+    changes = api.get(f"{url}/changes").json()
+    contract = api.get(f"/v1/contracts/{contract_id}").json()
+
+    assert planned.status_code == 200, planned.text
+    assert (planned.json()["guests"], planned.json()["warnings"]) == (
+        180,
+        ["staff_may_need_review"],
+    )
+    assert confirmed.json()["status"] == "CONFIRMED"
+    assert (early.status_code, early.json()["code"]) == (409, "event.not_event_day")
+    assert [(c["action"], c["changed_by_name"]) for c in changes] == [
+        ("PLANNING_UPDATED", "Administrador Darze"),
+        ("CONFIRMED", "Administrador Darze"),
+    ]
+    assert changes[0]["fields"] == [
+        {"field": "end_time", "before": "04:00:00", "after": "05:00:00"},
+        {"field": "guests", "before": 150, "after": 180},
+    ]
+    assert contract["status"] == "SIGNED"  # R-EVT-7: el contrato conserva lo firmado

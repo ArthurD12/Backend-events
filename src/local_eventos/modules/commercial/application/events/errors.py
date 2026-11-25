@@ -31,3 +31,28 @@ class EventRangeInvalidError(EventApplicationError):
             "event.range_invalid",
             f"El periodo debe terminar después de empezar y no superar {max_days} días.",
         )
+
+
+class ActivityNotFoundError(EventApplicationError):
+    def __init__(self) -> None:
+        super().__init__("activity.not_found", "No se encontró la actividad.")
+
+
+class ActivityResponsibleInvalidError(EventApplicationError):
+    def __init__(self) -> None:
+        super().__init__(
+            "activity.responsible_invalid",
+            "El responsable debe ser un administrador o encargado de eventos activo.",
+        )
+
+
+class NoteNotFoundError(EventApplicationError):
+    def __init__(self) -> None:
+        super().__init__("note.not_found", "No se encontró la observación.")
+
+
+class NoteNotAuthorError(EventApplicationError):
+    def __init__(self) -> None:
+        super().__init__(
+            "note.not_author", "Solo su autor o un administrador edita la observación."
+        )

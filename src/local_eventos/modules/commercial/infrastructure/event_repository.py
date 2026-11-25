@@ -1,4 +1,6 @@
-"""Repositorio de eventos en PostgreSQL (HU10): implementa `EventRepository`."""
+"""Repositorio de eventos en PostgreSQL (HU10 y HU11): implementa `EventRepository`.
+
+El historial de planificación y estado (`commercial_event_changes`) es de solo inserción."""
 
 from uuid import UUID
 
@@ -19,14 +21,18 @@ from local_eventos.modules.commercial.application.events.ports.event_repository 
 )
 from local_eventos.modules.commercial.domain.events.event import (
     Event,
+    EventAction,
     EventCancellation,
+    EventChange,
     EventRuleError,
     EventService,
     EventStatus,
+    FieldChange,
 )
 from local_eventos.modules.commercial.domain.quotes.quote import EventType, LineKind, LineUnit
 from local_eventos.modules.commercial.infrastructure.orm_models import (
     ClientRow,
+    EventChangeRow,
     EventCounterRow,
     EventRow,
     EventServiceRow,
@@ -94,17 +100,56 @@ class SqlAlchemyEventRepository:
         )
         await self._session.flush()
 
-    async def update(self, event: Event) -> None:
-        """Por ahora solo cambia el estado y la cancelación (HU11, parte)."""
+    async def update(self, event: Event, change: EventChange | None = None) -> None:
+        """Guarda la planificación, el estado y la cancelación; si hay `change`, lo agrega al
+        historial (solo inserción). Gana el último que guarda; ambos cambios quedan."""
         row = await self._session.get(EventRow, event.id)
         if row is None:
             raise LookupError(f"El evento {event.id} no existe en la base de datos.")
         cancellation = event.cancellation
+        row.event_date = event.event_date
+        row.start_time = event.start_time
+        row.end_time = event.end_time
+        row.venue = event.venue
+        row.guests = event.guests
+        row.coordinator_id = event.coordinator_id
         row.status = event.status.value
         row.cancel_reason = cancellation.reason if cancellation else None
         row.cancelled_by = cancellation.cancelled_by if cancellation else None
         row.cancelled_at = cancellation.cancelled_at if cancellation else None
+        if change is not None:
+            self._session.add(
+                EventChangeRow(
+                    event_id=change.event_id,
+                    action=change.action.value,
+                    fields=[
+                        {"field": f.field, "before": f.before, "after": f.after}
+                        for f in change.fields
+                    ],
+                    changed_by=change.changed_by,
+                    changed_at=change.changed_at,
+                )
+            )
         await self._session.flush()
+
+    async def list_changes(self, event_id: UUID) -> list[EventChange]:
+        rows = await self._session.scalars(
+            select(EventChangeRow)
+            .where(EventChangeRow.event_id == event_id)
+            .order_by(EventChangeRow.id)
+        )
+        return [
+            EventChange(
+                event_id=row.event_id,
+                action=EventAction(row.action),
+                fields=tuple(
+                    FieldChange(str(f["field"]), f["before"], f["after"]) for f in row.fields
+                ),
+                changed_by=row.changed_by,
+                changed_at=row.changed_at,
+            )
+            for row in rows
+        ]
 
     async def next_number(self, year: int) -> int:
         statement = (

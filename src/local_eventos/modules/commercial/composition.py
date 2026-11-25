@@ -14,6 +14,12 @@ from local_eventos.modules.commercial.application.clients.ports.client_repositor
 from local_eventos.modules.commercial.application.contracts.ports.contract_repository import (
     ContractRepository,
 )
+from local_eventos.modules.commercial.application.contracts.ports.receipt import (
+    PaymentReceiptRenderer,
+)
+from local_eventos.modules.commercial.application.events.ports.event_log_repository import (
+    EventLogRepository,
+)
 from local_eventos.modules.commercial.application.events.ports.event_repository import (
     EventRepository,
 )
@@ -33,6 +39,9 @@ from local_eventos.modules.commercial.infrastructure.company_settings import Com
 from local_eventos.modules.commercial.infrastructure.contract_repository import (
     SqlAlchemyContractRepository,
 )
+from local_eventos.modules.commercial.infrastructure.event_log_repository import (
+    SqlAlchemyEventLogRepository,
+)
 from local_eventos.modules.commercial.infrastructure.event_repository import (
     SqlAlchemyEventRepository,
 )
@@ -40,13 +49,19 @@ from local_eventos.modules.commercial.infrastructure.quote_pdf import ReportLabQ
 from local_eventos.modules.commercial.infrastructure.quote_repository import (
     SqlAlchemyQuoteRepository,
 )
-from local_eventos.modules.identity.public_api import CoordinatorLookup
+from local_eventos.modules.commercial.infrastructure.receipt_pdf import ReportLabReceiptRenderer
+from local_eventos.modules.identity.public_api import CoordinatorLookup, UserNamesLookup
 from local_eventos.modules.identity.public_api import coordinator_lookup as identity_coordinators
+from local_eventos.modules.identity.public_api import user_names as identity_user_names
 from local_eventos.modules.ledger.public_api import (
+    PaymentEntriesLookup,
+    PaymentFinder,
     PaymentRecorder,
-    PaymentsLookup,
+    PaymentVoider,
+    payment_entries,
+    payment_finder,
     payment_recorder,
-    payments_lookup,
+    payment_voider,
 )
 
 
@@ -85,12 +100,35 @@ def payments(session: AsyncSession) -> PaymentRecorder:
     return payment_recorder(session)
 
 
-def contract_payments(session: AsyncSession) -> PaymentsLookup:
-    return payments_lookup(session)
+def contract_payment_entries(session: AsyncSession) -> PaymentEntriesLookup:
+    """Pagos del contrato con su anulación, para calcular el saldo (RN15)."""
+    return payment_entries(session)
+
+
+def find_payment(session: AsyncSession) -> PaymentFinder:
+    return payment_finder(session)
+
+
+def void_payment(session: AsyncSession) -> PaymentVoider:
+    return payment_voider(session)
+
+
+def receipt_renderer() -> PaymentReceiptRenderer:
+    return ReportLabReceiptRenderer()
+
+
+def user_names(session: AsyncSession) -> UserNamesLookup:
+    """Quién registró cada pago, por la `public_api` de identity."""
+    return identity_user_names(session)
 
 
 def event_repository(session: AsyncSession) -> EventRepository:
     return SqlAlchemyEventRepository(session)
+
+
+def event_log_repository(session: AsyncSession) -> EventLogRepository:
+    """Actividades y observaciones del evento (HU13)."""
+    return SqlAlchemyEventLogRepository(session)
 
 
 def coordinators(session: AsyncSession) -> CoordinatorLookup:

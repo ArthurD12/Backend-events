@@ -42,7 +42,6 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.STAFF_MANAGE,
         }
     ),
-    Role.PURCHASING_MANAGER: frozenset({Permission.CATALOG_READ, Permission.EVENTS_READ}),
 }
 
 

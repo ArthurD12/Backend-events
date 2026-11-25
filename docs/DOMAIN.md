@@ -23,7 +23,7 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 ## 3. Ciclos de vida
 - **Cotización:** `borrador → enviada → aceptada | rechazada | vencida`. Solo se edita en borrador (RN05). Vence al terminar su vigencia sin ser aceptada (RN06).
 - **Contrato:** `pendiente de firma → firmado | anulado`. Solo se genera desde una cotización aceptada y sin contrato previo (HU41). Un contrato firmado no se edita; la anulación exige motivo (HU42).
-- **Evento:** `programado → confirmado → en ejecución → finalizado` · `cancelado`. Solo un contrato firmado y con el adelanto pagado se convierte en evento, y una sola vez (RN07, RN08, HU42).
+- **Evento:** `programado → confirmado → en ejecución → finalizado` · `cancelado`. Solo un contrato firmado y con el adelanto pagado se convierte en evento, y una sola vez (RN07, RN08, HU42). Avanza un estado a la vez y no vuelve atrás; pasa a en ejecución solo el día del evento (o el siguiente, si el horario cruza la medianoche) (R-EVT-8). La planificación (fecha, horario, lugar, invitados y responsable) se edita en programado y confirmado (R-EVT-6) sin cambiar el contrato ni la cotización (R-EVT-7). Cada cambio de planificación y de estado, y la cancelación, queda en un historial de solo inserción (CA-11.5, RN03).
 
 ## 4. Reglas de cotizaciones, contratos y eventos
 1. Cada cotización, contrato y evento tiene un **código único** generado por el sistema (RN04).
@@ -73,9 +73,13 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 ## 6. Dinero (pagos y flujo de caja)
 - Moneda `PEN`, enteros en céntimos. Sin pasarela: los cobros se **registran** (efectivo, transferencia, tarjeta, Yape/Plin) con referencia y usuario.
 - El importe de un pago es mayor que cero y no supera el saldo pendiente (RN14). **Saldo = total contratado − pagos + anulaciones** (RN15).
-- El adelanto se registra desde el contrato (HU42) y se guarda como **el primer pago del evento**; los pagos parciales posteriores se registran en el módulo de pagos (HU19).
-- Todo ingreso o egreso registra fecha, concepto, monto y usuario (RN16). Los egresos se clasifican (insumos, personal, transporte, otros) y pueden asociarse a un evento.
-- **Append-only:** un pago o movimiento no se elimina; se anula con una operación autorizada que conserva el historial (RN17).
+- El adelanto se registra desde el contrato (HU42) y se guarda como **el primer pago del evento**; los pagos parciales posteriores se registran contra el contrato (HU19, R-PAG-1).
+- **Saldo del contrato:** pendiente de firma = total − adelanto pactado; firmado = total − pagos vigentes + devoluciones. Un pago anulado no cuenta. Dos pagos simultáneos no superan el saldo: se bloquea la fila del contrato.
+- Cada pago tiene un número único `PAG-AAAA-NNNN` (correlativo por año) y un **comprobante interno** en PDF; no es boleta ni factura (HU20). El de un pago anulado sale con la marca ANULADO y el motivo.
+- Solo un **pago parcial** se anula por su cuenta, con motivo; el adelanto se anula con el contrato (R-CON-3) y una devolución no se anula. Sin pagos en un contrato pendiente de firma o anulado.
+- Todo ingreso o egreso registra fecha, concepto, monto, medio y usuario (RN16). Los egresos se clasifican (insumos, personal, transporte, otros) y pueden asociarse a un evento; un ingreso que no es pago de cliente va como "otros ingresos".
+- **Append-only:** un pago o movimiento no se elimina; se anula con una operación autorizada que conserva el historial (RN17). La anulación es una fila aparte y la base rechaza `UPDATE` y `DELETE`.
+- **Flujo de caja** (solo administrador, `finance:read`): por fecha del pago o movimiento, ingresos (pagos de clientes netos de devoluciones + otros ingresos), egresos por categoría y saldo del periodo, por mes; hasta 366 días. **Resultado de un evento:** cobrado (neto de devoluciones) − egresos asociados, más el total contratado y el saldo por cobrar. Nada anulado entra en los cálculos.
 
 ## 7. Almacén, requerimientos y compras
 - Todo movimiento indica producto, cantidad (> 0), fecha, tipo y usuario (RN18, RN19). Movimientos **append-only**; stock = suma de movimientos.
@@ -83,7 +87,15 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 - Alertas de **stock mínimo** y de **vencimiento próximo** (RN25).
 - Los **requerimientos** se calculan según el menú, los servicios y la cantidad de invitados (RN26), a partir de los insumos definidos por menú o servicio (HU24).
 - Una compra pasa por `solicitada → ordenada → recibida | cancelada` y solo incrementa el stock al estar **recibida** (RN21).
-- Método de costeo de insumos (promedio ponderado o por lote) **(por validar)**.
+- Método de costeo: **costo promedio ponderado** (R-INV-3, provisional; ver §10.3).
+- Implementado en la feature 017 (`inventory` y `purchasing`):
+  - Producto con código único (mayúsculas, ≤ 20), categoría y unidad de lista fija (R-INV-1, R-INV-2), tipo **consumible** o **reutilizable** y stock mínimo. No se elimina: se desactiva (RN02); uno inactivo no recibe entradas ni salidas, pero sí devoluciones, mermas y ajustes.
+  - Movimientos: entrada (con costo unitario; proveedor, lote y vencimiento opcionales), salida (a un evento programado, confirmado o en ejecución), devolución (no supera lo que salió menos lo devuelto y lo perdido), merma (con motivo; de almacén o de un evento) y ajuste (con signo y motivo). Cantidades con hasta 3 decimales; quien registra es el responsable.
+  - Una **merma de evento no baja el stock** del almacén: lo perdido ya salió con la salida; solo reduce lo que falta devolver. La merma de almacén sí lo baja.
+  - Alertas: **stock bajo** (stock ≤ mínimo) y **por vencer** (alguna entrada con stock vigente vence en 15 días o menos, o ya venció; R-INV-4). Como las salidas no se asignan a lotes, se supone que sale primero lo más antiguo.
+  - Materiales del evento: por producto, qué salió, volvió y se perdió, y qué **reutilizable falta devolver**.
+  - Proveedor: razón social, RUC (11) o DNI (8) único, teléfono; contacto, correo y dirección opcionales. Se busca sin distinguir tildes.
+  - Compra `COM-AAAA-NNNN`: la solicitud puede proponer los **faltantes** (productos bajo su mínimo y cuánto falta para volver a él); al ordenar se elige proveedor (activo) y costo de cada línea; al recibir se confirman cantidad real, lote y vencimiento de **todas** las líneas (R-COM-2) y se generan las entradas en la misma operación. Recibir es una sola vez; recibida o cancelada no cambia. Pagar al proveedor va aparte (R-COM-1).
 
 ## 8. Agente de inteligencia artificial
 - Solo lo usan usuarios autenticados (RN27) y solo consulta información autorizada para su rol (RN28).
@@ -102,7 +114,7 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 | Eventos y asignaciones | ✔ | ✔ | lectura |
 | Personal (trabajadores) | ✔ | ✔ | – |
 | Pagos, ingresos y egresos | ✔ | ✔ | – |
-| Productos, almacén, requerimientos y compras | ✔ | requerimientos | ✔ |
+| Productos, almacén, requerimientos y compras | ✔ | lectura del almacén y materiales de sus eventos (`inventory:read`) | ✔ |
 | Reportes financieros | ✔ | – | – |
 | Agente de IA | ✔ | ✔ | ✔ |
 
@@ -113,7 +125,7 @@ La gestión del **personal (trabajadores)** exige el permiso `staff:manage`; el 
 ## 10. Preguntas abiertas para el negocio
 1. ~~Política de cancelación y devolución del adelanto.~~ Resuelta: sin reglas automáticas (§11).
 2. **Cotización de promoción:** se cobra el servicio más un precio **por asiento**; cada alumno tiene su mesa (mínimo 4 asientos) y puede pedir sillas extra con costo. Falta definir cómo se cotiza y se paga **por alumno**. Se tratará como una historia aparte, después de HU07.
-3. Método de costeo de insumos.
+3. ~~Método de costeo de insumos.~~ Resuelta provisionalmente: costo promedio ponderado (R-INV-3, §11); falta confirmarlo con Darze.
 4. ~~¿El encargado de eventos puede registrar pagos?~~ Resuelta: sí (§11).
 5. ¿Hay servicios de cortesía (precio S/ 0)? Hoy el sistema los permite.
 
@@ -142,7 +154,15 @@ La gestión del **personal (trabajadores)** exige el permiso `staff:manage`; el 
 | 22/11/2026 | Responsable de coordinación del evento | Un usuario del sistema (administrador o encargado de eventos) hasta que exista el módulo de personal (R-EVT-2) | Product Owner |
 | 22/11/2026 | Anular un contrato que ya es evento | No se anula desde el contrato: se cancela el evento (R-EVT-3); también lo impide la base de datos | Equipo **(provisional)** |
 | 23/11/2026 | Cancelar un evento | Cancelar el evento anula su contrato con el mismo motivo y registra la devolución si la hubo, en un solo paso (R-EVT-4). Para cambiar algo de un contrato firmado, se anula y se hace una cotización nueva | Scrum Master **(provisional, a validar por el Product Owner)** |
+| 25/11/2026 | Pagos parciales | Se registran contra el **contrato**; el evento los muestra por su contrato (R-PAG-1) | Equipo **(provisional)** |
+| 25/11/2026 | Pago después de la fecha límite | Se permite, también después del evento; el sistema solo avisa "saldo vencido" (R-PAG-2) | Equipo **(provisional)** |
+| 25/11/2026 | Pago acordado al personal (HU17) | No es egreso hasta que se registra como egreso de categoría "personal" (R-PAG-3) | Equipo **(provisional)** |
+| 25/11/2026 | Fecha de un pago o movimiento | No puede ser futura, como el adelanto (R-PAG-4) | Equipo **(provisional)** |
 | 23/11/2026 | ¿Desde qué estado se cancela un evento? | Desde programado o confirmado; no desde en ejecución ni finalizado (R-EVT-5) | Equipo **(provisional)** |
+| 25/11/2026 | ¿Cuándo se edita la planificación del evento? | En programado y confirmado; en ejecución, finalizado o cancelado, no (R-EVT-6) | Equipo **(provisional)** |
+| 25/11/2026 | Editar el evento y el contrato | Editar el evento no cambia el contrato ni la cotización; más invitados no recalcula el total: si el cliente paga más, se registra aparte (R-EVT-7) | Equipo **(provisional)** |
+| 25/11/2026 | Avanzar el estado del evento | Un paso a la vez, sin volver atrás. En ejecución solo el día del evento en Lima (si el horario cruza la medianoche, también el día siguiente); finalizado solo desde en ejecución y sin exigir saldo en cero (R-EVT-8) | Equipo **(provisional)** |
+| 25/11/2026 | Cambio de fecha u horario del evento | El sistema avisa que el personal asignado puede tener otro horario; revisar las asignaciones es del módulo de personal (R-EVT-9) | Equipo **(provisional)** |
 | 22/11/2026 | Sesión | Termina tras 30 minutos sin actividad; no se puede desactivar al último administrador activo (R-ID-4) | Equipo, según HU01 **(provisional)** |
 | 24/11/2026 | Tipo de trabajador (HU15) | Solo `fijo` o `eventual`; no se registra interno/externo (R-STF-11) | Product Owner |
 | 24/11/2026 | Función del trabajador (HU15) | Lista fija más "otro" con descripción breve obligatoria; editable con auditoría y la asignación conserva la función trabajada (R-STF-12, R-STF-17) | Product Owner |

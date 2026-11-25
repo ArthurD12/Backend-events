@@ -95,6 +95,313 @@
         "title": "AccessResult",
         "type": "string"
       },
+      "AccountPaymentOut": {
+        "properties": {
+          "amount_cents": {
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/PaymentKind"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "number": {
+            "description": "PAG-AAAA-NNNN (CA-20.1)",
+            "title": "Number",
+            "type": "string"
+          },
+          "paid_on": {
+            "format": "date",
+            "title": "Paid On",
+            "type": "string"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "recorded_by": {
+            "format": "uuid",
+            "title": "Recorded By",
+            "type": "string"
+          },
+          "recorded_by_name": {
+            "description": "Vacío si el usuario no existe",
+            "title": "Recorded By Name",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "void": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaymentVoidOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "voidable": {
+            "description": "Solo un pago parcial vigente se anula (CA-19.5)",
+            "title": "Voidable",
+            "type": "boolean"
+          },
+          "voided": {
+            "description": "Anulado: no cuenta en el saldo (CA-19.3)",
+            "title": "Voided",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "number",
+          "kind",
+          "amount_cents",
+          "method",
+          "reference",
+          "paid_on",
+          "voided",
+          "recorded_by",
+          "recorded_by_name",
+          "recorded_at",
+          "voidable",
+          "void"
+        ],
+        "title": "AccountPaymentOut",
+        "type": "object"
+      },
+      "ActivityIn": {
+        "properties": {
+          "description": {
+            "description": "Hasta 200 caracteres",
+            "title": "Description",
+            "type": "string"
+          },
+          "responsible_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Administrador o encargado de eventos activo. Si se omite: quien crea",
+            "title": "Responsible Id"
+          }
+        },
+        "required": [
+          "description"
+        ],
+        "title": "ActivityIn",
+        "type": "object"
+      },
+      "ActivityOut": {
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "completed_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed By"
+          },
+          "completed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío si no se conoce el nombre del usuario",
+            "title": "Completed By Name"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "format": "uuid",
+            "title": "Created By",
+            "type": "string"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío si no se conoce el nombre del usuario",
+            "title": "Created By Name"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "responsible_id": {
+            "format": "uuid",
+            "title": "Responsible Id",
+            "type": "string"
+          },
+          "responsible_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío si no se conoce el nombre del usuario",
+            "title": "Responsible Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ActivityStatus"
+          }
+        },
+        "required": [
+          "id",
+          "event_id",
+          "description",
+          "status",
+          "responsible_id",
+          "responsible_name",
+          "created_by",
+          "created_by_name",
+          "created_at",
+          "completed_by",
+          "completed_by_name",
+          "completed_at"
+        ],
+        "title": "ActivityOut",
+        "type": "object"
+      },
+      "ActivityResponsibleIn": {
+        "properties": {
+          "responsible_id": {
+            "format": "uuid",
+            "title": "Responsible Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "responsible_id"
+        ],
+        "title": "ActivityResponsibleIn",
+        "type": "object"
+      },
+      "ActivityStatus": {
+        "enum": [
+          "PENDING",
+          "DONE"
+        ],
+        "title": "ActivityStatus",
+        "type": "string"
+      },
+      "AdjustmentIn": {
+        "properties": {
+          "occurred_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Con signo: positivo suma, negativo resta",
+            "examples": [
+              "12.5"
+            ],
+            "pattern": "^-?\\d+(\\.\\d+)?$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity",
+          "reason"
+        ],
+        "title": "AdjustmentIn",
+        "type": "object"
+      },
+      "CancelIn": {
+        "properties": {
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "CancelIn",
+        "type": "object"
+      },
       "CancellationOut": {
         "properties": {
           "cancelled_at": {
@@ -137,6 +444,155 @@
         ],
         "title": "CancellationOut",
         "type": "object"
+      },
+      "CashFlowMonthOut": {
+        "properties": {
+          "client_payments_cents": {
+            "description": "Pagos de clientes netos de devoluciones",
+            "title": "Client Payments Cents",
+            "type": "integer"
+          },
+          "expense_cents": {
+            "title": "Expense Cents",
+            "type": "integer"
+          },
+          "expenses": {
+            "$ref": "#/components/schemas/ExpensesOut"
+          },
+          "income_cents": {
+            "title": "Income Cents",
+            "type": "integer"
+          },
+          "month": {
+            "description": "AAAA-MM",
+            "title": "Month",
+            "type": "string"
+          },
+          "net_cents": {
+            "description": "Saldo del periodo: ingresos − egresos",
+            "title": "Net Cents",
+            "type": "integer"
+          },
+          "other_income_cents": {
+            "title": "Other Income Cents",
+            "type": "integer"
+          },
+          "refunds_cents": {
+            "title": "Refunds Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "client_payments_cents",
+          "refunds_cents",
+          "other_income_cents",
+          "income_cents",
+          "expenses",
+          "expense_cents",
+          "net_cents",
+          "month"
+        ],
+        "title": "CashFlowMonthOut",
+        "type": "object"
+      },
+      "CashFlowOut": {
+        "properties": {
+          "currency": {
+            "default": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "date_from": {
+            "format": "date",
+            "title": "Date From",
+            "type": "string"
+          },
+          "date_to": {
+            "format": "date",
+            "title": "Date To",
+            "type": "string"
+          },
+          "months": {
+            "description": "Solo los meses con movimiento",
+            "items": {
+              "$ref": "#/components/schemas/CashFlowMonthOut"
+            },
+            "title": "Months",
+            "type": "array"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/CashSummaryOut"
+          }
+        },
+        "required": [
+          "date_from",
+          "date_to",
+          "totals",
+          "months"
+        ],
+        "title": "CashFlowOut",
+        "type": "object"
+      },
+      "CashSummaryOut": {
+        "properties": {
+          "client_payments_cents": {
+            "description": "Pagos de clientes netos de devoluciones",
+            "title": "Client Payments Cents",
+            "type": "integer"
+          },
+          "expense_cents": {
+            "title": "Expense Cents",
+            "type": "integer"
+          },
+          "expenses": {
+            "$ref": "#/components/schemas/ExpensesOut"
+          },
+          "income_cents": {
+            "title": "Income Cents",
+            "type": "integer"
+          },
+          "net_cents": {
+            "description": "Saldo del periodo: ingresos − egresos",
+            "title": "Net Cents",
+            "type": "integer"
+          },
+          "other_income_cents": {
+            "title": "Other Income Cents",
+            "type": "integer"
+          },
+          "refunds_cents": {
+            "title": "Refunds Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "client_payments_cents",
+          "refunds_cents",
+          "other_income_cents",
+          "income_cents",
+          "expenses",
+          "expense_cents",
+          "net_cents"
+        ],
+        "title": "CashSummaryOut",
+        "type": "object"
+      },
+      "Category": {
+        "description": "R-INV-2: categorías de lista fija.",
+        "enum": [
+          "SUPPLIES",
+          "BEVERAGES",
+          "DINNERWARE",
+          "GLASSWARE",
+          "CUTLERY",
+          "LINENS",
+          "FURNITURE",
+          "DISPOSABLES",
+          "CLEANING",
+          "OTHER"
+        ],
+        "title": "Category",
+        "type": "string"
       },
       "CategoryIn": {
         "properties": {
@@ -233,7 +689,7 @@
             "type": "string"
           },
           "document_type": {
-            "$ref": "#/components/schemas/DocumentType"
+            "$ref": "#/components/schemas/local_eventos__modules__commercial__domain__clients__client__DocumentType"
           },
           "email": {
             "anyOf": [
@@ -320,7 +776,7 @@
             "type": "string"
           },
           "document_type": {
-            "$ref": "#/components/schemas/DocumentType"
+            "$ref": "#/components/schemas/local_eventos__modules__commercial__domain__clients__client__DocumentType"
           },
           "email": {
             "anyOf": [
@@ -358,6 +814,77 @@
           "active"
         ],
         "title": "ClientOut",
+        "type": "object"
+      },
+      "ContractAccountOut": {
+        "description": "CA-19.4: total, pagado, saldo, fecha límite y pagos con quién los registró.",
+        "properties": {
+          "balance_cents": {
+            "description": "Total − pagos vigentes + devoluciones (RN15)",
+            "title": "Balance Cents",
+            "type": "integer"
+          },
+          "balance_due_date": {
+            "format": "date",
+            "title": "Balance Due Date",
+            "type": "string"
+          },
+          "contract_code": {
+            "title": "Contract Code",
+            "type": "string"
+          },
+          "contract_id": {
+            "format": "uuid",
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "currency": {
+            "default": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "overdue": {
+            "description": "Saldo vencido: solo un aviso (R-PAG-2)",
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "paid_cents": {
+            "description": "Pagos vigentes (adelanto incluido)",
+            "title": "Paid Cents",
+            "type": "integer"
+          },
+          "payments": {
+            "items": {
+              "$ref": "#/components/schemas/AccountPaymentOut"
+            },
+            "title": "Payments",
+            "type": "array"
+          },
+          "refunded_cents": {
+            "title": "Refunded Cents",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ContractStatus"
+          },
+          "total_cents": {
+            "title": "Total Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "contract_id",
+          "contract_code",
+          "status",
+          "total_cents",
+          "paid_cents",
+          "refunded_cents",
+          "balance_cents",
+          "balance_due_date",
+          "overdue",
+          "payments"
+        ],
+        "title": "ContractAccountOut",
         "type": "object"
       },
       "ContractCancelIn": {
@@ -440,8 +967,16 @@
             "type": "integer"
           },
           "balance_cents": {
-            "title": "Balance Cents",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pendiente de firma: total − adelanto; firmado: total − pagos vigentes + devoluciones (RN15). Vacío sin `payments:record`",
+            "title": "Balance Cents"
           },
           "balance_due_date": {
             "format": "date",
@@ -509,6 +1044,18 @@
             "title": "Id",
             "type": "string"
           },
+          "paid_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pagos vigentes. Vacío sin `payments:record`",
+            "title": "Paid Cents"
+          },
           "payments": {
             "items": {
               "$ref": "#/components/schemas/PaymentOut"
@@ -553,6 +1100,7 @@
           "event_date",
           "total_cents",
           "advance_cents",
+          "paid_cents",
           "balance_cents",
           "balance_due_date",
           "status",
@@ -595,6 +1143,59 @@
           "page_size"
         ],
         "title": "ContractPageOut",
+        "type": "object"
+      },
+      "ContractPaymentCreatedOut": {
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/ContractAccountOut"
+          },
+          "payment": {
+            "$ref": "#/components/schemas/AccountPaymentOut"
+          }
+        },
+        "required": [
+          "payment",
+          "account"
+        ],
+        "title": "ContractPaymentCreatedOut",
+        "type": "object"
+      },
+      "ContractPaymentIn": {
+        "properties": {
+          "amount_cents": {
+            "description": "Mayor que cero y sin superar el saldo (RN14)",
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "paid_on": {
+            "description": "No puede ser futura (R-PAG-4)",
+            "format": "date",
+            "title": "Paid On",
+            "type": "string"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "N.º de operación, voucher, etc.",
+            "title": "Reference"
+          }
+        },
+        "required": [
+          "amount_cents",
+          "paid_on",
+          "method"
+        ],
+        "title": "ContractPaymentIn",
         "type": "object"
       },
       "ContractSignIn": {
@@ -825,12 +1426,106 @@
         "title": "DashboardQuotesOut",
         "type": "object"
       },
-      "DocumentType": {
-        "enum": [
-          "DNI",
-          "RUC"
+      "EntryIn": {
+        "properties": {
+          "expires_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires On"
+          },
+          "lot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lot"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Por defecto, hoy",
+            "title": "Occurred On"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Cantidad sin signo como texto, hasta 3 decimales",
+            "examples": [
+              "12.5"
+            ],
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Observación opcional",
+            "title": "Reason"
+          },
+          "supplier_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Id"
+          },
+          "unit_cost_cents": {
+            "description": "Costo unitario en céntimos: S/ 3.50 = 350",
+            "title": "Unit Cost Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity",
+          "unit_cost_cents"
         ],
-        "title": "DocumentType",
+        "title": "EntryIn",
+        "type": "object"
+      },
+      "EventAction": {
+        "description": "Qué cambió en el evento, para el historial (CA-11.5).",
+        "enum": [
+          "PLANNING_UPDATED",
+          "CONFIRMED",
+          "STARTED",
+          "FINISHED",
+          "CANCELLED"
+        ],
+        "title": "EventAction",
         "type": "string"
       },
       "EventCancelIn": {
@@ -924,6 +1619,79 @@
         "title": "EventCancellationOut",
         "type": "object"
       },
+      "Permission": {
+        "enum": [
+          "users:manage",
+          "access_log:read",
+          "clients:manage",
+          "catalog:read",
+          "catalog:manage",
+          "quotes:manage",
+          "dashboard:read",
+          "contracts:manage",
+          "payments:record",
+          "events:manage",
+          "events:read",
+          "staff:manage"
+        ],
+        "title": "Permission",
+        "type": "string"
+      },
+      "PriceUnit": {
+        "description": "Cómo se cobra el servicio: el buffet por persona, lo demás por unidad.",
+        "enum": [
+          "PER_PERSON",
+          "PER_UNIT"
+        ],
+        "title": "PriceUnit",
+        "type": "string"
+      },
+      "Problem": {
+        "description": "Error de negocio. `code` no cambia aunque cambie el texto de `detail`.",
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/EventAction"
+          },
+          "changed_at": {
+            "format": "date-time",
+            "title": "Changed At",
+            "type": "string"
+          },
+          "changed_by": {
+            "format": "uuid",
+            "title": "Changed By",
+            "type": "string"
+          },
+          "changed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío si no se conoce el nombre",
+            "title": "Changed By Name"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/FieldChangeOut"
+            },
+            "title": "Fields",
+            "type": "array"
+          }
+        },
+        "required": [
+          "action",
+          "fields",
+          "changed_by",
+          "changed_by_name",
+          "changed_at"
+        ],
+        "title": "EventChangeOut",
+        "type": "object"
+      },
       "EventConvertIn": {
         "properties": {
           "contract_id": {
@@ -951,8 +1719,143 @@
         "title": "EventConvertIn",
         "type": "object"
       },
+      "EventMaterialOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ProductKind"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "out": {
+            "description": "Salió para el evento",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Out",
+            "type": "string"
+          },
+          "pending_return": {
+            "description": "Reutilizable que falta devolver",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Pending Return",
+            "type": "string"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "returned": {
+            "description": "Volvió al almacén",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Returned",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          },
+          "wasted": {
+            "description": "Se perdió o se dañó en el evento",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Wasted",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "code",
+          "name",
+          "unit",
+          "kind",
+          "out",
+          "returned",
+          "wasted",
+          "pending_return"
+        ],
+        "title": "EventMaterialOut",
+        "type": "object"
+      },
+      "EventMovementIn": {
+        "description": "Salida o devolución de un evento.",
+        "properties": {
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "occurred_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurred On"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Cantidad sin signo como texto, hasta 3 decimales",
+            "examples": [
+              "12.5"
+            ],
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Observación opcional",
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "product_id",
+          "event_id",
+          "quantity"
+        ],
+        "title": "EventMovementIn",
+        "type": "object"
+      },
       "EventOut": {
         "properties": {
+          "balance_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Saldo del contrato (RN15). Vacío sin `payments:record`",
+            "title": "Balance Cents"
+          },
           "cancellation": {
             "anyOf": [
               {
@@ -1033,6 +1936,18 @@
             "title": "Id",
             "type": "string"
           },
+          "paid_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pagos vigentes del contrato (R-PAG-1). Vacío sin `payments:record`",
+            "title": "Paid Cents"
+          },
           "quote_code": {
             "title": "Quote Code",
             "type": "string"
@@ -1083,6 +1998,8 @@
           "status",
           "services",
           "cancellation",
+          "paid_cents",
+          "balance_cents",
           "created_at"
         ],
         "title": "EventOut",
@@ -1117,6 +2034,309 @@
           "page_size"
         ],
         "title": "EventPageOut",
+        "type": "object"
+      },
+      "EventPlanningIn": {
+        "description": "CA-11.2: todos obligatorios. Si la hora de fin es menor que la de inicio, el evento\ntermina al día siguiente (R-COT-1).",
+        "properties": {
+          "coordinator_id": {
+            "description": "Administrador o encargado de eventos activo",
+            "format": "uuid",
+            "title": "Coordinator Id",
+            "type": "string"
+          },
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "event_date": {
+            "description": "Hoy o una fecha futura (en Lima)",
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "guests": {
+            "description": "Entre 1 y 10000. No recalcula el total (R-EVT-7)",
+            "title": "Guests",
+            "type": "integer"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "venue": {
+            "description": "Hasta 300 caracteres",
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_date",
+          "start_time",
+          "end_time",
+          "venue",
+          "guests",
+          "coordinator_id"
+        ],
+        "title": "EventPlanningIn",
+        "type": "object"
+      },
+      "EventPlanningOut": {
+        "properties": {
+          "balance_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Saldo del contrato (RN15). Vacío sin `payments:record`",
+            "title": "Balance Cents"
+          },
+          "cancellation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventCancellationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "client_id": {
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "contract_code": {
+            "title": "Contract Code",
+            "type": "string"
+          },
+          "contract_id": {
+            "format": "uuid",
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "coordinator_id": {
+            "format": "uuid",
+            "title": "Coordinator Id",
+            "type": "string"
+          },
+          "coordinator_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío si el usuario ya no está activo",
+            "title": "Coordinator Name"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "ends_next_day": {
+            "title": "Ends Next Day",
+            "type": "boolean"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "event_type": {
+            "$ref": "#/components/schemas/EventType"
+          },
+          "guests": {
+            "title": "Guests",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "paid_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pagos vigentes del contrato (R-PAG-1). Vacío sin `payments:record`",
+            "title": "Paid Cents"
+          },
+          "quote_code": {
+            "title": "Quote Code",
+            "type": "string"
+          },
+          "quote_id": {
+            "format": "uuid",
+            "title": "Quote Id",
+            "type": "string"
+          },
+          "services": {
+            "items": {
+              "$ref": "#/components/schemas/EventServiceOut"
+            },
+            "title": "Services",
+            "type": "array"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventStatus"
+          },
+          "venue": {
+            "title": "Venue",
+            "type": "string"
+          },
+          "warnings": {
+            "description": "`staff_may_need_review` si cambió la fecha o el horario (R-EVT-9)",
+            "items": {
+              "$ref": "#/components/schemas/PlanningWarning"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "contract_id",
+          "contract_code",
+          "quote_id",
+          "quote_code",
+          "client_id",
+          "client_name",
+          "event_type",
+          "event_date",
+          "start_time",
+          "end_time",
+          "ends_next_day",
+          "venue",
+          "guests",
+          "coordinator_id",
+          "coordinator_name",
+          "status",
+          "services",
+          "cancellation",
+          "paid_cents",
+          "balance_cents",
+          "created_at",
+          "warnings"
+        ],
+        "title": "EventPlanningOut",
+        "type": "object"
+      },
+      "EventResultOut": {
+        "properties": {
+          "balance_cents": {
+            "description": "Saldo por cobrar (RN15)",
+            "title": "Balance Cents",
+            "type": "integer"
+          },
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "collected_cents": {
+            "description": "Cobrado al cliente, neto de devoluciones",
+            "title": "Collected Cents",
+            "type": "integer"
+          },
+          "contract_code": {
+            "title": "Contract Code",
+            "type": "string"
+          },
+          "contract_id": {
+            "format": "uuid",
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "currency": {
+            "default": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "event_code": {
+            "title": "Event Code",
+            "type": "string"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_status": {
+            "title": "Event Status",
+            "type": "string"
+          },
+          "expense_cents": {
+            "title": "Expense Cents",
+            "type": "integer"
+          },
+          "expenses": {
+            "$ref": "#/components/schemas/ExpensesOut"
+          },
+          "result_cents": {
+            "description": "Cobrado − egresos asociados al evento",
+            "title": "Result Cents",
+            "type": "integer"
+          },
+          "total_cents": {
+            "description": "Total contratado",
+            "title": "Total Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "event_id",
+          "event_code",
+          "event_date",
+          "event_status",
+          "client_name",
+          "contract_id",
+          "contract_code",
+          "total_cents",
+          "balance_cents",
+          "collected_cents",
+          "expenses",
+          "expense_cents",
+          "result_cents"
+        ],
+        "title": "EventResultOut",
         "type": "object"
       },
       "EventServiceOut": {
@@ -1159,7 +2379,7 @@
         "type": "object"
       },
       "EventStatus": {
-        "description": "DOMAIN.md §3. HU10 solo crea eventos programados; los demás estados llegan con HU11.",
+        "description": "DOMAIN.md §3: programado → confirmado → en ejecución → finalizado · cancelado.",
         "enum": [
           "SCHEDULED",
           "CONFIRMED",
@@ -1267,6 +2487,73 @@
         "title": "EventType",
         "type": "string"
       },
+      "ExpensesOut": {
+        "properties": {
+          "other_cents": {
+            "title": "Other Cents",
+            "type": "integer"
+          },
+          "staff_cents": {
+            "title": "Staff Cents",
+            "type": "integer"
+          },
+          "supplies_cents": {
+            "title": "Supplies Cents",
+            "type": "integer"
+          },
+          "transport_cents": {
+            "title": "Transport Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "supplies_cents",
+          "staff_cents",
+          "transport_cents",
+          "other_cents"
+        ],
+        "title": "ExpensesOut",
+        "type": "object"
+      },
+      "FieldChangeOut": {
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "After"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "description": "Fechas y horas en ISO; IDs como texto",
+            "title": "Before"
+          },
+          "field": {
+            "description": "`event_date`, `start_time`, `end_time`, `venue`, `guests`, `coordinator_id` o `status`",
+            "title": "Field",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "before",
+          "after"
+        ],
+        "title": "FieldChangeOut",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1317,1028 +2604,6 @@
           "status"
         ],
         "title": "HistoryEventOut",
-        "type": "object"
-      },
-      "HistorySummaryOut": {
-        "properties": {
-          "accepted_quotes": {
-            "title": "Accepted Quotes",
-            "type": "integer"
-          },
-          "contracted_cents": {
-            "description": "Suma de contratos firmados; sin los anulados",
-            "title": "Contracted Cents",
-            "type": "integer"
-          },
-          "events": {
-            "title": "Events",
-            "type": "integer"
-          },
-          "quotes": {
-            "title": "Quotes",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "quotes",
-          "accepted_quotes",
-          "events",
-          "contracted_cents"
-        ],
-        "title": "HistorySummaryOut",
-        "type": "object"
-      },
-      "LineKind": {
-        "enum": [
-          "SERVICE",
-          "EXTRA"
-        ],
-        "title": "LineKind",
-        "type": "string"
-      },
-      "LineUnit": {
-        "enum": [
-          "PER_PERSON",
-          "PER_UNIT"
-        ],
-        "title": "LineUnit",
-        "type": "string"
-      },
-      "LoginIn": {
-        "properties": {
-          "email": {
-            "title": "Email",
-            "type": "string"
-          },
-          "password": {
-            "title": "Password",
-            "type": "string"
-          }
-        },
-        "required": [
-          "email",
-          "password"
-        ],
-        "title": "LoginIn",
-        "type": "object"
-      },
-      "MeOut": {
-        "description": "Perfil del usuario: el frontend muestra solo los módulos de `permissions` (CA-01.4).",
-        "properties": {
-          "email": {
-            "title": "Email",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "permissions": {
-            "items": {
-              "$ref": "#/components/schemas/Permission"
-            },
-            "title": "Permissions",
-            "type": "array"
-          },
-          "role": {
-            "$ref": "#/components/schemas/Role"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "email",
-          "role",
-          "permissions"
-        ],
-        "title": "MeOut",
-        "type": "object"
-      },
-      "PaymentIn": {
-        "properties": {
-          "method": {
-            "$ref": "#/components/schemas/PaymentMethod"
-          },
-          "paid_on": {
-            "format": "date",
-            "title": "Paid On",
-            "type": "string"
-          },
-          "reference": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "N.º de operación, voucher, etc.",
-            "title": "Reference"
-          }
-        },
-        "required": [
-          "paid_on",
-          "method"
-        ],
-        "title": "PaymentIn",
-        "type": "object"
-      },
-      "PaymentKind": {
-        "enum": [
-          "ADVANCE",
-          "REFUND"
-        ],
-        "title": "PaymentKind",
-        "type": "string"
-      },
-      "PaymentMethod": {
-        "enum": [
-          "CASH",
-          "TRANSFER",
-          "CARD",
-          "YAPE_PLIN"
-        ],
-        "title": "PaymentMethod",
-        "type": "string"
-      },
-      "PaymentOut": {
-        "properties": {
-          "amount_cents": {
-            "title": "Amount Cents",
-            "type": "integer"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "kind": {
-            "$ref": "#/components/schemas/PaymentKind"
-          },
-          "method": {
-            "$ref": "#/components/schemas/PaymentMethod"
-          },
-          "paid_on": {
-            "format": "date",
-            "title": "Paid On",
-            "type": "string"
-          },
-          "reference": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reference"
-          }
-        },
-        "required": [
-          "id",
-          "kind",
-          "amount_cents",
-          "method",
-          "reference",
-          "paid_on"
-        ],
-        "title": "PaymentOut",
-        "type": "object"
-      },
-      "Permission": {
-        "enum": [
-          "users:manage",
-          "access_log:read",
-          "clients:manage",
-          "catalog:read",
-          "catalog:manage",
-          "quotes:manage",
-          "dashboard:read",
-          "contracts:manage",
-          "payments:record",
-          "events:manage",
-          "events:read",
-          "staff:manage"
-        ],
-        "title": "Permission",
-        "type": "string"
-      },
-      "PriceUnit": {
-        "description": "Cómo se cobra el servicio: el buffet por persona, lo demás por unidad.",
-        "enum": [
-          "PER_PERSON",
-          "PER_UNIT"
-        ],
-        "title": "PriceUnit",
-        "type": "string"
-      },
-      "Problem": {
-        "description": "Error de negocio. `code` no cambia aunque cambie el texto de `detail`.",
-        "properties": {
-          "code": {
-            "title": "Code",
-            "type": "string"
-          },
-          "detail": {
-            "title": "Detail",
-            "type": "string"
-          },
-          "status": {
-            "title": "Status",
-            "type": "integer"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          },
-          "type": {
-            "default": "about:blank",
-            "title": "Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "title",
-          "status",
-          "code",
-          "detail"
-        ],
-        "title": "Problem",
-        "type": "object"
-      },
-      "QuoteIn": {
-        "properties": {
-          "client_id": {
-            "format": "uuid",
-            "title": "Client Id",
-            "type": "string"
-          },
-          "end_time": {
-            "description": "Si es menor que start_time, el evento termina al día siguiente",
-            "format": "time",
-            "title": "End Time",
-            "type": "string"
-          },
-          "event_date": {
-            "format": "date",
-            "title": "Event Date",
-            "type": "string"
-          },
-          "event_type": {
-            "$ref": "#/components/schemas/EventType"
-          },
-          "guests": {
-            "title": "Guests",
-            "type": "integer"
-          },
-          "lines": {
-            "items": {
-              "$ref": "#/components/schemas/QuoteLineIn"
-            },
-            "title": "Lines",
-            "type": "array"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          },
-          "start_time": {
-            "format": "time",
-            "title": "Start Time",
-            "type": "string"
-          },
-          "valid_until": {
-            "anyOf": [
-              {
-                "format": "date",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Si se omite: 15 días al crear; se mantiene al modificar",
-            "title": "Valid Until"
-          },
-          "venue": {
-            "title": "Venue",
-            "type": "string"
-          }
-        },
-        "required": [
-          "client_id",
-          "event_type",
-          "event_date",
-          "start_time",
-          "end_time",
-          "venue",
-          "guests",
-          "lines"
-        ],
-        "title": "QuoteIn",
-        "type": "object"
-      },
-      "QuoteLineIn": {
-        "properties": {
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Solo en EXTRA",
-            "title": "Description"
-          },
-          "kind": {
-            "$ref": "#/components/schemas/LineKind",
-            "description": "SERVICE (del catálogo) o EXTRA (concepto adicional)"
-          },
-          "quantity": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Si se omite: invitados (por persona) o 1 (por unidad)",
-            "title": "Quantity"
-          },
-          "service_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Solo en SERVICE",
-            "title": "Service Id"
-          },
-          "unit_price_cents": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Precio acordado. Si se omite en SERVICE: el del catálogo",
-            "title": "Unit Price Cents"
-          }
-        },
-        "required": [
-          "kind"
-        ],
-        "title": "QuoteLineIn",
-        "type": "object"
-      },
-      "QuoteLineOut": {
-        "properties": {
-          "catalog_price_cents": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Catalog Price Cents"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "kind": {
-            "$ref": "#/components/schemas/LineKind"
-          },
-          "quantity": {
-            "title": "Quantity",
-            "type": "integer"
-          },
-          "service_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Service Id"
-          },
-          "subtotal_cents": {
-            "title": "Subtotal Cents",
-            "type": "integer"
-          },
-          "unit": {
-            "$ref": "#/components/schemas/LineUnit"
-          },
-          "unit_price_cents": {
-            "title": "Unit Price Cents",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "kind",
-          "service_id",
-          "description",
-          "unit",
-          "quantity",
-          "unit_price_cents",
-          "catalog_price_cents",
-          "subtotal_cents"
-        ],
-        "title": "QuoteLineOut",
-        "type": "object"
-      },
-      "QuoteOut": {
-        "properties": {
-          "client_id": {
-            "format": "uuid",
-            "title": "Client Id",
-            "type": "string"
-          },
-          "client_name": {
-            "title": "Client Name",
-            "type": "string"
-          },
-          "code": {
-            "title": "Code",
-            "type": "string"
-          },
-          "contract_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "El contrato de esta cotización",
-            "title": "Contract Id"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "currency": {
-            "title": "Currency",
-            "type": "string"
-          },
-          "end_time": {
-            "format": "time",
-            "title": "End Time",
-            "type": "string"
-          },
-          "ends_next_day": {
-            "title": "Ends Next Day",
-            "type": "boolean"
-          },
-          "event_date": {
-            "format": "date",
-            "title": "Event Date",
-            "type": "string"
-          },
-          "event_type": {
-            "$ref": "#/components/schemas/EventType"
-          },
-          "guests": {
-            "title": "Guests",
-            "type": "integer"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "lines": {
-            "items": {
-              "$ref": "#/components/schemas/QuoteLineOut"
-            },
-            "title": "Lines",
-            "type": "array"
-          },
-          "notes": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Notes"
-          },
-          "start_time": {
-            "format": "time",
-            "title": "Start Time",
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/QuoteStatus",
-            "description": "Estado efectivo: incluye EXPIRED si venció"
-          },
-          "total_cents": {
-            "title": "Total Cents",
-            "type": "integer"
-          },
-          "valid_until": {
-            "format": "date",
-            "title": "Valid Until",
-            "type": "string"
-          },
-          "venue": {
-            "title": "Venue",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "code",
-          "client_id",
-          "client_name",
-          "event_type",
-          "event_date",
-          "start_time",
-          "end_time",
-          "ends_next_day",
-          "venue",
-          "guests",
-          "valid_until",
-          "status",
-          "lines",
-          "total_cents",
-          "currency",
-          "notes",
-          "created_at"
-        ],
-        "title": "QuoteOut",
-        "type": "object"
-      },
-      "QuotePageOut": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/QuoteSummaryOut"
-            },
-            "title": "Items",
-            "type": "array"
-          },
-          "page": {
-            "title": "Page",
-            "type": "integer"
-          },
-          "page_size": {
-            "title": "Page Size",
-            "type": "integer"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "items",
-          "total",
-          "page",
-          "page_size"
-        ],
-        "title": "QuotePageOut",
-        "type": "object"
-      },
-      "QuoteStatus": {
-        "enum": [
-          "DRAFT",
-          "SENT",
-          "ACCEPTED",
-          "REJECTED",
-          "EXPIRED"
-        ],
-        "title": "QuoteStatus",
-        "type": "string"
-      },
-      "QuoteStatusIn": {
-        "properties": {
-          "status": {
-            "enum": [
-              "DRAFT",
-              "SENT",
-              "ACCEPTED",
-              "REJECTED"
-            ],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": [
-          "status"
-        ],
-        "title": "QuoteStatusIn",
-        "type": "object"
-      },
-      "QuoteSummaryOut": {
-        "properties": {
-          "client_id": {
-            "format": "uuid",
-            "title": "Client Id",
-            "type": "string"
-          },
-          "client_name": {
-            "title": "Client Name",
-            "type": "string"
-          },
-          "code": {
-            "title": "Code",
-            "type": "string"
-          },
-          "event_date": {
-            "format": "date",
-            "title": "Event Date",
-            "type": "string"
-          },
-          "event_type": {
-            "$ref": "#/components/schemas/EventType"
-          },
-          "guests": {
-            "title": "Guests",
-            "type": "integer"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/QuoteStatus"
-          },
-          "total_cents": {
-            "title": "Total Cents",
-            "type": "integer"
-          },
-          "valid_until": {
-            "format": "date",
-            "title": "Valid Until",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "code",
-          "client_id",
-          "client_name",
-          "event_type",
-          "event_date",
-          "guests",
-          "total_cents",
-          "status",
-          "valid_until"
-        ],
-        "title": "QuoteSummaryOut",
-        "type": "object"
-      },
-      "RefreshIn": {
-        "properties": {
-          "refresh_token": {
-            "title": "Refresh Token",
-            "type": "string"
-          }
-        },
-        "required": [
-          "refresh_token"
-        ],
-        "title": "RefreshIn",
-        "type": "object"
-      },
-      "Role": {
-        "enum": [
-          "ADMIN",
-          "EVENTS_MANAGER",
-          "PURCHASING_MANAGER"
-        ],
-        "title": "Role",
-        "type": "string"
-      },
-      "ServiceIn": {
-        "properties": {
-          "category_id": {
-            "format": "uuid",
-            "title": "Category Id",
-            "type": "string"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "price_unit": {
-            "$ref": "#/components/schemas/PriceUnit",
-            "description": "PER_PERSON (buffet) o PER_UNIT (lo demás)"
-          },
-          "reference_price_cents": {
-            "description": "Precio referencial en céntimos: S/ 45.00 = 4500",
-            "title": "Reference Price Cents",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "name",
-          "category_id",
-          "price_unit",
-          "reference_price_cents"
-        ],
-        "title": "ServiceIn",
-        "type": "object"
-      },
-      "ServiceOut": {
-        "properties": {
-          "active": {
-            "title": "Active",
-            "type": "boolean"
-          },
-          "category_id": {
-            "format": "uuid",
-            "title": "Category Id",
-            "type": "string"
-          },
-          "currency": {
-            "title": "Currency",
-            "type": "string"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "price_unit": {
-            "$ref": "#/components/schemas/PriceUnit"
-          },
-          "reference_price_cents": {
-            "title": "Reference Price Cents",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "category_id",
-          "price_unit",
-          "reference_price_cents",
-          "currency",
-          "description",
-          "active"
-        ],
-        "title": "ServiceOut",
-        "type": "object"
-      },
-      "SignatureOut": {
-        "properties": {
-          "recorded_at": {
-            "format": "date-time",
-            "title": "Recorded At",
-            "type": "string"
-          },
-          "signed_on": {
-            "format": "date",
-            "title": "Signed On",
-            "type": "string"
-          },
-          "signer_name": {
-            "title": "Signer Name",
-            "type": "string"
-          }
-        },
-        "required": [
-          "signed_on",
-          "signer_name",
-          "recorded_at"
-        ],
-        "title": "SignatureOut",
-        "type": "object"
-      },
-      "TokenOut": {
-        "properties": {
-          "access_token": {
-            "description": "Va en `Authorization: Bearer ...`. Dura 15 minutos.",
-            "title": "Access Token",
-            "type": "string"
-          },
-          "expires_in": {
-            "description": "Segundos que dura el access token",
-            "title": "Expires In",
-            "type": "integer"
-          },
-          "refresh_token": {
-            "description": "Renueva el acceso en `POST /v1/auth/refresh`. Vence tras 30 min sin uso.",
-            "title": "Refresh Token",
-            "type": "string"
-          },
-          "token_type": {
-            "default": "bearer",
-            "title": "Token Type",
-            "type": "string"
-          },
-          "user": {
-            "$ref": "#/components/schemas/MeOut"
-          }
-        },
-        "required": [
-          "access_token",
-          "expires_in",
-          "refresh_token",
-          "user"
-        ],
-        "title": "TokenOut",
-        "type": "object"
-      },
-      "UserCreate": {
-        "properties": {
-          "active": {
-            "default": true,
-            "title": "Active",
-            "type": "boolean"
-          },
-          "email": {
-            "title": "Email",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "password": {
-            "title": "Password",
-            "type": "string"
-          },
-          "role": {
-            "$ref": "#/components/schemas/Role"
-          }
-        },
-        "required": [
-          "name",
-          "email",
-          "password",
-          "role"
-        ],
-        "title": "UserCreate",
-        "type": "object"
-      },
-      "UserOut": {
-        "properties": {
-          "active": {
-            "title": "Active",
-            "type": "boolean"
-          },
-          "email": {
-            "title": "Email",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "role": {
-            "$ref": "#/components/schemas/Role"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "email",
-          "role",
-          "active"
-        ],
-        "title": "UserOut",
-        "type": "object"
-      },
-      "UserUpdate": {
-        "properties": {
-          "email": {
-            "title": "Email",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "new_password": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "description": "Solo si el administrador asigna una contraseña nueva",
-            "title": "New Password"
-          },
-          "role": {
-            "$ref": "#/components/schemas/Role"
-          }
-        },
-        "required": [
-          "name",
-          "email",
-          "role"
-        ],
-        "title": "UserUpdate",
-        "type": "object"
-      },
-      "ValidationError": {
-        "properties": {
-          "ctx": {
-            "title": "Context",
-            "type": "object"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "title": "Location",
-            "type": "array"
-          },
-          "msg": {
-            "title": "Message",
-            "type": "string"
-          },
-          "type": {
-            "title": "Error Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError",
         "type": "object"
       },
       "WorkerCreate": {
@@ -2839,147 +3104,17 @@
   "paths": {
     "/health": {
       "get": {
-        "description": "Responde mientras el proceso esté vivo, aunque la base de datos no lo esté (CA-2).",
-        "operationId": "health_live",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "title": "Response Health Live",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Health",
-        "tags": [
-          "operación"
-        ]
-      }
-    },
-    "/ready": {
-      "get": {
-        "description": "`200` si la base de datos responde (CA-3); `503` sin detalles del error si no (CA-4).",
-        "operationId": "health_ready",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Ready",
-        "tags": [
-          "operación"
-        ]
-      }
-    },
-    "/v1/access-log": {
-      "get": {
-        "description": "Intentos de inicio de sesión, del más reciente al más antiguo, con filtros y paginado.",
-        "operationId": "access_log_search",
+        "description": "Historial de planificación y estado, del más antiguo al más reciente (CA-11.5).",
+        "operationId": "events_changes_list",
         "parameters": [
           {
-            "in": "query",
-            "name": "user_id",
-            "required": false,
+            "in": "path",
+            "name": "event_id",
+            "required": true,
             "schema": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "User Id"
-            }
-          },
-          {
-            "description": "Desde (con zona horaria)",
-            "in": "query",
-            "name": "since",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "date-time",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Desde (con zona horaria)",
-              "title": "Since"
-            }
-          },
-          {
-            "description": "Hasta (con zona horaria)",
-            "in": "query",
-            "name": "until",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "date-time",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Hasta (con zona horaria)",
-              "title": "Until"
-            }
-          },
-          {
-            "in": "query",
-            "name": "result",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "$ref": "#/components/schemas/AccessResult"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Result"
-            }
-          },
-          {
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "default": 1,
-              "minimum": 1,
-              "title": "Page",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "page_size",
-            "required": false,
-            "schema": {
-              "default": 50,
-              "maximum": 100,
-              "minimum": 1,
-              "title": "Page Size",
-              "type": "integer"
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
             }
           }
         ],
@@ -2988,7 +3123,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccessLogPageOut"
+                  "items": {
+                    "$ref": "#/components/schemas/EventChangeOut"
+                  },
+                  "title": "Response Events Changes List",
+                  "type": "array"
                 }
               }
             },
@@ -3014,6 +3153,16 @@
             },
             "description": "`auth.forbidden`"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -3023,6 +3172,364 @@
               }
             },
             "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Changes",
+        "tags": [
+          "eventos"
+        ]
+      }
+    },
+    "/v1/events/{event_id}/confirm": {
+      "post": {
+        "description": "Programado → confirmado (CA-11.4).",
+        "operationId": "events_confirm",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.invalid_transition`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Confirm Event",
+        "tags": [
+          "eventos"
+        ]
+      }
+    },
+    "/v1/events/{event_id}/finish": {
+      "post": {
+        "description": "En ejecución → finalizado; no exige saldo en cero (R-EVT-8).",
+        "operationId": "events_finish",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.invalid_transition`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Finish Event",
+        "tags": [
+          "eventos"
+        ]
+      }
+    },
+    "/v1/events/{event_id}/notes": {
+      "get": {
+        "description": "Bitácora del evento, de la observación más reciente a la más antigua (CA-13.5).",
+        "operationId": "events_notes_list",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NoteOut"
+                  },
+                  "title": "Response Events Notes List",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Notes",
+        "tags": [
+          "eventos"
+        ]
+      },
+      "post": {
+        "description": "Agrega una observación (CA-13.4); también con el evento finalizado (R-ACT-2).",
+        "operationId": "events_notes_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.notes_closed`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`note.validation`"
           }
         },
         "security": [
@@ -3338,7 +3845,7 @@
             },
             "description": "`catalog.category_name_duplicated`"
           },
-          "422": {
+          "403": {
             "content": {
               "application/json": {
                 "schema": {
@@ -3382,7 +3889,8 @@
               "schema": {
                 "$ref": "#/components/schemas/CategoryIn"
               }
-            }
+            },
+            "description": "`event.not_found`"
           },
           "required": true
         },
@@ -3670,10 +4178,11 @@
               "title": "Include Inactive",
               "type": "boolean"
             }
-          }
-        ],
+          },
+          "required": true
+        },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -3707,15 +4216,35 @@
             },
             "description": "`auth.forbidden`"
           },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.product_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.insufficient_stock`"
+          },
           "422": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "`inventory.validation`"
           }
         },
         "security": [
@@ -3725,9 +4254,11 @@
         ],
         "summary": "Search Services",
         "tags": [
-          "catálogo"
+          "almacén"
         ]
-      },
+      }
+    },
+    "/v1/inventory/movements/entry": {
       "post": {
         "description": "Registra un servicio activo en una categoría activa.",
         "operationId": "catalog_services_register",
@@ -3810,7 +4341,7 @@
         ],
         "summary": "Register Service",
         "tags": [
-          "catálogo"
+          "almacén"
         ]
       }
     },
@@ -3841,7 +4372,7 @@
           "required": true
         },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -3909,7 +4440,7 @@
         ],
         "summary": "Update Service",
         "tags": [
-          "catálogo"
+          "almacén"
         ]
       }
     },
@@ -3927,10 +4458,11 @@
               "title": "Service Id",
               "type": "string"
             }
-          }
-        ],
+          },
+          "required": true
+        },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -3974,11 +4506,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "`inventory.validation`"
           }
         },
         "security": [
@@ -3988,7 +4520,7 @@
         ],
         "summary": "Activate Service",
         "tags": [
-          "catálogo"
+          "almacén"
         ]
       }
     },
@@ -4006,10 +4538,11 @@
               "title": "Service Id",
               "type": "string"
             }
-          }
-        ],
+          },
+          "required": true
+        },
         "responses": {
-          "200": {
+          "201": {
             "content": {
               "application/json": {
                 "schema": {
@@ -4053,11 +4586,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "`inventory.validation`"
           }
         },
         "security": [
@@ -4067,7 +4600,7 @@
         ],
         "summary": "Deactivate Service",
         "tags": [
-          "catálogo"
+          "almacén"
         ]
       }
     },
@@ -4095,6 +4628,18 @@
             "schema": {
               "default": false,
               "title": "Include Inactive",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Solo stock bajo o por vencer",
+            "in": "query",
+            "name": "alerts_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Solo stock bajo o por vencer",
+              "title": "Alerts Only",
               "type": "boolean"
             }
           }
@@ -4278,7 +4823,7 @@
             },
             "description": "`auth.forbidden`"
           },
-          "404": {
+          "409": {
             "content": {
               "application/json": {
                 "schema": {
@@ -4288,7 +4833,7 @@
             },
             "description": "`client.not_found`"
           },
-          "422": {
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
@@ -4630,7 +5175,7 @@
         ],
         "summary": "Client History",
         "tags": [
-          "clientes"
+          "almacén"
         ]
       }
     },
@@ -4962,7 +5507,7 @@
                 }
               }
             },
-            "description": "`auth.forbidden`"
+            "description": "`auth.forbidden`, `note.not_author`"
           },
           "404": {
             "content": {
@@ -5041,7 +5586,7 @@
                 }
               }
             },
-            "description": "Successful Response"
+            "description": "El comprobante"
           },
           "401": {
             "content": {
@@ -5130,6 +5675,16 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoidIn"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -5165,11 +5720,11 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "`payment.reason_required`"
           }
         },
         "security": [
@@ -5386,7 +5941,7 @@
             },
             "description": "`auth.forbidden`"
           },
-          "404": {
+          "422": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5396,7 +5951,7 @@
             },
             "description": "`contract.not_found`"
           },
-          "409": {
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5406,7 +5961,7 @@
             },
             "description": "`event.contract_not_ready`, `event.already_exists`"
           },
-          "422": {
+          "403": {
             "content": {
               "application/json": {
                 "schema": {
@@ -5500,6 +6055,16 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelIn"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -5791,13 +6356,13 @@
         "operationId": "quotes_search",
         "parameters": [
           {
-            "description": "Parte del código o del nombre del cliente",
+            "description": "Parte de la razón social o del documento",
             "in": "query",
             "name": "text",
             "required": false,
             "schema": {
               "default": "",
-              "description": "Parte del código o del nombre del cliente",
+              "description": "Parte de la razón social o del documento",
               "title": "Text",
               "type": "string"
             }
@@ -5885,11 +6450,9 @@
             "name": "page_size",
             "required": false,
             "schema": {
-              "default": 20,
-              "maximum": 100,
-              "minimum": 1,
-              "title": "Page Size",
-              "type": "integer"
+              "default": false,
+              "title": "Include Inactive",
+              "type": "boolean"
             }
           }
         ],
@@ -6083,6 +6646,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.supplier_not_found`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             },
@@ -6958,6 +7531,166 @@
         "summary": "Deactivate Worker",
         "tags": [
           "personal"
+        ]
+      }
+    },
+    "/v1/reports/cash-flow": {
+      "get": {
+        "description": "Ingresos, egresos por categoría y saldo del periodo, por mes; sin anulados (CA-22.1).",
+        "operationId": "reports_cash_flow",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "format": "date",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Hasta 366 días",
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "description": "Hasta 366 días",
+              "format": "date",
+              "title": "To",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CashFlowOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`report.range_invalid`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cash Flow",
+        "tags": [
+          "reportes"
+        ]
+      }
+    },
+    "/v1/reports/events/{event_id}/result": {
+      "get": {
+        "description": "Cobrado al cliente, egresos del evento por categoría y resultado (CA-22.3).",
+        "operationId": "reports_event_result",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Event Result",
+        "tags": [
+          "reportes"
         ]
       }
     },
