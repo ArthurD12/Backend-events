@@ -199,8 +199,9 @@ class CancelEvent:
                 today=today,
             )
             refund_payment_id = payment.id
-        event.cancel(reason=cleaned, cancelled_by=cancelled_by, now=now)
-        await self._events.update(event)  # primero el evento: la base lo exige (R-EVT-3)
+        change = event.cancel(reason=cleaned, cancelled_by=cancelled_by, now=now)
+        # Primero el evento: la base lo exige (R-EVT-3). El cambio queda en el historial.
+        await self._events.update(event, change)
         contract.cancel(
             reason=cleaned,
             refund_cents=refund_cents,

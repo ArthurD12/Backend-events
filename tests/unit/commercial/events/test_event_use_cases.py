@@ -1,7 +1,8 @@
-"""Convertir un contrato en evento con piezas en memoria (HU10)."""
+"""Convertir un contrato en evento (HU10), cancelarlo, planificarlo y avanzar sus estados
+(HU11) con piezas en memoria."""
 
 from dataclasses import dataclass
-from datetime import date, time
+from datetime import date, time, timedelta
 from uuid import UUID, uuid4
 
 import pytest
@@ -29,6 +30,14 @@ from local_eventos.modules.commercial.application.events.use_cases.events import
     GetEvent,
     SearchEvents,
 )
+from local_eventos.modules.commercial.application.events.use_cases.planning import (
+    ConfirmEvent,
+    EventPlanning,
+    FinishEvent,
+    ListEventChanges,
+    StartEvent,
+    UpdateEventPlanning,
+)
 from local_eventos.modules.commercial.application.quotes.use_cases.query_quotes import (
     ChangeQuoteStatus,
 )
@@ -39,9 +48,13 @@ from local_eventos.modules.commercial.domain.contracts.contract import (
     ContractValidationError,
 )
 from local_eventos.modules.commercial.domain.events.event import (
+    Event,
+    EventAction,
     EventRuleError,
     EventStatus,
     EventValidationError,
+    FieldChange,
+    PlanningWarning,
 )
 from local_eventos.modules.commercial.domain.quotes.quote import EventType, QuoteStatus
 from local_eventos.modules.identity.public_api import Coordinator
@@ -325,3 +338,158 @@ async def test_ca12_rango_invalido_o_mayor_a_92_dias(setup: Setup, start: date, 
 
 async def test_ca12_rango_de_92_dias_es_valido(setup: Setup) -> None:
     assert await EventCalendar(setup.events)(date(2026, 1, 1), date(2026, 4, 2)) == []
+
+
+# --- HU11: planificación, estados e historial ---
+
+
+async def _event(setup: Setup) -> Event:
+    return await setup.convert()((await setup.contract()).id, created_by=MANAGER.id)
+
+
+def _planning(event: Event, **changes: object) -> EventPlanning:
+    data: dict[str, object] = {
+        "event_date": event.event_date,
+        "start_time": event.start_time,
+        "end_time": event.end_time,
+        "venue": event.venue,
+        "guests": event.guests,
+        "coordinator_id": event.coordinator_id,
+        **changes,
+    }
+    return EventPlanning(**data)  # type: ignore[arg-type]
+
+
+def _update(setup: Setup) -> UpdateEventPlanning:
+    return UpdateEventPlanning(setup.events, setup.coordinators, setup.world.clock)
+
+
+async def test_ca11_c5_cancelar_deja_su_cambio_en_el_historial(setup: Setup) -> None:
+    event = await _event(setup)
+
+    await setup.cancel_event()(event.id, reason="Canceló", cancelled_by=ADMIN.id)
+
+    (change,) = await ListEventChanges(setup.events)(event.id)
+    assert (change.action, change.changed_by) == (EventAction.CANCELLED, ADMIN.id)
+    assert change.fields == (FieldChange("status", "SCHEDULED", "CANCELLED"),)
+
+
+async def test_ca11_2_edita_la_planificacion_y_guarda_el_historial(setup: Setup) -> None:
+    event = await _event(setup)
+
+    result = await _update(setup)(
+        event.id, _planning(event, guests=150, coordinator_id=ADMIN.id), by=MANAGER.id
+    )
+
+    stored = await GetEvent(setup.events)(event.id)
+    assert stored == result.event
+    assert (stored.guests, stored.coordinator_id) == (150, ADMIN.id)
+    assert result.warnings == ()
+    (change,) = await ListEventChanges(setup.events)(event.id)
+    assert (change.action, change.changed_by, change.changed_at) == (
+        EventAction.PLANNING_UPDATED,
+        MANAGER.id,
+        setup.world.clock.now(),
+    )
+    assert change.fields == (
+        FieldChange("guests", 100, 150),
+        FieldChange("coordinator_id", str(MANAGER.id), str(ADMIN.id)),
+    )
+
+
+async def test_r_evt_7_no_cambia_contrato_ni_cotizacion(setup: Setup) -> None:
+    event = await _event(setup)
+    contract_before = await setup.contracts.get(event.contract_id)
+    quote_before = await setup.world.quotes.get(event.quote_id)
+
+    await _update(setup)(event.id, _planning(event, guests=300), by=MANAGER.id)
+
+    assert await setup.contracts.get(event.contract_id) == contract_before
+    assert await setup.world.quotes.get(event.quote_id) == quote_before
+
+
+async def test_r_evt_9_avisa_si_cambia_el_horario(setup: Setup) -> None:
+    event = await _event(setup)
+
+    result = await _update(setup)(event.id, _planning(event, start_time=time(19)), by=MANAGER.id)
+
+    assert result.warnings == (PlanningWarning.STAFF_MAY_NEED_REVIEW,)
+
+
+async def test_sin_cambios_no_escribe_historial(setup: Setup) -> None:
+    event = await _event(setup)
+
+    result = await _update(setup)(event.id, _planning(event), by=MANAGER.id)
+
+    assert result.warnings == ()
+    assert await ListEventChanges(setup.events)(event.id) == []
+
+
+async def test_rn09_responsable_invalido_no_cambia_nada(setup: Setup) -> None:
+    event = await _event(setup)
+
+    with pytest.raises(EventCoordinatorInvalidError):
+        await _update(setup)(
+            event.id, _planning(event, guests=150, coordinator_id=uuid4()), by=MANAGER.id
+        )
+
+    assert (await GetEvent(setup.events)(event.id)).guests == 100
+    assert await ListEventChanges(setup.events)(event.id) == []
+
+
+async def test_r_cot_4_fecha_pasada_segun_lima(setup: Setup) -> None:
+    event = await _event(setup)
+    yesterday = setup.world.clock.today() - timedelta(days=1)
+
+    with pytest.raises(EventValidationError) as error:
+        await _update(setup)(event.id, _planning(event, event_date=yesterday), by=MANAGER.id)
+
+    assert error.value.code == "event.date_past"
+
+
+async def test_planificar_evento_inexistente(setup: Setup) -> None:
+    event = await _event(setup)
+
+    with pytest.raises(EventNotFoundError):
+        await _update(setup)(uuid4(), _planning(event), by=MANAGER.id)
+    with pytest.raises(EventNotFoundError):
+        await ListEventChanges(setup.events)(uuid4())
+
+
+async def test_ca11_4_ciclo_completo_con_historial(setup: Setup) -> None:
+    event = await _event(setup)  # 19/12/2026 de 20:00 a 03:00
+    clock = setup.world.clock
+
+    await ConfirmEvent(setup.events, clock)(event.id, by=MANAGER.id)
+    with pytest.raises(EventRuleError) as early:
+        await StartEvent(setup.events, clock)(event.id, by=MANAGER.id)
+    clock.current = clock.current.replace(month=12, day=21, hour=5)  # 21/12 00:00 en Lima
+    with pytest.raises(EventRuleError):
+        await StartEvent(setup.events, clock)(event.id, by=MANAGER.id)
+    clock.current = clock.current.replace(day=20, hour=6)  # 20/12 01:00 en Lima: aún es el evento
+    await StartEvent(setup.events, clock)(event.id, by=MANAGER.id)
+    with pytest.raises(EventRuleError) as edit:
+        await _update(setup)(event.id, _planning(event, guests=90), by=MANAGER.id)
+    finished = await FinishEvent(setup.events, clock)(event.id, by=ADMIN.id)
+
+    assert early.value.code == "event.not_event_day"
+    assert edit.value.code == "event.not_editable"
+    assert finished.status is EventStatus.FINISHED
+    assert await GetEvent(setup.events)(event.id) == finished
+    changes = await ListEventChanges(setup.events)(event.id)
+    assert [(c.action, c.changed_by) for c in changes] == [
+        (EventAction.CONFIRMED, MANAGER.id),
+        (EventAction.STARTED, MANAGER.id),
+        (EventAction.FINISHED, ADMIN.id),
+    ]
+
+
+async def test_ca11_4_no_vuelve_atras(setup: Setup) -> None:
+    event = await _event(setup)
+    clock = setup.world.clock
+
+    with pytest.raises(EventRuleError) as error:
+        await FinishEvent(setup.events, clock)(event.id, by=MANAGER.id)
+
+    assert error.value.code == "event.invalid_transition"
+    assert await ListEventChanges(setup.events)(event.id) == []
