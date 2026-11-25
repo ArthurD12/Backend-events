@@ -16,7 +16,8 @@ Un agente **no modifica** un módulo de otro dueño. Si necesita algo de él, lo
 ## 2. En curso
 | Trabajo | Dueño | Rama | Estado |
 |---|---|---|---|
-| HU16–HU18 | Harold | `feat/hu16-...` (desde `developer-b`) | por empezar |
+| HU17 (asignaciones) | Harold | `feat/hu17-asignaciones` (desde `developer-b`) | spec/plan aprobados; implementación |
+| HU16 (disponibilidad) y HU18 (asistencia) | Harold | — | por empezar, después de HU17 |
 | Lote 6: reportes (HU31 completo, HU32–HU34) | César | `feat/reportes` | spec |
 | Lote 7: HU24, HU25, HU30 | César | — | después del lote 6 |
 
@@ -31,9 +32,9 @@ Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunc
 ## 4. Puntos de conexión entre dueños
 | Necesita | Quién lo expone | Qué | Estado |
 |---|---|---|---|
-| Ficha del evento (HU14, `reporting`) muestra el personal | Harold, `staff.public_api` | `event_assignments(session)(event_id) -> list[...]` con nombre del trabajador, función, inicio y fin (UTC) | **pendiente** (hoy `reporting` usa un adaptador nulo: `NoEventStaff`) |
+| Ficha del evento (HU14, `reporting`) muestra el personal | Harold, `staff.public_api` | `event_assignments(session)(event_id) -> list[...]` con nombre del trabajador, función, inicio y fin (UTC), **sin pago** | **en curso** (HU17); `reporting` cambiará su adaptador nulo `NoEventStaff` cuando pase a listo |
 | Asignar a un evento (HU17) valida estado y horario | César, `commercial.public_api` | `event_lookup` (id, código, estado, fecha, horario) | **listo** |
-| Cancelar un evento libera al personal | Harold expone en `staff.public_api` un liberador; César lo conecta en `CancelEvent` por un puerto | **por acordar** |
+| Cancelar un evento libera al personal | — | No se requiere hook: la liberación es **perezosa** al escribir sobre el trabajador (decisión 25/11/2026); si se quiere inmediata, reevaluar con un evento de dominio | **acordado** |
 
 Cuando un punto pase a "listo", avisar al otro dueño para que lo conecte.
 
