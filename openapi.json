@@ -820,7 +820,7 @@
         "description": "CA-19.4: total, pagado, saldo, fecha límite y pagos con quién los registró.",
         "properties": {
           "balance_cents": {
-            "description": "Total − pagos vigentes + devoluciones (RN15)",
+            "description": "Total − pagos vigentes + devoluciones (RN15); 0 si el contrato está anulado",
             "title": "Balance Cents",
             "type": "integer"
           },

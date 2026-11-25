@@ -91,6 +91,28 @@ def test_ca19_5_anular_pago_y_errores(api: Api) -> None:  # noqa: F811
     assert (missing.status_code, missing.json()["code"]) == (404, "payment.not_found")
 
 
+def test_rn15_contrato_anulado_sin_saldo_por_cobrar(api: Api) -> None:  # noqa: F811
+    contract = _signed(api)
+    _pay(api, contract["id"], 100_000)
+    cancelled = api.client.post(
+        f"/v1/contracts/{contract['id']}/cancel",
+        json={
+            "reason": "El cliente canceló",
+            "refund_cents": 50_000,
+            "refund": {"paid_on": "2026-11-22", "method": "CASH"},
+        },
+    )
+
+    account = api.client.get(f"/v1/contracts/{contract['id']}/account").json()
+    detail = api.client.get(f"/v1/contracts/{contract['id']}").json()
+
+    assert cancelled.status_code == 200
+    assert account["status"] == "CANCELLED"
+    assert (account["paid_cents"], account["refunded_cents"]) == (350_000, 50_000)
+    assert (account["balance_cents"], account["overdue"]) == (0, False)
+    assert detail["balance_cents"] == 0
+
+
 def test_ca20_comprobante_pdf(api: Api) -> None:  # noqa: F811
     contract = _signed(api)
     payment = _pay(api, contract["id"], 100_000).json()["payment"]
