@@ -131,4 +131,4 @@ Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. e
 | 25/11/2026 | Eliminar una actividad creada por error | No se elimina en esta versión (R-ACT-3) | Equipo **(provisional; sin respuesta)** |
 | 25/11/2026 | Responsable de la actividad | Un usuario activo, administrador o encargado de eventos; por defecto quien la crea; se puede cambiar. Sin fecha límite (R-ACT-4) | Product Owner |
 | 25/11/2026 | ¿Compras y almacén agrega observaciones? | Sí (p. ej., faltantes de material), con el permiso `event_notes:write`; no crea ni marca actividades (R-ACT-5) | Product Owner |
-| 25/11/2026 | ¿Quién edita una observación? | Su autor o un administrador (R-ACT-6) | Equipo **(provisional)** |
+| 25/11/2026 | ¿Quién edita una observación? | Su autor o un administrador (permiso `event_notes:edit_any`, solo administrador) (R-ACT-6) | Equipo **(provisional)** |

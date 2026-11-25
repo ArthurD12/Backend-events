@@ -410,3 +410,18 @@ def test_ca13_6_compras_agrega_observaciones_pero_no_actividades(api: Api) -> No
     assert (complete.status_code, complete.json()["code"]) == (403, "auth.forbidden")
     assert listed.status_code == 200
     assert (by_admin.status_code, by_admin.json()["text"]) == (200, "Corregida")
+
+
+def test_r_act_6_encargado_no_edita_nota_ajena_y_admin_si(api: Api) -> None:
+    event_id = _event_id(api)
+    api.sign_in_as(Role.PURCHASING_MANAGER)
+    note_id = api.client.post(f"/v1/events/{event_id}/notes", json={"text": "Faltan copas"}).json()[
+        "id"
+    ]
+    api.sign_in_as(Role.EVENTS_MANAGER)
+    by_manager = api.client.put(f"/v1/notes/{note_id}", json={"text": "No"})
+    api.sign_in_as(Role.ADMIN)
+    by_admin = api.client.put(f"/v1/notes/{note_id}", json={"text": "Faltan 20 copas"})
+
+    assert (by_manager.status_code, by_manager.json()["code"]) == (403, "note.not_author")
+    assert (by_admin.status_code, by_admin.json()["text"]) == (200, "Faltan 20 copas")

@@ -228,8 +228,12 @@ async def update_note(
     coordinators: Coordinators,
     clock: Today,
 ) -> NoteOut:
-    """Edita una observación: su autor o un administrador (R-ACT-1, R-ACT-6)."""
+    """Edita una observación: su autor o quien tenga `event_notes:edit_any`, solo el
+    administrador (R-ACT-1, R-ACT-6)."""
     note = await EditNote(events, log, clock)(
-        note_id, text=body.text, editor_id=user.id, is_admin=user.role == "ADMIN"
+        note_id,
+        text=body.text,
+        editor_id=user.id,
+        is_admin=Permission.EVENT_NOTES_EDIT_ANY in user.permissions,
     )
     return NoteOut.from_note(note, await _names(coordinators, user))

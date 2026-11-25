@@ -1790,7 +1790,8 @@
           "payments:record",
           "events:manage",
           "events:read",
-          "event_notes:write"
+          "event_notes:write",
+          "event_notes:edit_any"
         ],
         "title": "Permission",
         "type": "string"
@@ -6208,7 +6209,7 @@
     },
     "/v1/notes/{note_id}": {
       "put": {
-        "description": "Edita una observación: su autor o un administrador (R-ACT-1, R-ACT-6).",
+        "description": "Edita una observación: su autor o quien tenga `event_notes:edit_any`, solo el\nadministrador (R-ACT-1, R-ACT-6).",
         "operationId": "notes_update",
         "parameters": [
           {
