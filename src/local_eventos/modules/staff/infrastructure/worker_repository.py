@@ -3,7 +3,9 @@
 Traduce entre el agregado `Worker`/`WorkerAudit` y las filas ORM mediante `mappers.py`;
 nunca devuelve filas al exterior. No confirma la transacción: eso lo decide quien abre
 la sesión, para que la ficha y su auditoría se guarden juntas o no se guarde ninguna
-(plan §4). La concurrencia del documento (captura de `IntegrityError`) es T-12.
+(plan §4). Si dos altas simultáneas pasan la comprobación de la aplicación, la
+restricción UNIQUE de PostgreSQL decide: la perdedora recibe `DuplicateDocumentError`
+(plan §6.4, T-12).
 """
 
 from __future__ import annotations
@@ -11,9 +13,11 @@ from __future__ import annotations
 from uuid import UUID
 
 from sqlalchemy import func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.elements import ColumnElement
 
+from local_eventos.modules.staff.application.errors import DuplicateDocumentError
 from local_eventos.modules.staff.application.ports.worker_repository import (
     WorkerPage,
     WorkerRef,
@@ -56,9 +60,9 @@ class SqlAlchemyWorkerRepository:
         else:
             apply_worker_to_row(worker, row)
         # La ficha se escribe antes que su auditoría para que la FK siempre resuelva.
-        await self._session.flush()
+        await self._flush()
         self._session.add(audit_to_row(audit))
-        await self._session.flush()
+        await self._flush()
 
     async def get(self, worker_id: UUID) -> Worker | None:
         row = await self._session.get(StaffWorkerRow, worker_id)
@@ -133,6 +137,21 @@ class SqlAlchemyWorkerRepository:
             function_description=row.function_description,
             status=WorkerStatus(row.status),
         )
+
+    async def _flush(self) -> None:
+        """Envía los cambios a PostgreSQL. Si el documento ya existe, error de negocio.
+
+        La aplicación ya revisa duplicados antes de guardar; esto cubre el caso en que dos
+        altas simultáneas pasan esa comprobación y la restricción UNIQUE gana. La
+        transacción la cierra quien abrió la sesión, que hace rollback al propagarse la
+        excepción (mismo patrón que `commercial`/`catalog`), de modo que la API responde 409.
+        """
+        try:
+            await self._session.flush()
+        except IntegrityError as error:
+            if "uq_staff_workers_document" in str(error.orig):
+                raise DuplicateDocumentError() from error
+            raise
 
     @staticmethod
     def _filters(
