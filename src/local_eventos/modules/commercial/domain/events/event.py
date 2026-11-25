@@ -23,7 +23,7 @@ from local_eventos.modules.commercial.domain.quotes.quote import (
 
 
 class EventStatus(StrEnum):
-    """DOMAIN.md §3. HU10 solo crea eventos programados; los demás estados llegan con HU11."""
+    """DOMAIN.md §3: programado → confirmado → en ejecución → finalizado · cancelado."""
 
     SCHEDULED = "SCHEDULED"
     CONFIRMED = "CONFIRMED"

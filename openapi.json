@@ -1363,6 +1363,18 @@
         "title": "DocumentType",
         "type": "string"
       },
+      "EventAction": {
+        "description": "Qué cambió en el evento, para el historial (CA-11.5).",
+        "enum": [
+          "PLANNING_UPDATED",
+          "CONFIRMED",
+          "STARTED",
+          "FINISHED",
+          "CANCELLED"
+        ],
+        "title": "EventAction",
+        "type": "string"
+      },
       "EventCancelIn": {
         "properties": {
           "note": {
@@ -1452,6 +1464,51 @@
           "cancelled_at"
         ],
         "title": "EventCancellationOut",
+        "type": "object"
+      },
+      "EventChangeOut": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/EventAction"
+          },
+          "changed_at": {
+            "format": "date-time",
+            "title": "Changed At",
+            "type": "string"
+          },
+          "changed_by": {
+            "format": "uuid",
+            "title": "Changed By",
+            "type": "string"
+          },
+          "changed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío si no se conoce el nombre",
+            "title": "Changed By Name"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/FieldChangeOut"
+            },
+            "title": "Fields",
+            "type": "array"
+          }
+        },
+        "required": [
+          "action",
+          "fields",
+          "changed_by",
+          "changed_by_name",
+          "changed_at"
+        ],
+        "title": "EventChangeOut",
         "type": "object"
       },
       "EventConvertIn": {
@@ -1675,6 +1732,225 @@
         "title": "EventPageOut",
         "type": "object"
       },
+      "EventPlanningIn": {
+        "description": "CA-11.2: todos obligatorios. Si la hora de fin es menor que la de inicio, el evento\ntermina al día siguiente (R-COT-1).",
+        "properties": {
+          "coordinator_id": {
+            "description": "Administrador o encargado de eventos activo",
+            "format": "uuid",
+            "title": "Coordinator Id",
+            "type": "string"
+          },
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "event_date": {
+            "description": "Hoy o una fecha futura (en Lima)",
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "guests": {
+            "description": "Entre 1 y 10000. No recalcula el total (R-EVT-7)",
+            "title": "Guests",
+            "type": "integer"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "venue": {
+            "description": "Hasta 300 caracteres",
+            "title": "Venue",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_date",
+          "start_time",
+          "end_time",
+          "venue",
+          "guests",
+          "coordinator_id"
+        ],
+        "title": "EventPlanningIn",
+        "type": "object"
+      },
+      "EventPlanningOut": {
+        "properties": {
+          "balance_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Saldo del contrato (RN15). Vacío sin `payments:record`",
+            "title": "Balance Cents"
+          },
+          "cancellation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventCancellationOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "client_id": {
+            "format": "uuid",
+            "title": "Client Id",
+            "type": "string"
+          },
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "contract_code": {
+            "title": "Contract Code",
+            "type": "string"
+          },
+          "contract_id": {
+            "format": "uuid",
+            "title": "Contract Id",
+            "type": "string"
+          },
+          "coordinator_id": {
+            "format": "uuid",
+            "title": "Coordinator Id",
+            "type": "string"
+          },
+          "coordinator_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío si el usuario ya no está activo",
+            "title": "Coordinator Name"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "ends_next_day": {
+            "title": "Ends Next Day",
+            "type": "boolean"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "event_type": {
+            "$ref": "#/components/schemas/EventType"
+          },
+          "guests": {
+            "title": "Guests",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "paid_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Pagos vigentes del contrato (R-PAG-1). Vacío sin `payments:record`",
+            "title": "Paid Cents"
+          },
+          "quote_code": {
+            "title": "Quote Code",
+            "type": "string"
+          },
+          "quote_id": {
+            "format": "uuid",
+            "title": "Quote Id",
+            "type": "string"
+          },
+          "services": {
+            "items": {
+              "$ref": "#/components/schemas/EventServiceOut"
+            },
+            "title": "Services",
+            "type": "array"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EventStatus"
+          },
+          "venue": {
+            "title": "Venue",
+            "type": "string"
+          },
+          "warnings": {
+            "description": "`staff_may_need_review` si cambió la fecha o el horario (R-EVT-9)",
+            "items": {
+              "$ref": "#/components/schemas/PlanningWarning"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "contract_id",
+          "contract_code",
+          "quote_id",
+          "quote_code",
+          "client_id",
+          "client_name",
+          "event_type",
+          "event_date",
+          "start_time",
+          "end_time",
+          "ends_next_day",
+          "venue",
+          "guests",
+          "coordinator_id",
+          "coordinator_name",
+          "status",
+          "services",
+          "cancellation",
+          "paid_cents",
+          "balance_cents",
+          "created_at",
+          "warnings"
+        ],
+        "title": "EventPlanningOut",
+        "type": "object"
+      },
       "EventResultOut": {
         "properties": {
           "balance_cents": {
@@ -1799,7 +2075,7 @@
         "type": "object"
       },
       "EventStatus": {
-        "description": "DOMAIN.md §3. HU10 solo crea eventos programados; los demás estados llegan con HU11.",
+        "description": "DOMAIN.md §3: programado → confirmado → en ejecución → finalizado · cancelado.",
         "enum": [
           "SCHEDULED",
           "CONFIRMED",
@@ -1933,6 +2209,45 @@
           "other_cents"
         ],
         "title": "ExpensesOut",
+        "type": "object"
+      },
+      "FieldChangeOut": {
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "title": "After"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              }
+            ],
+            "description": "Fechas y horas en ISO; IDs como texto",
+            "title": "Before"
+          },
+          "field": {
+            "description": "`event_date`, `start_time`, `end_time`, `venue`, `guests`, `coordinator_id` o `status`",
+            "title": "Field",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "before",
+          "after"
+        ],
+        "title": "FieldChangeOut",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -2611,6 +2926,14 @@
           "event_notes:edit_any"
         ],
         "title": "Permission",
+        "type": "string"
+      },
+      "PlanningWarning": {
+        "description": "R-EVT-9: cambió la fecha o el horario; el personal asignado puede tener otro horario.",
+        "enum": [
+          "staff_may_need_review"
+        ],
+        "title": "PlanningWarning",
         "type": "string"
       },
       "PriceUnit": {
@@ -7037,6 +7360,267 @@
         ]
       }
     },
+    "/v1/events/{event_id}/changes": {
+      "get": {
+        "description": "Historial de planificación y estado, del más antiguo al más reciente (CA-11.5).",
+        "operationId": "events_changes_list",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EventChangeOut"
+                  },
+                  "title": "Response Events Changes List",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Changes",
+        "tags": [
+          "eventos"
+        ]
+      }
+    },
+    "/v1/events/{event_id}/confirm": {
+      "post": {
+        "description": "Programado → confirmado (CA-11.4).",
+        "operationId": "events_confirm",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.invalid_transition`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Confirm Event",
+        "tags": [
+          "eventos"
+        ]
+      }
+    },
+    "/v1/events/{event_id}/finish": {
+      "post": {
+        "description": "En ejecución → finalizado; no exige saldo en cero (R-EVT-8).",
+        "operationId": "events_finish",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.invalid_transition`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Finish Event",
+        "tags": [
+          "eventos"
+        ]
+      }
+    },
     "/v1/events/{event_id}/notes": {
       "get": {
         "description": "Bitácora del evento, de la observación más reciente a la más antigua (CA-13.5).",
@@ -7212,6 +7796,194 @@
           }
         ],
         "summary": "Create Note",
+        "tags": [
+          "eventos"
+        ]
+      }
+    },
+    "/v1/events/{event_id}/planning": {
+      "put": {
+        "description": "Edita fecha, horario, lugar, invitados y responsable en un evento programado o\nconfirmado (CA-11.2, R-EVT-6). No cambia el contrato ni la cotización (R-EVT-7).",
+        "operationId": "events_planning_update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventPlanningIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventPlanningOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_editable`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.date_past`, `event.time_invalid`, `event.guests_invalid`, `event.venue_required`, `event.venue_too_long`, `event.coordinator_invalid`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Planning",
+        "tags": [
+          "eventos"
+        ]
+      }
+    },
+    "/v1/events/{event_id}/start": {
+      "post": {
+        "description": "Confirmado → en ejecución, solo el día del evento en Lima; si cruza la medianoche,\ntambién el día siguiente (R-EVT-8, R-COT-1).",
+        "operationId": "events_start",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`event.invalid_transition`, `event.not_event_day`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start Event",
         "tags": [
           "eventos"
         ]

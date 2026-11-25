@@ -1,6 +1,6 @@
-"""Endpoints de eventos (HU10 y HU11, parte). Consultar exige `events:read` (los tres roles);
-convertir y cancelar, `events:manage` (administrador y encargado de eventos). Cancelar exige
-además `payments:record`, porque puede registrar una devolución."""
+"""Endpoints de eventos (HU10 y HU11). Consultar exige `events:read` (los tres roles);
+convertir, planificar, avanzar estados y cancelar, `events:manage` (administrador y encargado
+de eventos). Cancelar exige además `payments:record`, porque puede registrar una devolución."""
 
 from datetime import date
 from typing import Annotated
@@ -21,6 +21,14 @@ from local_eventos.modules.commercial.application.events.use_cases.events import
     GetEvent,
     SearchEvents,
 )
+from local_eventos.modules.commercial.application.events.use_cases.planning import (
+    ConfirmEvent,
+    EventPlanning,
+    FinishEvent,
+    ListEventChanges,
+    StartEvent,
+    UpdateEventPlanning,
+)
 from local_eventos.modules.commercial.domain.events.event import Event, EventStatus
 from local_eventos.modules.commercial.domain.quotes.quote import EventType
 from local_eventos.modules.commercial.presentation.dependencies import (
@@ -32,13 +40,17 @@ from local_eventos.modules.commercial.presentation.dependencies import (
     Payments,
     Quotes,
     Today,
+    UserNames,
 )
 from local_eventos.modules.commercial.presentation.event_schemas import (
     CoordinatorOut,
     EventCancelIn,
+    EventChangeOut,
     EventConvertIn,
     EventOut,
     EventPageOut,
+    EventPlanningIn,
+    EventPlanningOut,
     EventSummaryOut,
 )
 from local_eventos.modules.identity.public_api import CurrentUser, Permission, require_permission
@@ -201,6 +213,126 @@ async def cancel_event(
         note=body.note,
     )
     return await _out(event, user, contracts, quotes, clients, coordinators, history)
+
+
+@router.put(
+    "/{event_id}/planning",
+    operation_id="events_planning_update",
+    responses={
+        404: {"model": Problem, "description": "`event.not_found`"},
+        409: {"model": Problem, "description": "`event.not_editable`"},
+        422: {
+            "model": Problem,
+            "description": "`event.date_past`, `event.time_invalid`, `event.guests_invalid`,"
+            " `event.venue_required`, `event.venue_too_long`, `event.coordinator_invalid`",
+        },
+    },
+)
+async def update_planning(
+    event_id: UUID,
+    body: EventPlanningIn,
+    user: Manager,
+    events: Events,
+    contracts: Contracts,
+    quotes: Quotes,
+    clients: Clients,
+    coordinators: Coordinators,
+    history: PaymentHistory,
+    clock: Today,
+) -> EventPlanningOut:
+    """Edita fecha, horario, lugar, invitados y responsable en un evento programado o
+    confirmado (CA-11.2, R-EVT-6). No cambia el contrato ni la cotización (R-EVT-7)."""
+    result = await UpdateEventPlanning(events, coordinators, clock)(
+        event_id,
+        EventPlanning(
+            event_date=body.event_date,
+            start_time=body.start_time,
+            end_time=body.end_time,
+            venue=body.venue,
+            guests=body.guests,
+            coordinator_id=body.coordinator_id,
+        ),
+        by=user.id,
+    )
+    out = await _out(result.event, user, contracts, quotes, clients, coordinators, history)
+    return EventPlanningOut(**out.model_dump(), warnings=list(result.warnings))
+
+
+_TRANSITION_ERRORS: dict[int | str, dict[str, object]] = {
+    404: {"model": Problem, "description": "`event.not_found`"},
+    409: {"model": Problem, "description": "`event.invalid_transition`"},
+}
+
+
+@router.post("/{event_id}/confirm", operation_id="events_confirm", responses=_TRANSITION_ERRORS)
+async def confirm_event(
+    event_id: UUID,
+    user: Manager,
+    events: Events,
+    contracts: Contracts,
+    quotes: Quotes,
+    clients: Clients,
+    coordinators: Coordinators,
+    history: PaymentHistory,
+    clock: Today,
+) -> EventOut:
+    """Programado → confirmado (CA-11.4)."""
+    event = await ConfirmEvent(events, clock)(event_id, by=user.id)
+    return await _out(event, user, contracts, quotes, clients, coordinators, history)
+
+
+@router.post(
+    "/{event_id}/start",
+    operation_id="events_start",
+    responses={
+        404: {"model": Problem, "description": "`event.not_found`"},
+        409: {"model": Problem, "description": "`event.invalid_transition`, `event.not_event_day`"},
+    },
+)
+async def start_event(
+    event_id: UUID,
+    user: Manager,
+    events: Events,
+    contracts: Contracts,
+    quotes: Quotes,
+    clients: Clients,
+    coordinators: Coordinators,
+    history: PaymentHistory,
+    clock: Today,
+) -> EventOut:
+    """Confirmado → en ejecución, solo el día del evento en Lima; si cruza la medianoche,
+    también el día siguiente (R-EVT-8, R-COT-1)."""
+    event = await StartEvent(events, clock)(event_id, by=user.id)
+    return await _out(event, user, contracts, quotes, clients, coordinators, history)
+
+
+@router.post("/{event_id}/finish", operation_id="events_finish", responses=_TRANSITION_ERRORS)
+async def finish_event(
+    event_id: UUID,
+    user: Manager,
+    events: Events,
+    contracts: Contracts,
+    quotes: Quotes,
+    clients: Clients,
+    coordinators: Coordinators,
+    history: PaymentHistory,
+    clock: Today,
+) -> EventOut:
+    """En ejecución → finalizado; no exige saldo en cero (R-EVT-8)."""
+    event = await FinishEvent(events, clock)(event_id, by=user.id)
+    return await _out(event, user, contracts, quotes, clients, coordinators, history)
+
+
+@router.get(
+    "/{event_id}/changes",
+    operation_id="events_changes_list",
+    responses={404: {"model": Problem, "description": "`event.not_found`"}},
+)
+async def list_changes(event_id: UUID, events: Events, names: UserNames) -> list[EventChangeOut]:
+    """Historial de planificación y estado, del más antiguo al más reciente (CA-11.5)."""
+    changes = await ListEventChanges(events)(event_id)
+    known = await names({c.changed_by for c in changes})
+    return [EventChangeOut.from_change(c, known) for c in changes]
 
 
 async def _out(

@@ -1,4 +1,4 @@
-"""Forma de los datos de eventos en la API (HU10)."""
+"""Forma de los datos de eventos en la API (HU10 y HU11)."""
 
 from datetime import date, datetime, time
 from typing import Self
@@ -11,7 +11,13 @@ from local_eventos.modules.commercial.application.events.ports.event_repository 
 )
 from local_eventos.modules.commercial.application.events.use_cases.events import EventPage
 from local_eventos.modules.commercial.domain.contracts.contract import Contract, ContractBalance
-from local_eventos.modules.commercial.domain.events.event import Event, EventStatus
+from local_eventos.modules.commercial.domain.events.event import (
+    Event,
+    EventAction,
+    EventChange,
+    EventStatus,
+    PlanningWarning,
+)
 from local_eventos.modules.commercial.domain.quotes.quote import EventType, LineKind, LineUnit
 from local_eventos.modules.commercial.presentation.contract_schemas import PaymentIn
 
@@ -28,6 +34,18 @@ class EventCancelIn(BaseModel):
     refund_cents: int | None = Field(default=None, description="Solo si se devolvió dinero")
     refund: PaymentIn | None = Field(default=None, description="Cómo se devolvió")
     note: str | None = None
+
+
+class EventPlanningIn(BaseModel):
+    """CA-11.2: todos obligatorios. Si la hora de fin es menor que la de inicio, el evento
+    termina al día siguiente (R-COT-1)."""
+
+    event_date: date = Field(description="Hoy o una fecha futura (en Lima)")
+    start_time: time
+    end_time: time
+    venue: str = Field(description="Hasta 300 caracteres")
+    guests: int = Field(description="Entre 1 y 10000. No recalcula el total (R-EVT-7)")
+    coordinator_id: UUID = Field(description="Administrador o encargado de eventos activo")
 
 
 class EventCancellationOut(BaseModel):
@@ -187,4 +205,39 @@ class EventPageOut(BaseModel):
             total=page.total,
             page=page.page,
             page_size=page.page_size,
+        )
+
+
+class EventPlanningOut(EventOut):
+    warnings: list[PlanningWarning] = Field(
+        description="`staff_may_need_review` si cambió la fecha o el horario (R-EVT-9)"
+    )
+
+
+class FieldChangeOut(BaseModel):
+    field: str = Field(
+        description="`event_date`, `start_time`, `end_time`, `venue`, `guests`,"
+        " `coordinator_id` o `status`"
+    )
+    before: str | int = Field(description="Fechas y horas en ISO; IDs como texto")
+    after: str | int
+
+
+class EventChangeOut(BaseModel):
+    action: EventAction
+    fields: list[FieldChangeOut]
+    changed_by: UUID
+    changed_by_name: str | None = Field(description="Vacío si no se conoce el nombre")
+    changed_at: datetime
+
+    @classmethod
+    def from_change(cls, change: EventChange, names: dict[UUID, str]) -> Self:
+        return cls(
+            action=change.action,
+            fields=[
+                FieldChangeOut(field=f.field, before=f.before, after=f.after) for f in change.fields
+            ],
+            changed_by=change.changed_by,
+            changed_by_name=names.get(change.changed_by),
+            changed_at=change.changed_at,
         )
