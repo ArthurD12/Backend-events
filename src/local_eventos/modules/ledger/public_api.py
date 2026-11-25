@@ -12,6 +12,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from local_eventos.modules.ledger import composition
+from local_eventos.modules.ledger.application.errors import PaymentNotFoundError
 from local_eventos.modules.ledger.application.ports.payment_repository import PaymentEntry
 from local_eventos.modules.ledger.application.use_cases.cash import (
     CashTotals,
@@ -117,6 +118,7 @@ __all__ = [
     "PaymentFinder",
     "PaymentKind",
     "PaymentMethod",
+    "PaymentNotFoundError",
     "PaymentRecorder",
     "PaymentRequest",
     "PaymentVoid",
