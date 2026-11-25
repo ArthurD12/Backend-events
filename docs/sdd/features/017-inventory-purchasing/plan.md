@@ -1,7 +1,7 @@
 # Plan: Inventario, movimientos de almacén, proveedores y compras
 
 - **Spec**: ./spec.md
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 25/11/2026)
 
 ## 1. Módulos y fronteras
 - `inventory` (nuevo): productos, movimientos, stock y alertas.

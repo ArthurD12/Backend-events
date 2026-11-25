@@ -1,7 +1,7 @@
 # Spec: Inventario, movimientos de almacén, proveedores y compras
 
 - **ID**: 017-inventory-purchasing
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 25/11/2026)
 - **Módulos afectados**: `inventory` (nuevo), `purchasing` (nuevo), `commercial` (consulta de eventos), `identity` (permisos)
 - **Historias**: HU23 (#20), HU26 (#23), HU27 (#28), HU28 (#29, adaptada), HU29 (#30)
 
