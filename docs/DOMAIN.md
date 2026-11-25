@@ -67,7 +67,15 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 - Alertas de **stock mínimo** y de **vencimiento próximo** (RN25).
 - Los **requerimientos** se calculan según el menú, los servicios y la cantidad de invitados (RN26), a partir de los insumos definidos por menú o servicio (HU24).
 - Una compra pasa por `solicitada → ordenada → recibida | cancelada` y solo incrementa el stock al estar **recibida** (RN21).
-- Método de costeo de insumos (promedio ponderado o por lote) **(por validar)**.
+- Método de costeo: **costo promedio ponderado** (R-INV-3, provisional; ver §10.3).
+- Implementado en la feature 017 (`inventory` y `purchasing`):
+  - Producto con código único (mayúsculas, ≤ 20), categoría y unidad de lista fija (R-INV-1, R-INV-2), tipo **consumible** o **reutilizable** y stock mínimo. No se elimina: se desactiva (RN02); uno inactivo no recibe entradas ni salidas, pero sí devoluciones, mermas y ajustes.
+  - Movimientos: entrada (con costo unitario; proveedor, lote y vencimiento opcionales), salida (a un evento programado, confirmado o en ejecución), devolución (no supera lo que salió menos lo devuelto y lo perdido), merma (con motivo; de almacén o de un evento) y ajuste (con signo y motivo). Cantidades con hasta 3 decimales; quien registra es el responsable.
+  - Una **merma de evento no baja el stock** del almacén: lo perdido ya salió con la salida; solo reduce lo que falta devolver. La merma de almacén sí lo baja.
+  - Alertas: **stock bajo** (stock ≤ mínimo) y **por vencer** (alguna entrada con stock vigente vence en 15 días o menos, o ya venció; R-INV-4). Como las salidas no se asignan a lotes, se supone que sale primero lo más antiguo.
+  - Materiales del evento: por producto, qué salió, volvió y se perdió, y qué **reutilizable falta devolver**.
+  - Proveedor: razón social, RUC (11) o DNI (8) único, teléfono; contacto, correo y dirección opcionales. Se busca sin distinguir tildes.
+  - Compra `COM-AAAA-NNNN`: la solicitud puede proponer los **faltantes** (productos bajo su mínimo y cuánto falta para volver a él); al ordenar se elige proveedor (activo) y costo de cada línea; al recibir se confirman cantidad real, lote y vencimiento de **todas** las líneas (R-COM-2) y se generan las entradas en la misma operación. Recibir es una sola vez; recibida o cancelada no cambia. Pagar al proveedor va aparte (R-COM-1).
 
 ## 8. Agente de inteligencia artificial
 - Solo lo usan usuarios autenticados (RN27) y solo consulta información autorizada para su rol (RN28).
@@ -85,7 +93,7 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 | Cotizaciones y contratos | ✔ | ✔ | – |
 | Eventos, personal y asignaciones | ✔ | ✔ | lectura |
 | Pagos, ingresos y egresos | ✔ | ✔ | – |
-| Productos, almacén, requerimientos y compras | ✔ | requerimientos | ✔ |
+| Productos, almacén, requerimientos y compras | ✔ | lectura del almacén y materiales de sus eventos (`inventory:read`) | ✔ |
 | Reportes financieros | ✔ | – | – |
 | Agente de IA | ✔ | ✔ | ✔ |
 
@@ -94,7 +102,7 @@ Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. e
 ## 10. Preguntas abiertas para el negocio
 1. ~~Política de cancelación y devolución del adelanto.~~ Resuelta: sin reglas automáticas (§11).
 2. **Cotización de promoción:** se cobra el servicio más un precio **por asiento**; cada alumno tiene su mesa (mínimo 4 asientos) y puede pedir sillas extra con costo. Falta definir cómo se cotiza y se paga **por alumno**. Se tratará como una historia aparte, después de HU07.
-3. Método de costeo de insumos.
+3. ~~Método de costeo de insumos.~~ Resuelta provisionalmente: costo promedio ponderado (R-INV-3, §11); falta confirmarlo con Darze.
 4. ~~¿El encargado de eventos puede registrar pagos?~~ Resuelta: sí (§11).
 5. ¿Hay servicios de cortesía (precio S/ 0)? Hoy el sistema los permite.
 
@@ -125,3 +133,10 @@ Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. e
 | 23/11/2026 | Cancelar un evento | Cancelar el evento anula su contrato con el mismo motivo y registra la devolución si la hubo, en un solo paso (R-EVT-4). Para cambiar algo de un contrato firmado, se anula y se hace una cotización nueva | Scrum Master **(provisional, a validar por el Product Owner)** |
 | 23/11/2026 | ¿Desde qué estado se cancela un evento? | Desde programado o confirmado; no desde en ejecución ni finalizado (R-EVT-5) | Equipo **(provisional)** |
 | 22/11/2026 | Sesión | Termina tras 30 minutos sin actividad; no se puede desactivar al último administrador activo (R-ID-4) | Equipo, según HU01 **(provisional)** |
+| 25/11/2026 | Unidades y cantidades | Lista fija: unidad, kg, g, litro, ml, docena, paquete, caja; cantidades con hasta 3 decimales (R-INV-1) | Equipo **(provisional)** |
+| 25/11/2026 | Categorías de producto | Lista fija: Insumos, Bebidas, Vajilla, Cristalería, Cubiertos, Mantelería, Mobiliario, Descartables, Limpieza, Otros (R-INV-2) | Equipo **(provisional)** |
+| 25/11/2026 | Costeo del inventario | Costo promedio ponderado para el valor del stock; lote y vencimiento solo para alertas; las salidas no se asignan a lotes (R-INV-3, responde §10.3) | Equipo **(provisional, a confirmar con Darze)** |
+| 25/11/2026 | Vencimiento próximo | 15 días o menos, o ya vencido (R-INV-4) | Equipo **(provisional)** |
+| 25/11/2026 | Corregir un movimiento | No se edita ni se borra (lo impide la base de datos): se corrige con un ajuste positivo o negativo con motivo (R-INV-5) | Equipo **(provisional)** |
+| 25/11/2026 | Pago al proveedor | Se registra aparte como egreso de insumos (HU21); recibir la compra no crea el egreso (R-COM-1) | Equipo **(provisional)** |
+| 25/11/2026 | Recepción de compras | Completa, sin recepciones parciales: si llegó menos, se recibe la cantidad real (puede ser 0 en una línea, no en todas) (R-COM-2) | Equipo **(provisional)** |
