@@ -52,6 +52,10 @@ from local_eventos.modules.reporting.presentation import dashboard_router, finan
 from local_eventos.modules.reporting.presentation.errors import (
     register_error_handlers as register_reporting_errors,
 )
+from local_eventos.modules.staff.presentation import worker_router
+from local_eventos.modules.staff.presentation.errors import (
+    register_error_handlers as register_staff_errors,
+)
 from local_eventos.shared.infrastructure.config import CorsSettings, Settings
 from local_eventos.shared.infrastructure.db import check_database, create_engine
 from local_eventos.shared.presentation import health
@@ -111,6 +115,7 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     app.include_router(inventory_movement_router.router)
     app.include_router(supplier_router.router)
     app.include_router(purchase_router.router)
+    app.include_router(worker_router.router)
     register_identity_errors(app)
     register_commercial_errors(app)
     register_ledger_errors(app)
@@ -118,6 +123,7 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     register_reporting_errors(app)
     register_inventory_errors(app)
     register_purchasing_errors(app)
+    register_staff_errors(app)
     return app
 
 
