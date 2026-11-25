@@ -25,6 +25,7 @@ class Permission(StrEnum):
     PAYMENTS_RECORD = "payments:record"
     EVENTS_MANAGE = "events:manage"
     EVENTS_READ = "events:read"
+    FINANCE_READ = "finance:read"  # flujo de caja y resultado por evento: solo administrador
 
 
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
