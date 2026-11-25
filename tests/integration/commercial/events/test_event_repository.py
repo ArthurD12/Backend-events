@@ -1,8 +1,8 @@
-"""Eventos contra PostgreSQL real (HU10 y HU13). Necesita Docker.
+"""Eventos contra PostgreSQL real (HU10, HU11 y HU13). Necesita Docker.
 
 Prueba lo que solo la base puede garantizar: un evento por contrato aun con dos conversiones
-simultáneas, los triggers que cuidan la relación con el contrato y el historial de
-actividades de solo inserción.
+simultáneas, los triggers que cuidan la relación con el contrato y los historiales (del
+evento y de sus actividades) de solo inserción.
 """
 
 import asyncio
@@ -47,8 +47,10 @@ from local_eventos.modules.commercial.domain.events.activity import (
 )
 from local_eventos.modules.commercial.domain.events.event import (
     Event,
+    EventAction,
     EventRuleError,
     EventStatus,
+    FieldChange,
 )
 from local_eventos.modules.commercial.domain.quotes.quote import (
     EventDetails,
@@ -103,7 +105,8 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
     async with engine.begin() as connection:
         await connection.execute(
             text(
-                "TRUNCATE commercial_event_activity_changes, commercial_event_activities,"
+                "TRUNCATE commercial_event_changes, commercial_event_activity_changes,"
+                " commercial_event_activities,"
                 " commercial_event_notes, commercial_event_services, commercial_events,"
                 " commercial_event_counters,"
                 " commercial_contracts, commercial_quote_lines, commercial_quotes,"
@@ -458,3 +461,54 @@ async def test_r_act_2_cancelado_rechaza_todo_y_finalizado_solo_observaciones(
     assert await attempt(finished, "note") == "ok"
     assert await attempt(cancelled, "activity") == "event.activities_closed"
     assert await attempt(cancelled, "note") == "event.notes_closed"
+
+
+async def test_ca11_5_editar_y_avanzar_estados_deja_historial(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    event = await _saved_event(sessions, "40000015")
+    user = uuid4()
+    planning = event.update_planning(
+        event_date=date(2026, 12, 20), start_time=time(19), end_time=time(2),
+        venue="Local El Olivar", guests=150, coordinator_id=MANAGER.id, by=user, now=NOW,
+        today=TODAY,
+    )  # fmt: skip
+    async with sessions.begin() as session:
+        await SqlAlchemyEventRepository(session).update(event, planning)
+    async with sessions.begin() as session:
+        repository = SqlAlchemyEventRepository(session)
+        await repository.update(event, event.confirm(by=user, now=NOW))
+        await repository.update(event, event.start(by=user, now=NOW, today=date(2026, 12, 21)))
+        await repository.update(event, event.finish(by=user, now=NOW))
+
+    async with sessions() as session:
+        repository = SqlAlchemyEventRepository(session)
+        saved = await repository.get(event.id)
+        changes = await repository.list_changes(event.id)
+
+    assert saved == event
+    assert (saved.event_date, saved.venue, saved.guests, saved.coordinator_id) == (
+        date(2026, 12, 20),
+        "Local El Olivar",
+        150,
+        MANAGER.id,
+    )
+    assert saved.status is EventStatus.FINISHED
+    assert [c.action for c in changes] == [
+        EventAction.PLANNING_UPDATED,
+        EventAction.CONFIRMED,
+        EventAction.STARTED,
+        EventAction.FINISHED,
+    ]
+    assert changes[0].fields[:2] == (
+        FieldChange("event_date", "2026-12-19", "2026-12-20"),
+        FieldChange("start_time", "20:00:00", "19:00:00"),
+    )
+    assert FieldChange("guests", 100, 150) in changes[0].fields
+    assert changes[0] == planning
+    with pytest.raises(DBAPIError, match="no se puede modificar"):
+        async with sessions.begin() as session:
+            await session.execute(text("UPDATE commercial_event_changes SET action = 'X'"))
+    with pytest.raises(DBAPIError, match="no se puede modificar"):
+        async with sessions.begin() as session:
+            await session.execute(text("DELETE FROM commercial_event_changes"))

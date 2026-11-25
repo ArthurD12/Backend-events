@@ -20,6 +20,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from local_eventos.shared.infrastructure.orm import Base
@@ -260,6 +261,26 @@ class EventCounterRow(Base):
 
     year: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
     last: Mapped[int]
+
+
+class EventChangeRow(Base):
+    """Historial de planificación y estado del evento (CA-11.5). Solo inserción: un trigger
+    rechaza UPDATE y DELETE. `fields` guarda cada campo cambiado con su antes y después."""
+
+    __tablename__ = "commercial_event_changes"
+    __table_args__ = (
+        CheckConstraint(
+            "action IN ('PLANNING_UPDATED', 'CONFIRMED', 'STARTED', 'FINISHED', 'CANCELLED')",
+            name="action_valid",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[UUID] = mapped_column(ForeignKey("commercial_events.id"), index=True)
+    action: Mapped[str] = mapped_column(String(20))
+    fields: Mapped[list[dict[str, str | int]]] = mapped_column(JSONB)
+    changed_by: Mapped[UUID]
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 class EventActivityRow(Base):
