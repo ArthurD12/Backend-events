@@ -1524,7 +1524,8 @@
           "contracts:manage",
           "payments:record",
           "events:manage",
-          "events:read"
+          "events:read",
+          "event_notes:write"
         ],
         "title": "Permission",
         "type": "string"
