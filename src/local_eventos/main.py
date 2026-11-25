@@ -51,6 +51,7 @@ from local_eventos.modules.purchasing.presentation.errors import (
 from local_eventos.modules.reporting.presentation import (
     dashboard_router,
     finance_router,
+    report_router,
     sheet_router,
 )
 from local_eventos.modules.reporting.presentation.errors import (
@@ -114,6 +115,7 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     app.include_router(dashboard_router.router)
     app.include_router(finance_router.router)
     app.include_router(sheet_router.router)
+    app.include_router(report_router.router)
     app.include_router(category_router.router)
     app.include_router(service_router.router)
     app.include_router(product_router.router)
