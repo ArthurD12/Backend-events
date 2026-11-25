@@ -118,7 +118,8 @@ class Contract:
 
     @property
     def balance_cents(self) -> int:
-        """Lo que falta pagar después del adelanto pactado."""
+        """Saldo pactado: lo que falta pagar después del adelanto. El saldo real, con los pagos
+        registrados, es `ContractBalance`."""
         return self.total_cents - self.advance_cents
 
     @property
@@ -199,6 +200,61 @@ class Contract:
             cancelled_at=now,
         )
         self.status = ContractStatus.CANCELLED
+
+
+@dataclass(frozen=True)
+class ContractBalance:
+    """Cuenta del contrato (HU19, RN15). Solo cuentan los pagos vigentes (CA-19.3).
+
+    - Pendiente de firma: saldo = total − adelanto pactado (aún no hay pagos; el adelanto se
+      paga al firmar, R-CON-1).
+    - Firmado: saldo = total − pagos + devoluciones.
+    - Anulado: no hay saldo por cobrar (0). Lo pagado y lo devuelto se siguen mostrando.
+    """
+
+    status: ContractStatus
+    total_cents: int
+    paid_cents: int
+    refunded_cents: int
+    balance_cents: int
+    due_date: date
+
+    @classmethod
+    def of(cls, contract: Contract, *, paid_cents: int, refunded_cents: int) -> ContractBalance:
+        if contract.status is ContractStatus.PENDING_SIGNATURE:
+            balance = contract.balance_cents
+        elif contract.status is ContractStatus.CANCELLED:
+            balance = 0  # un contrato anulado no tiene nada por cobrar
+        else:
+            balance = contract.total_cents - paid_cents + refunded_cents
+        return cls(
+            status=contract.status,
+            total_cents=contract.total_cents,
+            paid_cents=paid_cents,
+            refunded_cents=refunded_cents,
+            balance_cents=balance,
+            due_date=contract.balance_due_date,
+        )
+
+    def is_overdue(self, today: date) -> bool:
+        """R-PAG-2: solo un aviso. Se puede pagar después de la fecha límite."""
+        return (
+            self.status is ContractStatus.SIGNED
+            and self.balance_cents > 0
+            and today > self.due_date
+        )
+
+    def ensure_can_pay(self, amount_cents: int) -> None:
+        """CA-19.1, CA-19.6: solo en un contrato firmado. RN14: sin superar el saldo."""
+        if self.status is not ContractStatus.SIGNED:
+            raise ContractRuleError(
+                "contract.not_signed", "Solo se registran pagos en un contrato firmado."
+            )
+        if isinstance(amount_cents, int) and amount_cents > self.balance_cents:
+            raise ContractValidationError(
+                "payment.exceeds_balance",
+                f"El pago supera el saldo pendiente de S/ {self.balance_cents / 100:,.2f}.",
+            )
 
 
 def default_advance(total_cents: int) -> int:

@@ -69,7 +69,11 @@ def test_ca02_y_ca01_crea_usuario_que_entra_con_su_rol(api: TestClient) -> None:
     assert created.status_code == 201
     assert api.get("/v1/auth/me", headers=rosa).json()["permissions"] == [
         "catalog:read",
+        "event_notes:write",
         "events:read",
+        "inventory:manage",
+        "inventory:read",
+        "purchasing:manage",
     ]
     assert api.get("/v1/catalog/services", headers=rosa).status_code == 200
     assert api.get("/v1/clients", headers=rosa).status_code == 403

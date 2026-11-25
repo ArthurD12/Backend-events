@@ -101,3 +101,51 @@ def test_r_con_5_una_cotizacion_un_solo_contrato(env: tuple[TestClient, str]) ->
     again = api.post("/v1/contracts", json={"quote_id": quote_id})
 
     assert (again.status_code, again.json()["code"]) == (409, "contract.already_exists")
+
+
+def test_hu19_a_hu22_pagos_caja_y_reportes_en_la_base(env: tuple[TestClient, str]) -> None:
+    api, _ = env
+    contract = api.post("/v1/contracts", json={"quote_id": _accepted_quote(api, "40000003")}).json()
+    api.post(
+        f"/v1/contracts/{contract['id']}/sign",
+        json={
+            "signed_on": TODAY.isoformat(),
+            "signer_name": "José Ramírez",
+            "advance": {"paid_on": TODAY.isoformat(), "method": "CASH"},
+        },
+    )
+    pay = {"paid_on": TODAY.isoformat(), "method": "TRANSFER", "reference": "Op 1"}
+    first = api.post(
+        f"/v1/contracts/{contract['id']}/payments", json={"amount_cents": 100_000, **pay}
+    ).json()["payment"]
+    api.post(f"/v1/payments/{first['id']}/void", json={"reason": "Voucher repetido"})
+    api.post(f"/v1/contracts/{contract['id']}/payments", json={"amount_cents": 250_000, **pay})
+    over = api.post(f"/v1/contracts/{contract['id']}/payments", json={"amount_cents": 1, **pay})
+    account = api.get(f"/v1/contracts/{contract['id']}/account").json()
+    receipt = api.get(f"/v1/payments/{first['id']}/receipt.pdf")
+    coordinator = api.get("/v1/events/coordinators").json()[0]["id"]
+    event = api.post(
+        "/v1/events", json={"contract_id": contract["id"], "coordinator_id": coordinator}
+    ).json()
+    api.post(
+        "/v1/movements",
+        json={"type": "EXPENSE", "category": "STAFF", "concept": "Mozos", "amount_cents": 60_000,
+              "method": "CASH", "occurred_on": TODAY.isoformat(), "event_id": event["id"]},
+    )  # fmt: skip
+    result = api.get(f"/v1/reports/events/{event['id']}/result").json()
+    flow = api.get(
+        "/v1/reports/cash-flow", params={"from": TODAY.isoformat(), "to": TODAY.isoformat()}
+    ).json()
+
+    assert first["number"].startswith(f"PAG-{TODAY.year}-")
+    assert (over.status_code, over.json()["code"]) == (422, "payment.exceeds_balance")
+    assert (account["paid_cents"], account["balance_cents"]) == (500_000, 0)
+    assert [p["void"] is not None for p in account["payments"]] == [False, True, False]
+    assert receipt.status_code == 200 and receipt.content.startswith(b"%PDF")
+    assert (event["paid_cents"], event["balance_cents"]) == (500_000, 0)
+    assert (result["collected_cents"], result["expense_cents"], result["result_cents"]) == (
+        500_000,
+        60_000,
+        440_000,
+    )
+    assert flow["totals"]["expenses"]["staff_cents"] >= 60_000

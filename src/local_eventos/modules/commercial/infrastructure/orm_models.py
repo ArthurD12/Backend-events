@@ -1,4 +1,5 @@
-"""Tablas del módulo comercial en PostgreSQL: clientes, cotizaciones, contratos y eventos.
+"""Tablas del módulo comercial en PostgreSQL: clientes, cotizaciones, contratos y eventos
+(con sus actividades y observaciones).
 
 Estas clases describen las tablas, no son la entidad `Client` del dominio: el repositorio
 traduce entre unas y otras. Prefijo `commercial_` por ser del módulo comercial (ADR 0003).
@@ -12,12 +13,14 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     String,
     Text,
     Time,
     UniqueConstraint,
     func,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from local_eventos.shared.infrastructure.orm import Base
@@ -258,3 +261,79 @@ class EventCounterRow(Base):
 
     year: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
     last: Mapped[int]
+
+
+class EventChangeRow(Base):
+    """Historial de planificación y estado del evento (CA-11.5). Solo inserción: un trigger
+    rechaza UPDATE y DELETE. `fields` guarda cada campo cambiado con su antes y después."""
+
+    __tablename__ = "commercial_event_changes"
+    __table_args__ = (
+        CheckConstraint(
+            "action IN ('PLANNING_UPDATED', 'CONFIRMED', 'STARTED', 'FINISHED', 'CANCELLED')",
+            name="action_valid",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    event_id: Mapped[UUID] = mapped_column(ForeignKey("commercial_events.id"), index=True)
+    action: Mapped[str] = mapped_column(String(20))
+    fields: Mapped[list[dict[str, str | int]]] = mapped_column(JSONB)
+    changed_by: Mapped[UUID]
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class EventActivityRow(Base):
+    """Actividad o indicación del evento (HU13). Los usuarios son de identity: sin FK."""
+
+    __tablename__ = "commercial_event_activities"
+    __table_args__ = (
+        CheckConstraint("status IN ('PENDING', 'DONE')", name="status_valid"),
+        CheckConstraint(
+            "(status = 'DONE') = (completed_by IS NOT NULL AND completed_at IS NOT NULL)",
+            name="done_has_completion",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    event_id: Mapped[UUID] = mapped_column(ForeignKey("commercial_events.id"), index=True)
+    description: Mapped[str] = mapped_column(String(200))
+    status: Mapped[str] = mapped_column(String(10))
+    responsible_id: Mapped[UUID]
+    created_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    completed_by: Mapped[UUID | None]
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class EventActivityChangeRow(Base):
+    """Historial de cambios de estado de una actividad (CA-13.3). Solo inserción: un trigger
+    rechaza UPDATE y DELETE."""
+
+    __tablename__ = "commercial_event_activity_changes"
+    __table_args__ = (CheckConstraint("action IN ('COMPLETED', 'REOPENED')", name="action_valid"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    activity_id: Mapped[UUID] = mapped_column(
+        ForeignKey("commercial_event_activities.id"), index=True
+    )
+    action: Mapped[str] = mapped_column(String(10))
+    changed_by: Mapped[UUID]
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class EventNoteRow(Base):
+    """Observación de la bitácora del evento (HU13). Se edita, no se elimina (R-ACT-1)."""
+
+    __tablename__ = "commercial_event_notes"
+    __table_args__ = (
+        Index("ix_commercial_event_notes_event_id_created_at", "event_id", "created_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    event_id: Mapped[UUID] = mapped_column(ForeignKey("commercial_events.id"))
+    text: Mapped[str] = mapped_column(String(1000))
+    created_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    edited_by: Mapped[UUID | None]
+    edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

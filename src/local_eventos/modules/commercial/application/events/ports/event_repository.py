@@ -5,7 +5,7 @@ from datetime import date, time
 from typing import Protocol
 from uuid import UUID
 
-from local_eventos.modules.commercial.domain.events.event import Event, EventStatus
+from local_eventos.modules.commercial.domain.events.event import Event, EventChange, EventStatus
 from local_eventos.modules.commercial.domain.quotes.quote import EventType
 
 
@@ -44,7 +44,13 @@ class EventRepository(Protocol):
         """Si el contrato ya tiene evento, lanza `EventAlreadyExistsError` (CA-10.5)."""
         ...
 
-    async def update(self, event: Event) -> None: ...
+    async def update(self, event: Event, change: EventChange | None = None) -> None:
+        """Guarda el evento y, si hay `change`, lo agrega al historial (solo inserción)."""
+        ...
+
+    async def list_changes(self, event_id: UUID) -> list[EventChange]:
+        """Historial de planificación y estado, del más antiguo al más reciente (CA-11.5)."""
+        ...
 
     async def next_number(self, year: int) -> int: ...
 

@@ -136,7 +136,14 @@ def test_ca01_4_me_devuelve_solo_los_permisos_del_rol(api: Api) -> None:
     me = api.client.get("/v1/auth/me", headers=api.headers("luis@darze.pe", "luis-clave-segura"))
 
     assert me.status_code == 200
-    assert me.json()["permissions"] == ["catalog:read", "events:read"]
+    assert me.json()["permissions"] == [
+        "catalog:read",
+        "event_notes:write",
+        "events:read",
+        "inventory:manage",
+        "inventory:read",
+        "purchasing:manage",
+    ]
 
 
 def test_ca01_5_logout_impide_renovar(api: Api) -> None:
