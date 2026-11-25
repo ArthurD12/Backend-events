@@ -1,8 +1,8 @@
 # Tasks: Pagos, comprobante, ingresos y egresos, flujo de caja
 
-Se empieza **después** de unir `feat/staff` (la migración va encadenada a la de personal).
+La migración se encadena al head de developer-b al momento de unir.
 
-- [ ] T-01 [ledger/domain] `INSTALLMENT`, número `PAG`, `PaymentVoid`, `CashMovement`, `MovementVoid` + tests
+- [x] T-01 [ledger/domain] `INSTALLMENT`, número `PAG`, `PaymentVoid`, `CashMovement`, `MovementVoid` + tests
 - [ ] T-02 [ledger/app+infra] Repos, correlativo, migración (tablas, triggers append-only), `payment_voider`, consultas de suma para reporting + tests de integración
 - [ ] T-03 [commercial] `ContractBalance`, `RecordContractPayment`, `VoidContractPayment`, `GetContractAccount` con `FOR UPDATE` + tests; HU41/HU42 siguen verdes
 - [ ] T-04 [commercial] Comprobante PDF (`RenderPaymentReceipt`, ReportLab como `quote_pdf.py`) + test

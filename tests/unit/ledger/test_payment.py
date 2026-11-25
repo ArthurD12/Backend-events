@@ -7,10 +7,13 @@ from uuid import uuid4
 import pytest
 
 from local_eventos.modules.ledger.domain.payment import (
+    LedgerRuleError,
     LedgerValidationError,
     Payment,
     PaymentKind,
     PaymentMethod,
+    PaymentVoid,
+    format_payment_number,
 )
 
 TODAY = date(2026, 11, 22)
@@ -18,6 +21,7 @@ TODAY = date(2026, 11, 22)
 
 def _payment(**changes: object) -> Payment:
     data: dict[str, object] = {
+        "number": "PAG-2026-0001",
         "contract_id": uuid4(),
         "kind": PaymentKind.ADVANCE,
         "amount_cents": 272_500,
@@ -56,3 +60,39 @@ def test_regla_5_un_pago_no_se_modifica() -> None:
     payment = _payment()
     with pytest.raises(FrozenInstanceError):
         payment.amount_cents = 1  # type: ignore[misc]
+
+
+def test_ca20_1_numero_pag_por_anio() -> None:
+    assert format_payment_number(2026, 7) == "PAG-2026-0007"
+    assert _payment(number="PAG-2026-0007").number == "PAG-2026-0007"
+
+
+def test_ca19_5_un_pago_parcial_se_anula_con_motivo_limpio() -> None:
+    payment = _payment(kind=PaymentKind.INSTALLMENT)
+    by, now = uuid4(), datetime(2026, 11, 23, tzinfo=UTC)
+
+    void = PaymentVoid.of(payment, reason="  Monto  equivocado ", voided_by=by, now=now)
+
+    assert (void.payment_id, void.reason, void.voided_by, void.voided_at) == (
+        payment.id,
+        "Monto equivocado",
+        by,
+        now,
+    )
+
+
+@pytest.mark.parametrize("kind", [PaymentKind.ADVANCE, PaymentKind.REFUND])
+def test_ca19_5_el_adelanto_y_la_devolucion_no_se_anulan_por_aqui(kind: PaymentKind) -> None:
+    with pytest.raises(LedgerRuleError) as error:
+        PaymentVoid.of(_payment(kind=kind), reason="x", voided_by=uuid4(), now=datetime.now(UTC))
+    assert error.value.code == "payment.not_voidable"
+
+
+@pytest.mark.parametrize(
+    ("reason", "code"), [("   ", "payment.reason_required"), ("x" * 501, "payment.reason_too_long")]
+)
+def test_ca19_5_motivo_obligatorio(reason: str, code: str) -> None:
+    payment = _payment(kind=PaymentKind.INSTALLMENT)
+    with pytest.raises(LedgerValidationError) as error:
+        PaymentVoid.of(payment, reason=reason, voided_by=uuid4(), now=datetime.now(UTC))
+    assert error.value.code == code
