@@ -10,6 +10,7 @@ ASSIGNMENT_SCHEDULE_INVALID = "staff.assignment_schedule_invalid"
 ASSIGNMENT_DATE_INVALID = "staff.assignment_date_invalid"
 ASSIGNMENT_FUNCTION_REQUIRED = "staff.assignment_function_required"
 ASSIGNMENT_PAY_INVALID = "staff.assignment_pay_invalid"
+ASSIGNMENT_REASON_REQUIRED = "staff.assignment_reason_required"
 
 
 class StaffValidationError(ValueError):
@@ -56,3 +57,13 @@ class AssignmentPayInvalidError(StaffValidationError):
         message: str = "El pago debe expresarse en céntimos enteros y no puede ser negativo.",
     ) -> None:
         super().__init__(ASSIGNMENT_PAY_INVALID, message)
+
+
+class AssignmentReasonRequiredError(StaffValidationError):
+    """La edición o la anulación de una asignación requiere motivo (R-ASG-8, RN03)."""
+
+    def __init__(
+        self,
+        message: str = "La edición o la anulación de una asignación requiere motivo.",
+    ) -> None:
+        super().__init__(ASSIGNMENT_REASON_REQUIRED, message)
