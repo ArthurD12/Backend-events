@@ -30,6 +30,7 @@ Entre la firma y el día del evento, el encargado prepara muchas cosas (confirma
 - **R-ACT-3** *(equipo, provisional; sin respuesta)*: una actividad **no se elimina** en esta versión.
 - **R-ACT-4** *(Harold, 25/11/2026)*: cada actividad tiene un **responsable**: un usuario activo, administrador o encargado de eventos. Por defecto, quien la crea. Se puede cambiar. Sin fecha límite.
 - **R-ACT-5** *(Harold, 25/11/2026)*: el **encargado de compras y almacén** también agrega observaciones (p. ej., faltantes de material). No crea ni marca actividades.
+- **R-ACT-6** *(equipo, provisional)*: una observación la edita su **autor** o un **administrador**.
 - El usuario se guarda como **ID** del módulo `identity`, sin clave foránea entre módulos (AGENTS.md, regla 3). El issue #14 propone una relación ORM con `Usuario`: no se hace así.
 
 ## 6. Fuera de alcance
