@@ -25,6 +25,9 @@ class Permission(StrEnum):
     PAYMENTS_RECORD = "payments:record"
     EVENTS_MANAGE = "events:manage"
     EVENTS_READ = "events:read"
+    INVENTORY_READ = "inventory:read"
+    INVENTORY_MANAGE = "inventory:manage"
+    PURCHASING_MANAGE = "purchasing:manage"
     FINANCE_READ = "finance:read"  # flujo de caja y resultado por evento: solo administrador
     EVENT_NOTES_WRITE = "event_notes:write"  # R-ACT-5: observaciones del evento
     EVENT_NOTES_EDIT_ANY = "event_notes:edit_any"  # R-ACT-6: editar observaciones ajenas
@@ -42,10 +45,18 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.EVENTS_MANAGE,
             Permission.EVENTS_READ,
             Permission.EVENT_NOTES_WRITE,
+            Permission.INVENTORY_READ,  # 017: consulta stock y materiales de sus eventos
         }
     ),
     Role.PURCHASING_MANAGER: frozenset(
-        {Permission.CATALOG_READ, Permission.EVENTS_READ, Permission.EVENT_NOTES_WRITE}
+        {
+            Permission.CATALOG_READ,
+            Permission.EVENTS_READ,
+            Permission.EVENT_NOTES_WRITE,
+            Permission.INVENTORY_READ,
+            Permission.INVENTORY_MANAGE,
+            Permission.PURCHASING_MANAGE,
+        }
     ),
 }
 
