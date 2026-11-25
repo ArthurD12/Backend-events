@@ -141,7 +141,9 @@ class ContractAccountOut(BaseModel):
     total_cents: int
     paid_cents: int = Field(description="Pagos vigentes (adelanto incluido)")
     refunded_cents: int
-    balance_cents: int = Field(description="Total − pagos vigentes + devoluciones (RN15)")
+    balance_cents: int = Field(
+        description="Total − pagos vigentes + devoluciones (RN15); 0 si el contrato está anulado"
+    )
     balance_due_date: date
     overdue: bool = Field(description="Saldo vencido: solo un aviso (R-PAG-2)")
     currency: str = "PEN"
