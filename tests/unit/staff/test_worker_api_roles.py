@@ -129,14 +129,33 @@ def test_compras_recibe_403_en_las_seis_rutas_sin_alterar_datos(
     assert stored.status == WorkerStatus.ACTIVE
 
 
-def test_sin_sesion_responde_401(api: tuple[TestClient, InMemoryWorkerRepository]) -> None:
-    client, _ = api
-    worker_id = _register(client, ANA)["id"]
+def test_sin_sesion_responde_401_en_las_seis_rutas_sin_alterar_datos(
+    api: tuple[TestClient, InMemoryWorkerRepository],
+) -> None:
+    client, repository = api
+    worker_id = UUID(str(_register(client, ANA)["id"]))
     del client.app.dependency_overrides[get_current_user]  # type: ignore[attr-defined]
 
+    register = client.post("/v1/staff", json=BETO)
     listed = client.get("/v1/staff")
     fetched = client.get(f"/v1/staff/{worker_id}")
+    updated = client.put(
+        f"/v1/staff/{worker_id}",
+        json={
+            "name": "Nombre cambiado",
+            "document_type": "DNI",
+            "document_number": "44125896",
+        },
+    )
+    deactivated = client.post(f"/v1/staff/{worker_id}/deactivate")
+    activated = client.post(f"/v1/staff/{worker_id}/activate")
 
-    for response in (listed, fetched):
+    for response in (register, listed, fetched, updated, deactivated, activated):
         assert response.status_code == 401
         assert response.json()["code"] == "auth.not_authenticated"
+
+    # Sin sesión ninguna petición se ejecuta: ni alta ni cambios sobre el existente.
+    assert len(repository.workers) == 1
+    stored = repository.workers[worker_id]
+    assert stored.name == "Ana Torres"
+    assert stored.status == WorkerStatus.ACTIVE
