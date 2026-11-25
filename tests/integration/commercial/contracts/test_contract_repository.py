@@ -74,7 +74,8 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
         await connection.execute(
             text(
                 "TRUNCATE commercial_event_services, commercial_events, commercial_event_counters,"
-                " ledger_payments, commercial_contracts, commercial_contract_counters,"
+                " ledger_payment_voids, ledger_payments, ledger_payment_counters,"
+                " commercial_contracts, commercial_contract_counters,"
                 " commercial_quote_lines, commercial_quotes,"
                 " commercial_client_document_corrections, commercial_clients"
             )
@@ -131,6 +132,7 @@ def _contract(quote: Quote, code: str = "CON-2026-0001") -> Contract:
 
 def _advance(contract: Contract) -> Payment:
     return Payment.record(
+        number=f"PAG-T-{uuid4().hex[:12]}",
         contract_id=contract.id, kind=PaymentKind.ADVANCE, amount_cents=contract.advance_cents,
         method=PaymentMethod.TRANSFER, reference="Op. 1", paid_on=TODAY, recorded_by=uuid4(),
         now=NOW, today=TODAY,
