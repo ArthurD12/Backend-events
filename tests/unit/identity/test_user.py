@@ -100,6 +100,11 @@ def test_r_id_3_permisos_segun_la_tabla_del_dominio() -> None:
         Permission.INVENTORY_MANAGE,
         Permission.PURCHASING_MANAGE,
     }
+    # HU17 (R-ASG-14): solo el administrador escribe asignaciones; eventos conserva
+    # staff:manage para lectura y compras no tiene acceso al personal.
+    assert Permission.STAFF_ASSIGN in admin.permissions
+    assert Permission.STAFF_ASSIGN not in eventos.permissions
+    assert Permission.STAFF_ASSIGN not in compras.permissions
     assert admin.is_active_admin and not eventos.is_active_admin
 
 

@@ -32,6 +32,7 @@ class Permission(StrEnum):
     EVENT_NOTES_WRITE = "event_notes:write"  # R-ACT-5: observaciones del evento
     EVENT_NOTES_EDIT_ANY = "event_notes:edit_any"  # R-ACT-6: editar observaciones ajenas
     STAFF_MANAGE = "staff:manage"
+    STAFF_ASSIGN = "staff:assign"  # 033-staff: escribir asignaciones (solo administrador)
 
 
 ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
