@@ -5,5 +5,5 @@
 - [x] T-03 [identity] Permiso `event_notes:write` (tres roles) + test
 - [x] T-04 [infra] ORM, repositorios, migración + tests de integración
 - [x] T-05 [presentation] Rutas del plan §4 + tests de API + `just openapi`
-- [ ] T-06 [docs] DOMAIN.md §11 (R-ACT-1..6)
+- [x] T-06 [docs] DOMAIN.md §11 (R-ACT-1..6)
 - [ ] T-07 [frontend] Pestaña Seguimiento: actividades y bitácora
