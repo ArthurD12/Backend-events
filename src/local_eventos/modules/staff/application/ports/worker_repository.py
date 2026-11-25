@@ -37,6 +37,16 @@ class WorkerRef:
     status: WorkerStatus
 
 
+class WorkerLookup(Protocol):
+    """Consulta pública de solo lectura para otros módulos (HU17, CA-15.12).
+
+    Expone únicamente la referencia mínima (`WorkerRef`): nunca documento, teléfono
+    ni tarifa, y ninguna operación de escritura.
+    """
+
+    async def get(self, worker_id: UUID) -> WorkerRef | None: ...
+
+
 @dataclass(frozen=True)
 class WorkerPage:
     """Una página de trabajadores y el total que cumple el filtro."""
