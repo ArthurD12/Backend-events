@@ -44,7 +44,7 @@ class UpdateWorker:
         document = Document(data.document_type, data.document_number)
         existing = await self._workers.get_by_document(document)
         if existing is not None and existing.id != worker_id:
-            raise DuplicateDocumentError()
+            raise DuplicateDocumentError(document)
 
         worker.update(
             name=data.name,

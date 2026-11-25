@@ -105,6 +105,7 @@ async def test_ca15_5_dos_altas_simultaneas_dejan_solo_una(
             return "ok"
         except DuplicateDocumentError as error:
             assert error.code == "staff.document_duplicated"
+            assert str(error) == "Ya existe un trabajador con DNI 44125896."
             return "duplicado"
 
     results = await asyncio.gather(try_save(first), try_save(second))

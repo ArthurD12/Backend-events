@@ -167,6 +167,17 @@ def test_ca15_3_409(api: TestClient) -> None:
     assert response.status_code == 409
     assert response.headers["content-type"] == "application/problem+json"
     assert response.json()["code"] == "staff.document_duplicated"
+    assert response.json()["detail"] == "Ya existe un trabajador con DNI 44125896."
+
+
+def test_ca15_3_409_identifica_el_ce(api: TestClient) -> None:
+    _register(api, CARLA)
+
+    response = api.post("/v1/staff", json=CARLA)
+
+    assert response.status_code == 409
+    assert response.json()["code"] == "staff.document_duplicated"
+    assert response.json()["detail"] == "Ya existe un trabajador con CE 123456789."
 
 
 def test_ca15_2_422(api: TestClient) -> None:

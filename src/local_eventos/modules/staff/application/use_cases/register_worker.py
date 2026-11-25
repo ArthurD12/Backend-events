@@ -48,7 +48,7 @@ class RegisterWorker:
 
         existing = await self._workers.get_by_document(worker.document)
         if existing is not None:
-            raise DuplicateDocumentError()
+            raise DuplicateDocumentError(worker.document)
 
         audit = WorkerAudit(
             worker_id=worker.id,

@@ -60,9 +60,9 @@ class SqlAlchemyWorkerRepository:
         else:
             apply_worker_to_row(worker, row)
         # La ficha se escribe antes que su auditoría para que la FK siempre resuelva.
-        await self._flush()
+        await self._flush(worker.document)
         self._session.add(audit_to_row(audit))
-        await self._flush()
+        await self._flush(worker.document)
 
     async def get(self, worker_id: UUID) -> Worker | None:
         row = await self._session.get(StaffWorkerRow, worker_id)
@@ -138,7 +138,7 @@ class SqlAlchemyWorkerRepository:
             status=WorkerStatus(row.status),
         )
 
-    async def _flush(self) -> None:
+    async def _flush(self, document: Document) -> None:
         """Envía los cambios a PostgreSQL. Si el documento ya existe, error de negocio.
 
         La aplicación ya revisa duplicados antes de guardar; esto cubre el caso en que dos
@@ -150,7 +150,7 @@ class SqlAlchemyWorkerRepository:
             await self._session.flush()
         except IntegrityError as error:
             if "uq_staff_workers_document" in str(error.orig):
-                raise DuplicateDocumentError() from error
+                raise DuplicateDocumentError(document) from error
             raise
 
     @staticmethod

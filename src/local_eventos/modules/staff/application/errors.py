@@ -6,6 +6,8 @@ Python puro: no importa FastAPI, SQLAlchemy ni Pydantic (AGENTS.md, regla 2).
 
 from __future__ import annotations
 
+from local_eventos.modules.staff.domain.document import Document
+
 
 class StaffApplicationError(Exception):
     """Error de negocio de un caso de uso de personal. `code` es estable."""
@@ -18,10 +20,10 @@ class StaffApplicationError(Exception):
 class DuplicateDocumentError(StaffApplicationError):
     """Ya existe otro trabajador —activo o inactivo— con el mismo tipo + número."""
 
-    def __init__(self) -> None:
+    def __init__(self, document: Document) -> None:
         super().__init__(
             "staff.document_duplicated",
-            "Ya existe un trabajador registrado con ese documento.",
+            f"Ya existe un trabajador con {document.type.value} {document.number}.",
         )
 
 

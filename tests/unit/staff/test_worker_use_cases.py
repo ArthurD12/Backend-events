@@ -146,10 +146,31 @@ async def test_ca15_3_duplicado_activo_no_se_guarda() -> None:
     repository.workers[WORKER_1_ID] = _worker(worker_id=WORKER_1_ID)
     register = RegisterWorker(repository, FixedClock(NOW))
 
-    with pytest.raises(DuplicateDocumentError):
+    with pytest.raises(DuplicateDocumentError) as error:
         await register.execute(_data(), ACTOR_ID)
 
+    assert error.value.code == "staff.document_duplicated"
+    assert str(error.value) == "Ya existe un trabajador con DNI 44125896."
     assert len(repository.workers) == 1
+    assert repository.audits == []
+
+
+async def test_ca15_3_duplicado_identifica_el_ce() -> None:
+    repository = FakeWorkerRepository()
+    repository.workers[WORKER_1_ID] = _worker(
+        worker_id=WORKER_1_ID,
+        document_type=WorkerDocumentType.CE,
+        document_number="001234567",
+    )
+    register = RegisterWorker(repository, FixedClock(NOW))
+
+    with pytest.raises(DuplicateDocumentError) as error:
+        await register.execute(
+            _data(document_type=WorkerDocumentType.CE, document_number="001234567"),
+            ACTOR_ID,
+        )
+
+    assert str(error.value) == "Ya existe un trabajador con CE 001234567."
     assert repository.audits == []
 
 
@@ -160,9 +181,10 @@ async def test_ca15_3_duplicado_incluye_inactivos() -> None:
     repository.workers[WORKER_1_ID] = inactive
     register = RegisterWorker(repository, FixedClock(NOW))
 
-    with pytest.raises(DuplicateDocumentError):
+    with pytest.raises(DuplicateDocumentError) as error:
         await register.execute(_data(), ACTOR_ID)
 
+    assert str(error.value) == "Ya existe un trabajador con DNI 44125896."
     assert repository.audits == []
 
 
@@ -176,11 +198,12 @@ async def test_ca15_4_edicion_a_documento_ajeno_conserva_el_anterior() -> None:
     )
     update = UpdateWorker(repository, FixedClock(NOW))
 
-    with pytest.raises(DuplicateDocumentError):
+    with pytest.raises(DuplicateDocumentError) as error:
         await update.execute(
             WORKER_2_ID, _data(name="Beto Ruiz", document_number="44125896"), ACTOR_ID
         )
 
+    assert str(error.value) == "Ya existe un trabajador con DNI 44125896."
     assert repository.workers[WORKER_2_ID].document == Document(WorkerDocumentType.DNI, "12345678")
     assert repository.audits == []
 
