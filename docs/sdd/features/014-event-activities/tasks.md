@@ -1,6 +1,6 @@
 # Tasks: Actividades y observaciones del evento
 
-- [ ] T-01 [domain] `EventActivity`, `ActivityChange`, `EventNote`, reglas de estado en `Event` + tests
+- [x] T-01 [domain] `EventActivity`, `ActivityChange`, `EventNote`, reglas de estado en `Event` + tests
 - [ ] T-02 [application] Casos de uso y puertos + tests con fakes
 - [ ] T-03 [identity] Permiso `event_notes:write` (tres roles) + test
 - [ ] T-04 [infra] ORM, repositorios, migración + tests de integración

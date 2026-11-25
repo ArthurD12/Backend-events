@@ -33,6 +33,7 @@ class EventStatus(StrEnum):
 
 _REASON_MAX_LENGTH = 500
 _CANCELLABLE = (EventStatus.SCHEDULED, EventStatus.CONFIRMED)  # R-EVT-5
+_ACTIVITIES_OPEN = (EventStatus.SCHEDULED, EventStatus.CONFIRMED, EventStatus.IN_PROGRESS)
 
 
 class EventRuleError(Exception):
@@ -140,6 +141,30 @@ class Event:
     @property
     def ends_next_day(self) -> bool:
         return self.end_time < self.start_time
+
+    @property
+    def can_manage_activities(self) -> bool:
+        """R-ACT-2: actividades en programado, confirmado y en ejecución."""
+        return self.status in _ACTIVITIES_OPEN
+
+    @property
+    def can_take_notes(self) -> bool:
+        """R-ACT-2: observaciones en todo estado menos cancelado (también finalizado)."""
+        return self.status is not EventStatus.CANCELLED
+
+    def check_activities_open(self) -> None:
+        if not self.can_manage_activities:
+            raise EventRuleError(
+                "event.activities_closed",
+                "Las actividades solo se registran o marcan en un evento programado, confirmado"
+                " o en ejecución.",
+            )
+
+    def check_notes_open(self) -> None:
+        if not self.can_take_notes:
+            raise EventRuleError(
+                "event.notes_closed", "En un evento cancelado no se registran observaciones."
+            )
 
     def check_cancellation(self, reason: str) -> str:
         """CA-11.C1 y CA-11.C2. Se valida antes de registrar pagos. Devuelve el motivo limpio."""
