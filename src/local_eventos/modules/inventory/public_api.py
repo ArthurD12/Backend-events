@@ -1,7 +1,8 @@
 """Superficie pública del módulo inventory: única vía de uso por otros módulos.
 
 `purchasing` consulta productos y faltantes, y registra las entradas al recibir una compra
-dentro de la misma transacción de la petición (AGENTS.md, regla 3).
+dentro de la misma transacción de la petición; `reporting` lee los materiales de un evento
+(AGENTS.md, regla 3).
 """
 
 from typing import Protocol
@@ -11,6 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from local_eventos.modules.inventory import composition
 from local_eventos.modules.inventory.application.use_cases.lookups import (
+    EventMaterialInfo,
+    ListEventMaterials,
     ListLowStock,
     LookupProduct,
     LowStockItem,
@@ -41,6 +44,12 @@ class LowStockLookup(Protocol):
     async def __call__(self) -> list[LowStockItem]: ...
 
 
+class EventMaterialsLookup(Protocol):
+    """Materiales de un evento por producto: salió, volvió, merma y falta devolver (HU14)."""
+
+    async def __call__(self, event_id: UUID) -> list[EventMaterialInfo]: ...
+
+
 class StockReceiver(Protocol):
     """Registra entradas de almacén (una por línea recibida) en la misma transacción."""
 
@@ -59,11 +68,20 @@ def low_stock_lookup(session: AsyncSession) -> LowStockLookup:
     )
 
 
+def event_materials(session: AsyncSession) -> EventMaterialsLookup:
+    """Consulta de solo lectura para la ficha del evento (HU14)."""
+    return ListEventMaterials(
+        composition.product_repository(session), composition.movement_repository(session)
+    )
+
+
 def stock_receiver(session: AsyncSession) -> StockReceiver:
     return RecordEntries(composition.record_movement(session))
 
 
 __all__ = [
+    "EventMaterialInfo",
+    "EventMaterialsLookup",
     "InsufficientStockError",
     "InventoryRuleError",
     "InventoryValidationError",
@@ -76,6 +94,7 @@ __all__ = [
     "StockEntry",
     "StockReceiver",
     "Unit",
+    "event_materials",
     "low_stock_lookup",
     "product_lookup",
     "stock_receiver",

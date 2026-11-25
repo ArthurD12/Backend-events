@@ -21,6 +21,18 @@ from local_eventos.modules.commercial.application.events.use_cases.event_lookup 
     EventInfo,
     LookupEvent,
 )
+from local_eventos.modules.commercial.application.events.use_cases.event_sheet import (
+    AccountPaymentInfo,
+    ActivityInfo,
+    EventAccount,
+    EventDetail,
+    EventFollowUp,
+    EventServiceInfo,
+    GetEventAccount,
+    GetEventDetail,
+    GetEventFollowUp,
+    NoteInfo,
+)
 from local_eventos.modules.commercial.application.quotes.ports.quote_repository import (
     QuoteSummary,
 )
@@ -28,7 +40,10 @@ from local_eventos.modules.commercial.application.quotes.use_cases.quote_stats i
     GetQuoteStats,
     QuoteStats,
 )
+from local_eventos.modules.commercial.domain.contracts.contract import ContractStatus
+from local_eventos.modules.commercial.domain.events.activity import ActivityStatus
 from local_eventos.modules.commercial.domain.events.event import EventStatus
+from local_eventos.modules.commercial.domain.quotes.quote import EventType, LineKind, LineUnit
 
 
 class ClientLookup(Protocol):
@@ -70,23 +85,79 @@ def event_lookup(session: AsyncSession) -> EventLookup:
     return LookupEvent(composition.event_repository(session))
 
 
+class EventDetailLookup(Protocol):
+    """Evento con su cliente y servicios contratados, sin precios (HU14). `None` si no existe."""
+
+    async def __call__(self, event_id: UUID) -> EventDetail | None: ...
+
+
+class EventFollowUpLookup(Protocol):
+    """Actividades del evento y sus últimas observaciones (HU13 → HU14)."""
+
+    async def __call__(self, event_id: UUID) -> EventFollowUp: ...
+
+
+class EventAccountLookup(Protocol):
+    """Cuenta del contrato del evento: total, pagado, saldo y pagos (HU19 → HU14)."""
+
+    async def __call__(self, event_id: UUID) -> EventAccount | None: ...
+
+
+def event_detail(session: AsyncSession) -> EventDetailLookup:
+    """Consulta de solo lectura para la ficha del evento (HU14)."""
+    return GetEventDetail(
+        composition.event_repository(session), composition.client_repository(session)
+    )
+
+
+def event_follow_up(session: AsyncSession) -> EventFollowUpLookup:
+    return GetEventFollowUp(composition.event_log_repository(session))
+
+
+def event_account(session: AsyncSession) -> EventAccountLookup:
+    return GetEventAccount(
+        composition.event_repository(session),
+        composition.contract_repository(session),
+        composition.contract_payment_entries(session),
+        composition.clock(),
+    )
+
+
 def quote_stats(session: AsyncSession) -> QuoteStatsLookup:
     """Consulta de solo lectura para el panel (HU31), dentro de la transacción de la petición."""
     return GetQuoteStats(composition.quote_repository(session), composition.clock())
 
 
 __all__ = [
+    "AccountPaymentInfo",
+    "ActivityInfo",
+    "ActivityStatus",
     "ClientLookup",
     "ClientSummary",
+    "ContractStatus",
+    "EventAccount",
+    "EventAccountLookup",
+    "EventDetail",
+    "EventDetailLookup",
     "EventFinance",
     "EventFinanceLookup",
+    "EventFollowUp",
+    "EventFollowUpLookup",
     "EventInfo",
     "EventLookup",
+    "EventServiceInfo",
     "EventStatus",
+    "EventType",
+    "LineKind",
+    "LineUnit",
+    "NoteInfo",
     "QuoteStats",
     "QuoteStatsLookup",
     "QuoteSummary",
+    "event_account",
+    "event_detail",
     "event_finance",
+    "event_follow_up",
     "event_lookup",
     "quote_stats",
 ]
