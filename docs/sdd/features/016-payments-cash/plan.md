@@ -1,7 +1,7 @@
 # Plan: Pagos, comprobante, ingresos y egresos, flujo de caja
 
 - **Spec**: ./spec.md
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 25/11/2026)
 
 ## 1. Módulos y fronteras
 - `ledger` guarda todo el dinero: pagos, anulaciones de pagos, movimientos y anulaciones de movimientos. No conoce contratos ni eventos más que por ID.

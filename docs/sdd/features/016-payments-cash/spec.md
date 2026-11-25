@@ -1,7 +1,7 @@
 # Spec: Pagos, comprobante, ingresos y egresos, flujo de caja
 
 - **ID**: 016-payments-cash
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 25/11/2026)
 - **Módulos afectados**: `commercial` (pagos del contrato y saldo), `ledger` (pagos, anulaciones, movimientos), `reporting` (flujo de caja y resultado por evento), `identity` (permiso `finance:read`)
 - **Historias**: HU19 (#24), HU20 (#25), HU21 (#26), HU22 (#27)
 
