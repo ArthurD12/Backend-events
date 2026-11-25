@@ -17,7 +17,7 @@ from local_eventos.shared.infrastructure.db import create_engine
 pytestmark = pytest.mark.integration
 
 ROOT = Path(__file__).resolve().parents[3]
-BEFORE = "d0f713f5dc65"
+BEFORE = "a4f88017b782"  # la migración anterior a la de pagos
 
 
 @pytest.fixture(scope="module")

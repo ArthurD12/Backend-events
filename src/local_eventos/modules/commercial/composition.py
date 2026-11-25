@@ -17,6 +17,9 @@ from local_eventos.modules.commercial.application.contracts.ports.contract_repos
 from local_eventos.modules.commercial.application.contracts.ports.receipt import (
     PaymentReceiptRenderer,
 )
+from local_eventos.modules.commercial.application.events.ports.event_log_repository import (
+    EventLogRepository,
+)
 from local_eventos.modules.commercial.application.events.ports.event_repository import (
     EventRepository,
 )
@@ -35,6 +38,9 @@ from local_eventos.modules.commercial.infrastructure.clock import LimaClock
 from local_eventos.modules.commercial.infrastructure.company_settings import CompanySettings
 from local_eventos.modules.commercial.infrastructure.contract_repository import (
     SqlAlchemyContractRepository,
+)
+from local_eventos.modules.commercial.infrastructure.event_log_repository import (
+    SqlAlchemyEventLogRepository,
 )
 from local_eventos.modules.commercial.infrastructure.event_repository import (
     SqlAlchemyEventRepository,
@@ -118,6 +124,11 @@ def user_names(session: AsyncSession) -> UserNamesLookup:
 
 def event_repository(session: AsyncSession) -> EventRepository:
     return SqlAlchemyEventRepository(session)
+
+
+def event_log_repository(session: AsyncSession) -> EventLogRepository:
+    """Actividades y observaciones del evento (HU13)."""
+    return SqlAlchemyEventLogRepository(session)
 
 
 def coordinators(session: AsyncSession) -> CoordinatorLookup:

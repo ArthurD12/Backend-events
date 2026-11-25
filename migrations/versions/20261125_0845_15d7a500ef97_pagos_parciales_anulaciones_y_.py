@@ -6,7 +6,7 @@
 - Las cuatro tablas son de solo inserción (AGENTS.md, regla 5).
 
 Revision ID: 15d7a500ef97
-Revises: d0f713f5dc65
+Revises: a4f88017b782
 Create Date: 2026-11-25 08:45:28.900061
 """
 
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "15d7a500ef97"
-down_revision: str | None = "d0f713f5dc65"
+down_revision: str | None = "a4f88017b782"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

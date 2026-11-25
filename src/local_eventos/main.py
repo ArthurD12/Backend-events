@@ -15,6 +15,7 @@ from local_eventos.modules.catalog.presentation.errors import (
     register_error_handlers as register_catalog_errors,
 )
 from local_eventos.modules.commercial.presentation import (
+    activity_router,
     client_router,
     contract_router,
     event_router,
@@ -90,6 +91,7 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     app.include_router(event_router.router)
     app.include_router(payment_router.router)
     app.include_router(movement_router.router)
+    app.include_router(activity_router.router)
     app.include_router(dashboard_router.router)
     app.include_router(finance_router.router)
     app.include_router(category_router.router)

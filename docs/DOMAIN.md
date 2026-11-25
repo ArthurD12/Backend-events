@@ -88,6 +88,7 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 | Clientes | ✔ | ✔ | – |
 | Cotizaciones y contratos | ✔ | ✔ | – |
 | Eventos, personal y asignaciones | ✔ | ✔ | lectura |
+| Observaciones del evento (bitácora) | ✔ | ✔ | ✔ (R-ACT-5) |
 | Pagos, ingresos y egresos | ✔ | ✔ | – |
 | Productos, almacén, requerimientos y compras | ✔ | requerimientos | ✔ |
 | Reportes financieros | ✔ | – | – |
@@ -133,3 +134,9 @@ Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. e
 | 25/11/2026 | Fecha de un pago o movimiento | No puede ser futura, como el adelanto (R-PAG-4) | Equipo **(provisional)** |
 | 23/11/2026 | ¿Desde qué estado se cancela un evento? | Desde programado o confirmado; no desde en ejecución ni finalizado (R-EVT-5) | Equipo **(provisional)** |
 | 22/11/2026 | Sesión | Termina tras 30 minutos sin actividad; no se puede desactivar al último administrador activo (R-ID-4) | Equipo, según HU01 **(provisional)** |
+| 25/11/2026 | Editar observaciones del evento | Se editan; queda quién la editó por última vez y cuándo. No se eliminan (R-ACT-1) | Product Owner |
+| 25/11/2026 | Actividades y observaciones según el estado del evento | Actividades: se registran y marcan en programado, confirmado y en ejecución. Observaciones: también con el evento finalizado. En un evento cancelado no se agrega ni se cambia nada; todo se sigue viendo (R-ACT-2) | Product Owner |
+| 25/11/2026 | Eliminar una actividad creada por error | No se elimina en esta versión (R-ACT-3) | Equipo **(provisional; sin respuesta)** |
+| 25/11/2026 | Responsable de la actividad | Un usuario activo, administrador o encargado de eventos; por defecto quien la crea; se puede cambiar. Sin fecha límite (R-ACT-4) | Product Owner |
+| 25/11/2026 | ¿Compras y almacén agrega observaciones? | Sí (p. ej., faltantes de material), con el permiso `event_notes:write`; no crea ni marca actividades (R-ACT-5) | Product Owner |
+| 25/11/2026 | ¿Quién edita una observación? | Su autor o un administrador (permiso `event_notes:edit_any`, solo administrador) (R-ACT-6) | Equipo **(provisional)** |

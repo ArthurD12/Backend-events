@@ -19,6 +19,9 @@ from local_eventos.modules.commercial.application.contracts.ports.contract_repos
 from local_eventos.modules.commercial.application.contracts.ports.receipt import (
     PaymentReceiptRenderer,
 )
+from local_eventos.modules.commercial.application.events.ports.event_log_repository import (
+    EventLogRepository,
+)
 from local_eventos.modules.commercial.application.events.ports.event_repository import (
     EventRepository,
 )
@@ -144,5 +147,12 @@ async def get_coordinator_lookup(
     return composition.coordinators(session)
 
 
+async def get_event_log_repository(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> EventLogRepository:
+    return composition.event_log_repository(session)
+
+
 Events = Annotated[EventRepository, Depends(get_event_repository)]
 Coordinators = Annotated[CoordinatorLookup, Depends(get_coordinator_lookup)]
+EventLog = Annotated[EventLogRepository, Depends(get_event_log_repository)]
