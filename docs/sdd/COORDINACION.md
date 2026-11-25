@@ -17,7 +17,7 @@ Un agente **no modifica** un módulo de otro dueño. Si necesita algo de él, lo
 | Trabajo | Dueño | Rama | Estado |
 |---|---|---|---|
 | HU16–HU18 | Harold | `feat/hu16-...` (desde `developer-b`) | por empezar |
-| Lote 6: reportes (HU31 completo, HU32–HU34) | César | `feat/reportes` | spec |
+| Lote 6: reportes (HU31 completo, HU32–HU34) | César | `feat/reportes` | en desarrollo |
 | Lote 7: HU24, HU25, HU30 | César | — | después del lote 6 |
 
 ## 3. Archivos compartidos (conflictos frecuentes)
@@ -33,6 +33,7 @@ Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunc
 |---|---|---|---|
 | Ficha del evento (HU14, `reporting`) muestra el personal | Harold, `staff.public_api` | `event_assignments(session)(event_id) -> list[...]` con nombre del trabajador, función, inicio y fin (UTC) | **pendiente** (hoy `reporting` usa un adaptador nulo: `NoEventStaff`) |
 | Asignar a un evento (HU17) valida estado y horario | César, `commercial.public_api` | `event_lookup` (id, código, estado, fecha, horario) | **listo** |
+| Reporte de personal (HU32–HU34, `reporting`) | Harold, `staff.public_api` | `workers_report(session)(function?, active?) -> list[...]` con nombre, documento, función, tipo, tarifa y estado (solo lectura) | **pendiente** (el reporte queda deshabilitado hasta entonces) |
 | Cancelar un evento libera al personal | Harold expone en `staff.public_api` un liberador; César lo conecta en `CancelEvent` por un puerto | **por acordar** |
 
 Cuando un punto pase a "listo", avisar al otro dueño para que lo conecte.

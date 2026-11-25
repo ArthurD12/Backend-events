@@ -1,7 +1,7 @@
 # Spec: Dashboard completo y reportes con exportación
 
 - **ID**: 020-reports
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 25/11/2026)
 - **Módulos afectados**: `reporting` (agrega datos de otros por su `public_api`), `commercial`, `ledger`, `inventory`, `purchasing`, `staff` (solo lectura)
 - **Historias**: HU31 (#32, completar), HU32–HU34 (#33)
 

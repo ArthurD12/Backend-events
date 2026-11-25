@@ -1,7 +1,7 @@
 # Plan: Dashboard completo y reportes con exportación
 
 - **Spec**: ./spec.md
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 25/11/2026)
 
 ## 1. Módulos y fronteras
 - Todo en `reporting`. Lee por `public_api` de `commercial` (eventos y cuentas), `ledger` (movimientos y sumas), `inventory` (stock, alertas, movimientos), `purchasing` (compras) y `staff` (trabajadores: **solo lectura**, por una consulta que se pide a Harold en `COORDINACION.md`; mientras no exista, el reporte de personal queda deshabilitado con un mensaje).
