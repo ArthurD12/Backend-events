@@ -1,7 +1,7 @@
 # Spec: Actividades y observaciones del evento
 
 - **ID**: 014-event-activities
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 25/11/2026)
 - **Módulos afectados**: `commercial` (submódulo `events`), `identity` (nombre del usuario y permisos, por su `public_api`)
 - **Historia**: HU13 (#14)
 

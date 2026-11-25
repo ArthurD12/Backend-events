@@ -1,7 +1,7 @@
 # Plan: Actividades y observaciones del evento
 
 - **Spec**: ./spec.md
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 25/11/2026)
 
 ## 1. Módulos y fronteras
 - `commercial` (submódulo `events`): las actividades y observaciones son parte del evento.
