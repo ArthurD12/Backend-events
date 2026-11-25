@@ -1,6 +1,6 @@
 # Tasks: Inventario, movimientos de almacén, proveedores y compras
 
-- [ ] T-01 [commercial] `commercial.public_api.event_lookup` (id, código, estado, fecha, horario) + tests
+- [x] T-01 [commercial] `commercial.public_api.event_lookup` (id, código, estado, fecha, horario) + tests
 - [ ] T-02 [identity] Permisos `inventory:manage`, `inventory:read`, `purchasing:manage` + tests
 - [ ] T-03 [inventory/domain+app] Producto, movimientos, `StockLevel`, `EventMaterials`, casos de uso + tests con fakes
 - [ ] T-04 [inventory/infra] ORM, repos, `inventory_stock` con FOR UPDATE, trigger append-only, migración + integración
