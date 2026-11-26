@@ -13,6 +13,9 @@ from local_eventos.modules.commercial.application.events.errors import (
 from local_eventos.modules.commercial.application.events.ports.event_repository import (
     EventRepository,
 )
+from local_eventos.modules.commercial.application.events.ports.reservation_releaser import (
+    ReservationReleaser,
+)
 from local_eventos.modules.commercial.application.events.use_cases.events import GetEvent
 from local_eventos.modules.commercial.application.quotes.ports.clock import Clock
 from local_eventos.modules.commercial.domain.events.event import (
@@ -98,14 +101,18 @@ class StartEvent:
 
 
 class FinishEvent:
-    def __init__(self, events: EventRepository, clock: Clock) -> None:
+    def __init__(
+        self, events: EventRepository, clock: Clock, reservations: ReservationReleaser
+    ) -> None:
         self._events = events
         self._clock = clock
+        self._reservations = reservations
 
     async def __call__(self, event_id: UUID, *, by: UUID) -> Event:
         """CA-11.4 y R-EVT-8: en ejecución → finalizado; no exige saldo en cero."""
         event = await GetEvent(self._events)(event_id)
         await self._events.update(event, event.finish(by=by, now=self._clock.now()))
+        await self._reservations(event.id)  # R-REC-3: lo reservado vuelve a estar disponible
         return event
 
 

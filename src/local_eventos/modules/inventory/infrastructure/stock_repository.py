@@ -5,6 +5,7 @@ Los movimientos solo se insertan y se leen (AGENTS.md, regla 5). El stock se blo
 registran una tras otra y la segunda ve el stock ya descontado (RN20).
 """
 
+from datetime import date
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -109,6 +110,19 @@ class SqlAlchemyMovementRepository:
                 MovementRow.product_id.in_(product_ids),
                 MovementRow.kind == MovementKind.ENTRY.value,
             )
+        )
+        return [_to_movement(row) for row in rows]
+
+    async def list_between(
+        self, date_from: date, date_to: date, kind: MovementKind | None = None
+    ) -> list[Movement]:
+        query = select(MovementRow).where(
+            MovementRow.occurred_on >= date_from, MovementRow.occurred_on <= date_to
+        )
+        if kind is not None:
+            query = query.where(MovementRow.kind == kind.value)
+        rows = await self._session.scalars(
+            query.order_by(MovementRow.occurred_on, MovementRow.recorded_at, MovementRow.id)
         )
         return [_to_movement(row) for row in rows]
 

@@ -47,6 +47,14 @@ class InMemoryEventRepository:
     async def list_changes(self, event_id: UUID) -> list[EventChange]:
         return [c for c in self.changes if c.event_id == event_id]
 
+    async def codes(self, event_ids: list[UUID]) -> dict[UUID, str]:
+        return {e: self.events[e].code for e in event_ids if e in self.events}
+
+    async def codes_by_contract(self, contract_ids: list[UUID]) -> dict[UUID, str]:
+        return {
+            e.contract_id: e.code for e in self.events.values() if e.contract_id in contract_ids
+        }
+
     async def next_number(self, year: int) -> int:
         self.counters[year] = self.counters.get(year, 0) + 1
         return self.counters[year]

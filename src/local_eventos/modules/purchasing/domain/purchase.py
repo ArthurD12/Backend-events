@@ -14,6 +14,8 @@ from enum import StrEnum
 from uuid import UUID, uuid4
 
 from local_eventos.modules.purchasing.domain.errors import (
+    ExpenseAlreadyRegisteredError,
+    ExpenseNotAvailableError,
     InvalidTransitionError,
     PurchasingValidationError,
 )
@@ -81,6 +83,7 @@ class Purchase:
     received: Stamp | None = None
     cancelled: Stamp | None = None
     cancel_reason: str | None = None
+    expense_movement_id: UUID | None = None  # egreso de ledger (R-COM-3), una sola vez
 
     @classmethod
     def request(
@@ -175,6 +178,20 @@ class Purchase:
         self.invoice_number = _clean_text(invoice_number, "El comprobante", INVOICE_MAX_LENGTH)
         self.received = Stamp(received_by, now)
         self.status = PurchaseStatus.RECEIVED
+
+    def expense_amount(self) -> int:
+        """CA-30.3: monto del egreso (total real de la compra recibida), una sola vez."""
+        if self.status is not PurchaseStatus.RECEIVED:
+            raise ExpenseNotAvailableError("Solo una compra recibida se registra como egreso.")
+        if self.expense_movement_id is not None:
+            raise ExpenseAlreadyRegisteredError()
+        total = self.total_cents
+        if not total:
+            raise ExpenseNotAvailableError("La compra no tiene un total mayor que cero.")
+        return total
+
+    def mark_expensed(self, movement_id: UUID) -> None:
+        self.expense_movement_id = movement_id
 
     def cancel(self, *, reason: str, cancelled_by: UUID, now: datetime) -> None:
         if self.status not in (PurchaseStatus.REQUESTED, PurchaseStatus.ORDERED):

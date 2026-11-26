@@ -54,10 +54,12 @@ from local_eventos.modules.identity.public_api import CoordinatorLookup, UserNam
 from local_eventos.modules.identity.public_api import coordinator_lookup as identity_coordinators
 from local_eventos.modules.identity.public_api import user_names as identity_user_names
 from local_eventos.modules.ledger.public_api import (
+    ContractPaidTotalsLookup,
     PaymentEntriesLookup,
     PaymentFinder,
     PaymentRecorder,
     PaymentVoider,
+    contract_paid_totals,
     payment_entries,
     payment_finder,
     payment_recorder,
@@ -103,6 +105,11 @@ def payments(session: AsyncSession) -> PaymentRecorder:
 def contract_payment_entries(session: AsyncSession) -> PaymentEntriesLookup:
     """Pagos del contrato con su anulación, para calcular el saldo (RN15)."""
     return payment_entries(session)
+
+
+def paid_totals(session: AsyncSession) -> ContractPaidTotalsLookup:
+    """Pagado y devuelto de varios contratos en una consulta (reportes y panel)."""
+    return contract_paid_totals(session)
 
 
 def find_payment(session: AsyncSession) -> PaymentFinder:

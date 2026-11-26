@@ -13,11 +13,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from local_eventos.modules.ledger import composition
 from local_eventos.modules.ledger.application.errors import PaymentNotFoundError
-from local_eventos.modules.ledger.application.ports.payment_repository import PaymentEntry
+from local_eventos.modules.ledger.application.ports.movement_repository import MovementEntry
+from local_eventos.modules.ledger.application.ports.payment_repository import (
+    ContractPaidTotals,
+    PaymentEntry,
+)
 from local_eventos.modules.ledger.application.use_cases.cash import (
+    CashEntries,
+    CashEntry,
+    CashEntryKind,
     CashTotals,
+    ContractPaidTotalsQuery,
     EventCash,
     MonthlyCash,
+)
+from local_eventos.modules.ledger.application.use_cases.movements import (
+    MovementRequest,
+    RecordMovement,
 )
 from local_eventos.modules.ledger.application.use_cases.payments import (
     ContractPaymentEntries,
@@ -27,7 +39,7 @@ from local_eventos.modules.ledger.application.use_cases.payments import (
     RecordPayment,
     VoidPayment,
 )
-from local_eventos.modules.ledger.domain.movement import MovementCategory
+from local_eventos.modules.ledger.domain.movement import MovementCategory, MovementType
 from local_eventos.modules.ledger.domain.payment import (
     LedgerValidationError,
     Payment,
@@ -39,6 +51,12 @@ from local_eventos.modules.ledger.domain.payment import (
 
 class PaymentRecorder(Protocol):
     async def __call__(self, request: PaymentRequest, *, now: datetime, today: date) -> Payment: ...
+
+
+class MovementRecorder(Protocol):
+    """Registra un ingreso o egreso de caja (HU21), p. ej. el egreso de una compra recibida."""
+
+    async def __call__(self, request: MovementRequest) -> MovementEntry: ...
 
 
 class PaymentsLookup(Protocol):
@@ -76,8 +94,24 @@ class EventCashLookup(Protocol):
     async def __call__(self, event_id: UUID) -> dict[MovementCategory, int]: ...
 
 
+class ContractPaidTotalsLookup(Protocol):
+    """Pagado y devuelto vigentes de varios contratos (reportes y panel, HU31–HU34)."""
+
+    async def __call__(self, contract_ids: list[UUID]) -> dict[UUID, ContractPaidTotals]: ...
+
+
+class CashEntriesLookup(Protocol):
+    """Pagos y movimientos del rango, anulados incluidos y marcados (reporte de caja, CA-32.2)."""
+
+    async def __call__(self, date_from: date, date_to: date) -> list[CashEntry]: ...
+
+
 def payment_recorder(session: AsyncSession) -> PaymentRecorder:
     return RecordPayment(composition.payment_repository(session))
+
+
+def movement_recorder(session: AsyncSession) -> MovementRecorder:
+    return RecordMovement(composition.movement_repository(session), composition.clock())
 
 
 def payments_lookup(session: AsyncSession) -> PaymentsLookup:
@@ -106,11 +140,32 @@ def event_cash(session: AsyncSession) -> EventCashLookup:
     return EventCash(composition.movement_repository(session))
 
 
+def contract_paid_totals(session: AsyncSession) -> ContractPaidTotalsLookup:
+    """Consulta de solo lectura para `commercial` (saldo de varios contratos a la vez)."""
+    return ContractPaidTotalsQuery(composition.payment_repository(session))
+
+
+def cash_entries(session: AsyncSession) -> CashEntriesLookup:
+    """Consulta de solo lectura para el reporte de caja (`reporting`)."""
+    return CashEntries(
+        composition.payment_repository(session), composition.movement_repository(session)
+    )
+
+
 __all__ = [
+    "CashEntriesLookup",
+    "CashEntry",
+    "CashEntryKind",
     "CashTotalsLookup",
+    "ContractPaidTotals",
+    "ContractPaidTotalsLookup",
     "EventCashLookup",
     "LedgerValidationError",
     "MonthlyCash",
+    "MovementEntry",
+    "MovementRecorder",
+    "MovementRequest",
+    "MovementType",
     "MovementCategory",
     "Payment",
     "PaymentEntriesLookup",
@@ -124,7 +179,10 @@ __all__ = [
     "PaymentVoid",
     "PaymentVoider",
     "PaymentsLookup",
+    "cash_entries",
     "cash_totals",
+    "movement_recorder",
+    "contract_paid_totals",
     "event_cash",
     "payment_entries",
     "payment_finder",

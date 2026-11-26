@@ -123,6 +123,15 @@ class SqlAlchemyMovementRepository:
         )
         return {MovementCategory(category): int(total) for category, total in result}
 
+    async def entries_between(self, date_from: date, date_to: date) -> list[MovementEntry]:
+        result = await self._session.execute(
+            select(MovementRow, MovementVoidRow)
+            .outerjoin(MovementVoidRow, MovementVoidRow.movement_id == MovementRow.id)
+            .where(MovementRow.occurred_on >= date_from, MovementRow.occurred_on <= date_to)
+            .order_by(MovementRow.occurred_on, MovementRow.recorded_at)
+        )
+        return [_to_entry(row, void) for row, void in result]
+
 
 def _conditions(filters: MovementFilters) -> list[ColumnElement[bool]]:
     conditions: list[ColumnElement[bool]] = []

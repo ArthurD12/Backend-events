@@ -116,8 +116,10 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 | Observaciones del evento (bitácora) | ✔ | ✔ | ✔ (R-ACT-5) |
 | Pagos, ingresos y egresos | ✔ | ✔ | – |
 | Productos, almacén, requerimientos y compras | ✔ | lectura del almacén y materiales de sus eventos (`inventory:read`) | ✔ |
-| Reportes financieros | ✔ | – | – |
-| Agente de IA | ✔ | ✔ | ✔ |
+| Reportes financieros (caja, flujo de caja, resultado por evento) | ✔ | – | – |
+| Reportes de eventos (montos solo con `payments:record`), almacén y compras (020) | ✔ | eventos (con montos) y almacén | eventos (sin montos), almacén y compras |
+| Agente de IA (cada función exige además el permiso de su dato; R-IA-5) | ✔ | ✔ | ✔ |
+| Historial del asistente (`assistant_log:read`) | ✔ | – | – |
 
 Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. ej. `quotes:create`), no por nombre de rol. Los registros con operaciones relacionadas no se eliminan: se desactivan (RN02). Correcciones y anulaciones guardan usuario, fecha, hora y motivo (RN03).
 
@@ -186,3 +188,16 @@ La gestión del **personal (trabajadores)** exige el permiso `staff:manage`; el 
 | 24/11/2026 | Baja y reactivación del trabajador (HU15) | Baja lógica sin borrado, reactivación permitida, motivo opcional, usuario y fecha-hora siempre (R-STF-2, R-STF-15) | Product Owner |
 | 24/11/2026 | Listado de personal (HU15) | Filtros por función y estado, búsqueda por nombre o documento y paginación | Product Owner |
 | 24/11/2026 | Permisos de personal (HU15) | Administrador y encargado de eventos; el encargado de compras y almacén sin acceso, ni de lectura (R-STF-5, R-STF-16) | Product Owner |
+| 25/11/2026 | Exportación de reportes (020) | Hoja de cálculo en **CSV** (UTF-8 con BOM, separador `;`, coma decimal) que Excel en español abre directo; sin `.xlsx` (sin `openpyxl`, regla 11). Si se exige `.xlsx`, se hace con un ADR (R-REP-1) | Equipo **(provisional)** |
+| 25/11/2026 | Rango de un reporte (020) | Como máximo 366 días; si no, `report.range_invalid` (R-REP-2) | Equipo **(provisional)** |
+| 25/11/2026 | Formato de los reportes (020) | Montos en soles con 2 decimales; fechas y hora de generación en hora de Lima; sin datos, vacío (nunca se inventa) (R-REP-3) | Equipo **(provisional)** |
+| 25/11/2026 | Permisos de los reportes (020) | Eventos: `events:read`, montos solo con `payments:record`; caja: solo administrador (`finance:read`); almacén: `inventory:read`; compras: `purchasing:manage`; personal: `staff:manage` (responde `report.unavailable` hasta que `staff` publique su consulta) | Equipo **(provisional)** |
+| 26/11/2026 | Cantidades por persona (021) | Se redondean **hacia arriba** a 3 decimales; la receta de un servicio es por persona (× invitados del evento) o por servicio (× unidades contratadas) (R-REC-1) | Equipo **(provisional)** |
+| 26/11/2026 | Requerimiento del evento (021) | Se calcula al momento, no se guarda; un evento finalizado o cancelado no se calcula (solo se ve lo que salió) (R-REC-2) | Equipo **(provisional)** |
+| 26/11/2026 | Reservas de materiales (021) | Apartado sin movimiento de stock; el disponible para otros es stock menos reservas vigentes y nunca queda negativo; la salida al evento consume primero su reserva; vence al cancelar o finalizar el evento (R-REC-3) | Equipo **(provisional)** |
+| 26/11/2026 | Egreso de la compra (021, cambia R-COM-1) | Una compra recibida se registra como egreso de insumos con un clic (monto = total, evento y código de la compra), una sola vez; no es automático (R-COM-3) | Equipo **(provisional)** |
+| 26/11/2026 | Proveedor del asistente (022, R-IA-1) | Anthropic (Claude), modelo `claude-opus-5-5`, detrás del puerto `LanguageModel` (ADR 0005); sin clave el asistente aparece no disponible | Equipo **(provisional)** |
+| 26/11/2026 | Límite del asistente (022, R-IA-2) | 30 preguntas por usuario por hora (se cuentan las del registro de auditoría) y respuestas cortas; al pasarlo responde 429 `assistant.rate_limited` | Equipo **(provisional)** |
+| 26/11/2026 | Conversación del asistente (022, R-IA-3) | Vive en el chat: el frontend envía hasta 10 turnos previos; el backend no guarda contexto entre días. La auditoría sí se guarda y es de solo inserción | Equipo **(provisional)** |
+| 26/11/2026 | Formato de respuestas (022, R-IA-4) | Español; las funciones entregan montos en soles y fechas día/mes/año de Lima, y el modelo los copia tal cual | Equipo **(provisional)** |
+| 26/11/2026 | Permisos del asistente (022, R-IA-5) | Cada función exige el permiso de su dato: eventos `events:read`; cuentas, cobros e historial del cliente `payments:record`; almacén `inventory:read`; compras `purchasing:manage`; caja `finance:read`; clientes `clients:manage`. Historial: `assistant_log:read` (solo administrador). Sin permiso, el asistente lo dice. Falta la herramienta de personal hasta que `staff` publique la consulta | Equipo **(provisional)** |

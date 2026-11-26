@@ -389,6 +389,52 @@
         "title": "AdjustmentIn",
         "type": "object"
       },
+      "AskIn": {
+        "properties": {
+          "history": {
+            "description": "Turnos previos de la sesión de chat (el backend no guarda la conversación)",
+            "items": {
+              "$ref": "#/components/schemas/HistoryTurnIn"
+            },
+            "maxItems": 10,
+            "title": "History",
+            "type": "array"
+          },
+          "question": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "AskIn",
+        "type": "object"
+      },
+      "AskOut": {
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "tools": {
+            "description": "Funciones consultadas (transparencia)",
+            "items": {
+              "$ref": "#/components/schemas/ToolUseOut"
+            },
+            "title": "Tools",
+            "type": "array"
+          }
+        },
+        "required": [
+          "answer",
+          "tools"
+        ],
+        "title": "AskOut",
+        "type": "object"
+      },
       "CancelIn": {
         "properties": {
           "reason": {
@@ -1300,27 +1346,172 @@
         "title": "CoordinatorOut",
         "type": "object"
       },
+      "DashboardCashOut": {
+        "description": "Caja del mes elegido, con el mismo cálculo que el flujo de caja (HU22).",
+        "properties": {
+          "expense_cents": {
+            "title": "Expense Cents",
+            "type": "integer"
+          },
+          "income_cents": {
+            "description": "Pagos de clientes netos de devoluciones + otros",
+            "title": "Income Cents",
+            "type": "integer"
+          },
+          "net_cents": {
+            "title": "Net Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "income_cents",
+          "expense_cents",
+          "net_cents"
+        ],
+        "title": "DashboardCashOut",
+        "type": "object"
+      },
+      "DashboardEventOut": {
+        "properties": {
+          "balance_cents": {
+            "description": "Saldo por cobrar del contrato (RN15)",
+            "title": "Balance Cents",
+            "type": "integer"
+          },
+          "client_name": {
+            "title": "Client Name",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "overdue": {
+            "description": "Saldo vencido (R-PAG-2)",
+            "title": "Overdue",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "event_date",
+          "client_name",
+          "status",
+          "balance_cents",
+          "overdue"
+        ],
+        "title": "DashboardEventOut",
+        "type": "object"
+      },
+      "DashboardInventoryOut": {
+        "properties": {
+          "expiring_soon": {
+            "description": "Productos activos por vencer (15 días o menos)",
+            "title": "Expiring Soon",
+            "type": "integer"
+          },
+          "low_stock": {
+            "description": "Productos activos en stock bajo",
+            "title": "Low Stock",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "low_stock",
+          "expiring_soon"
+        ],
+        "title": "DashboardInventoryOut",
+        "type": "object"
+      },
       "DashboardOut": {
         "properties": {
+          "cash": {
+            "$ref": "#/components/schemas/DashboardCashOut",
+            "description": "Caja del mes elegido (CA-31.8)"
+          },
           "currency": {
             "default": "PEN",
             "title": "Currency",
             "type": "string"
+          },
+          "inventory": {
+            "$ref": "#/components/schemas/DashboardInventoryOut",
+            "description": "Alertas de almacén (CA-31.10)"
           },
           "month": {
             "description": "AAAA-MM",
             "title": "Month",
             "type": "string"
           },
+          "purchases": {
+            "$ref": "#/components/schemas/DashboardPurchasesOut",
+            "description": "Compras abiertas (CA-31.11)"
+          },
           "quotes": {
             "$ref": "#/components/schemas/DashboardQuotesOut"
+          },
+          "receivables": {
+            "$ref": "#/components/schemas/DashboardReceivablesOut",
+            "description": "Cobros pendientes (CA-31.9)"
+          },
+          "upcoming_events": {
+            "description": "Eventos de hoy a 14 días, sin cancelados ni finalizados (CA-31.7)",
+            "items": {
+              "$ref": "#/components/schemas/DashboardEventOut"
+            },
+            "title": "Upcoming Events",
+            "type": "array"
           }
         },
         "required": [
           "month",
-          "quotes"
+          "quotes",
+          "upcoming_events",
+          "cash",
+          "receivables",
+          "inventory",
+          "purchases"
         ],
         "title": "DashboardOut",
+        "type": "object"
+      },
+      "DashboardPurchasesOut": {
+        "properties": {
+          "open": {
+            "description": "Solicitadas + ordenadas",
+            "title": "Open",
+            "type": "integer"
+          },
+          "ordered": {
+            "title": "Ordered",
+            "type": "integer"
+          },
+          "requested": {
+            "title": "Requested",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "requested",
+          "ordered",
+          "open"
+        ],
+        "title": "DashboardPurchasesOut",
         "type": "object"
       },
       "DashboardQuoteOut": {
@@ -1406,7 +1597,7 @@
             "type": "integer"
           },
           "upcoming": {
-            "description": "Aceptadas con evento en los próximos 30 días",
+            "description": "Aceptadas con evento en los próximos 30 días. Obsoleto: usar `upcoming_events` del panel (CA-31.7)",
             "items": {
               "$ref": "#/components/schemas/DashboardQuoteOut"
             },
@@ -1424,6 +1615,37 @@
           "recent"
         ],
         "title": "DashboardQuotesOut",
+        "type": "object"
+      },
+      "DashboardReceivablesOut": {
+        "properties": {
+          "contracts": {
+            "description": "Contratos firmados con saldo",
+            "title": "Contracts",
+            "type": "integer"
+          },
+          "overdue_cents": {
+            "title": "Overdue Cents",
+            "type": "integer"
+          },
+          "overdue_contracts": {
+            "description": "De ellos, con el saldo vencido",
+            "title": "Overdue Contracts",
+            "type": "integer"
+          },
+          "total_cents": {
+            "description": "Por cobrar de contratos firmados",
+            "title": "Total Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_cents",
+          "contracts",
+          "overdue_contracts",
+          "overdue_cents"
+        ],
+        "title": "DashboardReceivablesOut",
         "type": "object"
       },
       "EntryIn": {
@@ -2227,6 +2449,53 @@
         "title": "EventPlanningOut",
         "type": "object"
       },
+      "EventRequirementOut": {
+        "properties": {
+          "calculated": {
+            "description": "Falso en eventos finalizados o cancelados: solo se ve lo que salió",
+            "title": "Calculated",
+            "type": "boolean"
+          },
+          "event_code": {
+            "title": "Event Code",
+            "type": "string"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "guests": {
+            "title": "Guests",
+            "type": "integer"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "without_recipe": {
+            "description": "Servicios sin insumos definidos (CA-25.3)",
+            "items": {
+              "type": "string"
+            },
+            "title": "Without Recipe",
+            "type": "array"
+          }
+        },
+        "required": [
+          "event_id",
+          "event_code",
+          "guests",
+          "calculated",
+          "lines",
+          "without_recipe"
+        ],
+        "title": "EventRequirementOut",
+        "type": "object"
+      },
       "EventResultOut": {
         "properties": {
           "balance_cents": {
@@ -2524,6 +2793,29 @@
         "title": "EventType",
         "type": "string"
       },
+      "ExpenseIn": {
+        "properties": {
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod",
+            "default": "CASH",
+            "description": "Cómo se pagó"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Operación o comprobante; por defecto, el de la factura",
+            "title": "Reference"
+          }
+        },
+        "title": "ExpenseIn",
+        "type": "object"
+      },
       "ExpensesOut": {
         "properties": {
           "other_cents": {
@@ -2670,6 +2962,30 @@
           "contracted_cents"
         ],
         "title": "HistorySummaryOut",
+        "type": "object"
+      },
+      "HistoryTurnIn": {
+        "properties": {
+          "role": {
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "text"
+        ],
+        "title": "HistoryTurnIn",
         "type": "object"
       },
       "LineKind": {
@@ -3188,7 +3504,8 @@
           "finance:read",
           "event_notes:write",
           "event_notes:edit_any",
-          "staff:manage"
+          "staff:manage",
+          "assistant_log:read"
         ],
         "title": "Permission",
         "type": "string"
@@ -3572,6 +3889,19 @@
             ],
             "title": "Event Id"
           },
+          "expense_movement_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Egreso de caja de la compra; si existe, ya se registró (R-COM-3)",
+            "title": "Expense Movement Id"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -3686,7 +4016,8 @@
           "ordered_at",
           "received_at",
           "cancelled_at",
-          "cancel_reason"
+          "cancel_reason",
+          "expense_movement_id"
         ],
         "title": "PurchaseOut",
         "type": "object"
@@ -3771,6 +4102,118 @@
         ],
         "title": "PurchaseStatus",
         "type": "string"
+      },
+      "QueryLogEntryOut": {
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "duration_ms": {
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "input_tokens": {
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "error",
+              "refused"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/ToolUseOut"
+            },
+            "title": "Tools",
+            "type": "array"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          },
+          "user_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Name"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "user_name",
+          "created_at",
+          "question",
+          "tools",
+          "answer",
+          "input_tokens",
+          "output_tokens",
+          "duration_ms",
+          "status"
+        ],
+        "title": "QueryLogEntryOut",
+        "type": "object"
+      },
+      "QueryLogPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QueryLogEntryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "QueryLogPageOut",
+        "type": "object"
       },
       "QuoteIn": {
         "properties": {
@@ -4311,6 +4754,128 @@
         "title": "ReceiveLineIn",
         "type": "object"
       },
+      "RecipeBasis": {
+        "enum": [
+          "PER_PERSON",
+          "PER_SERVICE"
+        ],
+        "title": "RecipeBasis",
+        "type": "string"
+      },
+      "RecipeIn": {
+        "properties": {
+          "lines": {
+            "description": "Reemplaza todos los insumos del servicio",
+            "items": {
+              "$ref": "#/components/schemas/RecipeLineIn"
+            },
+            "title": "Lines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "lines"
+        ],
+        "title": "RecipeIn",
+        "type": "object"
+      },
+      "RecipeLineIn": {
+        "properties": {
+          "basis": {
+            "$ref": "#/components/schemas/RecipeBasis",
+            "description": "PER_PERSON: por invitado del evento. PER_SERVICE: por unidad contratada"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "En la unidad del producto (R-INV-1)",
+            "examples": [
+              "12.5"
+            ],
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "title": "Quantity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity",
+          "basis"
+        ],
+        "title": "RecipeLineIn",
+        "type": "object"
+      },
+      "RecipeLineOut": {
+        "properties": {
+          "basis": {
+            "$ref": "#/components/schemas/RecipeBasis"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Cantidad decimal con 3 decimales",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Quantity",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "product_id",
+          "code",
+          "name",
+          "unit",
+          "quantity",
+          "basis"
+        ],
+        "title": "RecipeLineOut",
+        "type": "object"
+      },
+      "RecipeOut": {
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "service_id": {
+            "format": "uuid",
+            "title": "Service Id",
+            "type": "string"
+          },
+          "service_name": {
+            "title": "Service Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "service_id",
+          "service_name",
+          "lines"
+        ],
+        "title": "RecipeOut",
+        "type": "object"
+      },
       "RecordedMovementOut": {
         "properties": {
           "avg_cost_cents": {
@@ -4350,6 +4915,192 @@
         "title": "RefreshIn",
         "type": "object"
       },
+      "ReportColumnOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "type": {
+            "description": "text, date (AAAA-MM-DD), money (céntimos), quantity (texto decimal), integer o boolean",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "type"
+        ],
+        "title": "ReportColumnOut",
+        "type": "object"
+      },
+      "ReportFilterOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "description": "Valor del filtro tal como se muestra",
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "value"
+        ],
+        "title": "ReportFilterOut",
+        "type": "object"
+      },
+      "ReportFormat": {
+        "enum": [
+          "json",
+          "csv",
+          "pdf"
+        ],
+        "title": "ReportFormat",
+        "type": "string"
+      },
+      "ReportOut": {
+        "properties": {
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ReportColumnOut"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "currency": {
+            "default": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "filters": {
+            "items": {
+              "$ref": "#/components/schemas/ReportFilterOut"
+            },
+            "title": "Filters",
+            "type": "array"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "report": {
+            "description": "events, cash, inventory, inventory_movements, purchases…",
+            "title": "Report",
+            "type": "string"
+          },
+          "rows": {
+            "description": "Una entrada por fila, por `key`",
+            "items": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/ReportTotalOut"
+            },
+            "title": "Totals",
+            "type": "array"
+          }
+        },
+        "required": [
+          "report",
+          "title",
+          "generated_at",
+          "filters",
+          "columns",
+          "rows",
+          "totals",
+          "notes"
+        ],
+        "title": "ReportOut",
+        "type": "object"
+      },
+      "ReportTotalOut": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`null`: sin dato o monto oculto",
+            "title": "Value"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "type",
+          "value"
+        ],
+        "title": "ReportTotalOut",
+        "type": "object"
+      },
       "RequestLineIn": {
         "properties": {
           "product_id": {
@@ -4372,6 +5123,156 @@
           "quantity"
         ],
         "title": "RequestLineIn",
+        "type": "object"
+      },
+      "RequirementLineOut": {
+        "properties": {
+          "available": {
+            "description": "Libre en almacén (stock menos reservas vigentes)",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Available",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "out": {
+            "description": "Ya salió para el evento",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Out",
+            "type": "string"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "required": {
+            "description": "Lo que piden los servicios contratados",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Required",
+            "type": "string"
+          },
+          "reserved": {
+            "description": "Apartado para el evento",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Reserved",
+            "type": "string"
+          },
+          "shortage": {
+            "description": "Falta comprar: requerido - salido - reservado - disponible (mínimo 0)",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Shortage",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "product_id",
+          "code",
+          "name",
+          "unit",
+          "required",
+          "out",
+          "reserved",
+          "available",
+          "shortage"
+        ],
+        "title": "RequirementLineOut",
+        "type": "object"
+      },
+      "ReservationLineIn": {
+        "properties": {
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Cantidad a apartar, se suma a la ya reservada",
+            "examples": [
+              "12.5"
+            ],
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "title": "Quantity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity"
+        ],
+        "title": "ReservationLineIn",
+        "type": "object"
+      },
+      "ReservationOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Total vigente reservado para el evento",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Quantity",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "product_id",
+          "code",
+          "name",
+          "unit",
+          "quantity"
+        ],
+        "title": "ReservationOut",
+        "type": "object"
+      },
+      "ReservationsIn": {
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/ReservationLineIn"
+            },
+            "title": "Lines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "lines"
+        ],
+        "title": "ReservationsIn",
         "type": "object"
       },
       "Role": {
@@ -5078,6 +5979,20 @@
         "title": "SignatureOut",
         "type": "object"
       },
+      "StatusOut": {
+        "properties": {
+          "available": {
+            "description": "Falso si no hay clave del proveedor configurada",
+            "title": "Available",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "available"
+        ],
+        "title": "StatusOut",
+        "type": "object"
+      },
       "SupplierIn": {
         "properties": {
           "address": {
@@ -5247,6 +6162,32 @@
           "user"
         ],
         "title": "TokenOut",
+        "type": "object"
+      },
+      "ToolUseOut": {
+        "properties": {
+          "error": {
+            "title": "Error",
+            "type": "boolean"
+          },
+          "input": {
+            "additionalProperties": true,
+            "description": "Parámetros con que se ejecutó",
+            "title": "Input",
+            "type": "object"
+          },
+          "name": {
+            "description": "Función de consulta ejecutada",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "input",
+          "error"
+        ],
+        "title": "ToolUseOut",
         "type": "object"
       },
       "Unit": {
@@ -6768,6 +7709,287 @@
         "summary": "Change Responsible",
         "tags": [
           "eventos"
+        ]
+      }
+    },
+    "/v1/assistant/ask": {
+      "post": {
+        "description": "Responde una pregunta en lenguaje natural usando solo funciones de consulta, con los\npermisos del usuario. La conversación vive en el chat: el frontend envía el historial.",
+        "operationId": "assistant_ask",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AskOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`assistant.rate_limited` (30 por hora, R-IA-2)"
+          },
+          "502": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`assistant.provider_error`"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`assistant.unavailable` (sin clave del proveedor)"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Ask",
+        "tags": [
+          "asistente"
+        ]
+      }
+    },
+    "/v1/assistant/log": {
+      "get": {
+        "description": "Historial de consultas al asistente, de la más reciente a la más antigua (solo lectura).",
+        "operationId": "assistant_log_list",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          },
+          {
+            "description": "Desde (con zona horaria)",
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Desde (con zona horaria)",
+              "title": "Since"
+            }
+          },
+          {
+            "description": "Hasta (con zona horaria)",
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Hasta (con zona horaria)",
+              "title": "Until"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueryLogPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Log",
+        "tags": [
+          "asistente"
+        ]
+      }
+    },
+    "/v1/assistant/status": {
+      "get": {
+        "description": "Si el asistente está disponible (hay clave del proveedor); el resto no depende de él.",
+        "operationId": "assistant_status",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Status",
+        "tags": [
+          "asistente"
         ]
       }
     },
@@ -9020,7 +10242,7 @@
     },
     "/v1/dashboard": {
       "get": {
-        "description": "Indicadores reales del negocio. Caja y stock se agregan cuando existan sus módulos.",
+        "description": "Indicadores reales del negocio en una petición: cotizaciones, próximos eventos, caja del\nmes, cobros pendientes, alertas de almacén y compras abiertas (CA-31.1 a CA-31.11).",
         "operationId": "dashboard_get",
         "parameters": [
           {
@@ -10591,6 +11813,270 @@
         ]
       }
     },
+    "/v1/inventory/events/{event_id}/requirement": {
+      "get": {
+        "description": "CA-25.1 a CA-25.3: requerido, salido, reservado, disponible y faltante por producto.",
+        "operationId": "inventory_event_requirement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRequirementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.event_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Event Requirement",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/events/{event_id}/reservations": {
+      "post": {
+        "description": "CA-25.4: aparta lo disponible para el evento sin mover el stock (R-REC-3).\n\nDevuelve todo lo vigente reservado del evento.",
+        "operationId": "inventory_reservations_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReservationsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReservationOut"
+                  },
+                  "title": "Response Inventory Reservations Create",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.event_not_found`, `inventory.product_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.insufficient_available`, `inventory.event_not_assignable`, `inventory.product_inactive`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Reservations",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/events/{event_id}/reservations/{product_id}": {
+      "delete": {
+        "description": "Libera la reserva vigente del producto en el evento.",
+        "operationId": "inventory_reservations_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Product Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.reservation_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Reservation",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
     "/v1/inventory/movements/adjustment": {
       "post": {
         "description": "R-INV-5: corrige el stock con un ajuste positivo o negativo y su motivo.",
@@ -11648,6 +13134,172 @@
         ]
       }
     },
+    "/v1/inventory/recipes/{service_id}": {
+      "get": {
+        "description": "CA-24.1: insumos del servicio (vacío si aún no tiene).",
+        "operationId": "inventory_recipe_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.service_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Recipe",
+        "tags": [
+          "almacén"
+        ]
+      },
+      "put": {
+        "description": "CA-24.3: reemplaza todos los insumos del servicio; un producto una sola vez (CA-24.2).",
+        "operationId": "inventory_recipe_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.service_not_found`, `inventory.product_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put Recipe",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
     "/v1/movements": {
       "get": {
         "description": "Movimientos de la fecha más reciente a la más antigua, con filtros (CA-21.4).",
@@ -12463,6 +14115,95 @@
         ]
       }
     },
+    "/v1/purchasing/purchases/from-event/{event_id}": {
+      "post": {
+        "description": "CA-25.6: solicitud con los faltantes del requerimiento, vinculada al evento.",
+        "operationId": "purchasing_purchases_from_event",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.event_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.no_shortages`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Purchase From Event",
+        "tags": [
+          "compras"
+        ]
+      }
+    },
     "/v1/purchasing/purchases/{purchase_id}": {
       "get": {
         "operationId": "purchasing_purchases_get",
@@ -12640,6 +14381,105 @@
         ]
       }
     },
+    "/v1/purchasing/purchases/{purchase_id}/expense": {
+      "post": {
+        "description": "CA-30.3 y R-COM-3: egreso de insumos por el total de la compra recibida, una sola vez.",
+        "operationId": "purchasing_purchases_expense",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Purchase Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExpenseIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden` (exige también `payments:record`)"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.purchase_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.expense_not_available`, `purchasing.expense_already_registered`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Register Expense",
+        "tags": [
+          "compras"
+        ]
+      }
+    },
     "/v1/purchasing/purchases/{purchase_id}/order": {
       "post": {
         "description": "CA-29.1: elige proveedor y costo unitario de cada línea.",
@@ -12734,6 +14574,81 @@
           }
         ],
         "summary": "Order Purchase",
+        "tags": [
+          "compras"
+        ]
+      }
+    },
+    "/v1/purchasing/purchases/{purchase_id}/pdf": {
+      "get": {
+        "description": "CA-30.2: descarga la compra como orden de compra en PDF. No la modifica.",
+        "operationId": "purchasing_purchases_pdf",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "purchase_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Purchase Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "La orden de compra en PDF"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`purchasing.purchase_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Purchase Pdf",
         "tags": [
           "compras"
         ]
@@ -13985,6 +15900,102 @@
         ]
       }
     },
+    "/v1/reports/cash": {
+      "get": {
+        "description": "CA-32.2: cada pago de cliente, devolución, ingreso y egreso; anulados marcados y fuera\nde los totales. Solo administrador.",
+        "operationId": "reports_cash",
+        "parameters": [
+          {
+            "description": "Desde (incluido)",
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "description": "Desde (incluido)",
+              "format": "date",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Hasta (incluido); como máximo 366 días",
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "description": "Hasta (incluido); como máximo 366 días",
+              "format": "date",
+              "title": "To",
+              "type": "string"
+            }
+          },
+          {
+            "description": "json (por defecto), csv o pdf",
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ReportFormat",
+              "default": "json",
+              "description": "json (por defecto), csv o pdf"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              },
+              "application/pdf": {},
+              "text/csv": {}
+            },
+            "description": "El reporte en JSON o, con `format`, el archivo CSV o PDF"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`report.range_invalid`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cash Report",
+        "tags": [
+          "reportes"
+        ]
+      }
+    },
     "/v1/reports/cash-flow": {
       "get": {
         "description": "Ingresos, egresos por categoría y saldo del periodo, por mes; sin anulados (CA-22.1).",
@@ -14061,6 +16072,135 @@
           }
         ],
         "summary": "Cash Flow",
+        "tags": [
+          "reportes"
+        ]
+      }
+    },
+    "/v1/reports/events": {
+      "get": {
+        "description": "CA-32.1: por fecha del evento, estado y cliente. Total contratado, pagado y saldo van\nvacíos (`null`) sin `payments:record`.",
+        "operationId": "reports_events",
+        "parameters": [
+          {
+            "description": "Desde (incluido)",
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "description": "Desde (incluido)",
+              "format": "date",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Hasta (incluido); como máximo 366 días",
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "description": "Hasta (incluido); como máximo 366 días",
+              "format": "date",
+              "title": "To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/EventStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "client_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Client Id"
+            }
+          },
+          {
+            "description": "json (por defecto), csv o pdf",
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ReportFormat",
+              "default": "json",
+              "description": "json (por defecto), csv o pdf"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              },
+              "application/pdf": {},
+              "text/csv": {}
+            },
+            "description": "El reporte en JSON o, con `format`, el archivo CSV o PDF"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`report.range_invalid`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Events Report",
         "tags": [
           "reportes"
         ]
@@ -14219,6 +16359,442 @@
           }
         ],
         "summary": "Event Sheet",
+        "tags": [
+          "reportes"
+        ]
+      }
+    },
+    "/v1/reports/inventory": {
+      "get": {
+        "description": "CA-32.3: stock actual por producto con costo promedio, valor y alertas.",
+        "operationId": "reports_inventory",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Category"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_inactive",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Inactive",
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "json (por defecto), csv o pdf",
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ReportFormat",
+              "default": "json",
+              "description": "json (por defecto), csv o pdf"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              },
+              "application/pdf": {},
+              "text/csv": {}
+            },
+            "description": "El reporte en JSON o, con `format`, el archivo CSV o PDF"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Inventory Report",
+        "tags": [
+          "reportes"
+        ]
+      }
+    },
+    "/v1/reports/inventory-movements": {
+      "get": {
+        "description": "CA-32.3: movimientos de almacén del rango, por fecha del movimiento.",
+        "operationId": "reports_inventory_movements",
+        "parameters": [
+          {
+            "description": "Desde (incluido)",
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "description": "Desde (incluido)",
+              "format": "date",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Hasta (incluido); como máximo 366 días",
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "description": "Hasta (incluido); como máximo 366 días",
+              "format": "date",
+              "title": "To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/MovementKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "description": "json (por defecto), csv o pdf",
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ReportFormat",
+              "default": "json",
+              "description": "json (por defecto), csv o pdf"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              },
+              "application/pdf": {},
+              "text/csv": {}
+            },
+            "description": "El reporte en JSON o, con `format`, el archivo CSV o PDF"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`report.range_invalid`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Inventory Movements Report",
+        "tags": [
+          "reportes"
+        ]
+      }
+    },
+    "/v1/reports/purchases": {
+      "get": {
+        "description": "CA-32.4: compras creadas en el rango (días de Lima), con proveedor, total y recepción.",
+        "operationId": "reports_purchases",
+        "parameters": [
+          {
+            "description": "Desde (incluido)",
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "description": "Desde (incluido)",
+              "format": "date",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Hasta (incluido); como máximo 366 días",
+            "in": "query",
+            "name": "to",
+            "required": true,
+            "schema": {
+              "description": "Hasta (incluido); como máximo 366 días",
+              "format": "date",
+              "title": "To",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/PurchaseStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "description": "json (por defecto), csv o pdf",
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ReportFormat",
+              "default": "json",
+              "description": "json (por defecto), csv o pdf"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              },
+              "application/pdf": {},
+              "text/csv": {}
+            },
+            "description": "El reporte en JSON o, con `format`, el archivo CSV o PDF"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`report.range_invalid`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Purchases Report",
+        "tags": [
+          "reportes"
+        ]
+      }
+    },
+    "/v1/reports/staff": {
+      "get": {
+        "description": "CA-32.5: trabajadores con función, tipo, tarifa y estado. Responde 503\n`report.unavailable` hasta que `staff` publique su consulta de trabajadores.",
+        "operationId": "reports_staff",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "function",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Function"
+            }
+          },
+          {
+            "in": "query",
+            "name": "active",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Active"
+            }
+          },
+          {
+            "description": "json (por defecto), csv o pdf",
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ReportFormat",
+              "default": "json",
+              "description": "json (por defecto), csv o pdf"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              },
+              "application/pdf": {},
+              "text/csv": {}
+            },
+            "description": "El reporte en JSON o, con `format`, el archivo CSV o PDF"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`report.unavailable`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Staff Report",
         "tags": [
           "reportes"
         ]

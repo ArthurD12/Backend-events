@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from local_eventos.modules.inventory.public_api import Unit
+from local_eventos.modules.ledger.public_api import PaymentMethod
 from local_eventos.modules.purchasing.application.use_cases.purchases import (
     PurchaseDetails,
     PurchasePage,
@@ -132,6 +133,9 @@ class PurchaseOut(BaseModel):
     received_at: datetime | None
     cancelled_at: datetime | None
     cancel_reason: str | None
+    expense_movement_id: UUID | None = Field(
+        description="Egreso de caja de la compra; si existe, ya se registró (R-COM-3)"
+    )
 
     @classmethod
     def from_details(cls, details: PurchaseDetails) -> Self:
@@ -173,6 +177,7 @@ class PurchaseOut(BaseModel):
             received_at=p.received.at if p.received else None,
             cancelled_at=p.cancelled.at if p.cancelled else None,
             cancel_reason=p.cancel_reason,
+            expense_movement_id=p.expense_movement_id,
         )
 
 
@@ -209,3 +214,10 @@ class ShortageOut(BaseModel):
             min_stock=quantity_text(s.min_stock),
             suggested_quantity=quantity_text(s.suggested_quantity),
         )  # fmt: skip
+
+
+class ExpenseIn(BaseModel):
+    method: PaymentMethod = Field(default=PaymentMethod.CASH, description="Cómo se pagó")
+    reference: str | None = Field(
+        default=None, description="Operación o comprobante; por defecto, el de la factura"
+    )

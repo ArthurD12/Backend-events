@@ -9,7 +9,16 @@ from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, Date, DateTime, ForeignKey, Index, Numeric, String
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Numeric,
+    String,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from local_eventos.shared.infrastructure.orm import Base
@@ -101,3 +110,47 @@ class StockRow(Base):
     product_id: Mapped[UUID] = mapped_column(ForeignKey("inventory_products.id"), primary_key=True)
     quantity: Mapped[Decimal] = mapped_column(QUANTITY)
     avg_cost_cents: Mapped[int]
+
+
+class RecipeLineRow(Base):
+    """Insumo de un servicio del catálogo. `service_id` es de catalog: sin FK (regla 3)."""
+
+    __tablename__ = "inventory_recipe_lines"
+    __table_args__ = (
+        CheckConstraint("quantity > 0", name="quantity_positive"),
+        CheckConstraint("basis IN ('PER_PERSON', 'PER_SERVICE')", name="basis_valid"),
+    )
+
+    service_id: Mapped[UUID] = mapped_column(primary_key=True)
+    product_id: Mapped[UUID] = mapped_column(ForeignKey("inventory_products.id"), primary_key=True)
+    quantity: Mapped[Decimal] = mapped_column(QUANTITY)
+    basis: Mapped[str] = mapped_column(String(11))
+
+
+class ReservationRow(Base):
+    """Apartado de un producto para un evento (R-REC-3). No mueve el stock.
+
+    Solo una reserva vigente por evento y producto (índice parcial).
+    """
+
+    __tablename__ = "inventory_reservations"
+    __table_args__ = (
+        CheckConstraint("quantity > 0", name="quantity_positive"),
+        CheckConstraint("status IN ('ACTIVE', 'CONSUMED', 'RELEASED')", name="status_valid"),
+        Index(
+            "uq_inventory_reservations_active",
+            "event_id",
+            "product_id",
+            unique=True,
+            postgresql_where=text("status = 'ACTIVE'"),
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    event_id: Mapped[UUID] = mapped_column(index=True)  # de commercial: sin FK
+    product_id: Mapped[UUID] = mapped_column(ForeignKey("inventory_products.id"), index=True)
+    quantity: Mapped[Decimal] = mapped_column(QUANTITY)
+    status: Mapped[str] = mapped_column(String(8))
+    created_by: Mapped[UUID]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -39,6 +39,7 @@ from local_eventos.modules.commercial.presentation.dependencies import (
     PaymentHistory,
     Payments,
     Quotes,
+    Reservations,
     Today,
     UserNames,
 )
@@ -202,9 +203,10 @@ async def cancel_event(
     coordinators: Coordinators,
     history: PaymentHistory,
     clock: Today,
+    reservations: Reservations,
 ) -> EventOut:
     """Cancela el evento y anula su contrato; si hubo devolución, la registra (R-EVT-4)."""
-    event = await CancelEvent(events, contracts, payments, clock)(
+    event = await CancelEvent(events, contracts, payments, clock, reservations)(
         event_id,
         reason=body.reason,
         cancelled_by=user.id,
@@ -317,9 +319,10 @@ async def finish_event(
     coordinators: Coordinators,
     history: PaymentHistory,
     clock: Today,
+    reservations: Reservations,
 ) -> EventOut:
     """En ejecución → finalizado; no exige saldo en cero (R-EVT-8)."""
-    event = await FinishEvent(events, clock)(event_id, by=user.id)
+    event = await FinishEvent(events, clock, reservations)(event_id, by=user.id)
     return await _out(event, user, contracts, quotes, clients, coordinators, history)
 
 

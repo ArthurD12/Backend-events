@@ -166,6 +166,10 @@ class SqlAlchemyPurchaseRepository:
             conditions.append(PurchaseRow.event_id == filters.event_id)
         if filters.supplier_id is not None:
             conditions.append(PurchaseRow.supplier_id == filters.supplier_id)
+        if filters.created_from is not None:
+            conditions.append(PurchaseRow.created_at >= filters.created_from)
+        if filters.created_before is not None:
+            conditions.append(PurchaseRow.created_at < filters.created_before)
         total = await self._session.scalar(
             select(func.count()).select_from(PurchaseRow).where(*conditions)
         )
@@ -179,6 +183,12 @@ class SqlAlchemyPurchaseRepository:
             )
         )
         return await self._to_purchases(rows), int(total or 0)
+
+    async def count_by_status(self) -> dict[PurchaseStatus, int]:
+        rows = await self._session.execute(
+            select(PurchaseRow.status, func.count()).group_by(PurchaseRow.status)
+        )
+        return {PurchaseStatus(status): int(count) for status, count in rows}
 
     async def _to_purchases(self, rows: list[PurchaseRow]) -> list[Purchase]:
         if not rows:
@@ -223,6 +233,7 @@ def _to_purchase(row: PurchaseRow, lines: list[PurchaseLine]) -> Purchase:
         received=_stamp(row.received_by, row.received_at),
         cancelled=_stamp(row.cancelled_by, row.cancelled_at),
         cancel_reason=row.cancel_reason,
+        expense_movement_id=row.expense_movement_id,
     )
 
 
@@ -240,6 +251,7 @@ def _copy_purchase(purchase: Purchase, row: PurchaseRow) -> None:
     row.cancelled_by = purchase.cancelled.by if purchase.cancelled else None
     row.cancelled_at = purchase.cancelled.at if purchase.cancelled else None
     row.cancel_reason = purchase.cancel_reason
+    row.expense_movement_id = purchase.expense_movement_id
 
 
 def _to_supplier(row: SupplierRow) -> Supplier:
