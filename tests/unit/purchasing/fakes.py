@@ -15,7 +15,7 @@ from local_eventos.modules.inventory.public_api import (
 from local_eventos.modules.purchasing.application.errors import DocumentTakenError
 from local_eventos.modules.purchasing.application.ports.repositories import PurchaseFilters
 from local_eventos.modules.purchasing.application.search_text import normalize
-from local_eventos.modules.purchasing.domain.purchase import Purchase
+from local_eventos.modules.purchasing.domain.purchase import Purchase, PurchaseStatus
 from local_eventos.modules.purchasing.domain.supplier import DocumentType, Supplier
 
 
@@ -90,8 +90,16 @@ class InMemoryPurchaseRepository:
             if (filters.status is None or p.status is filters.status)
             and (filters.event_id is None or p.event_id == filters.event_id)
             and (filters.supplier_id is None or p.supplier_id == filters.supplier_id)
+            and (filters.created_from is None or p.created.at >= filters.created_from)
+            and (filters.created_before is None or p.created.at < filters.created_before)
         ]
         return found[offset : offset + limit], len(found)
+
+    async def count_by_status(self) -> dict[PurchaseStatus, int]:
+        counts: dict[PurchaseStatus, int] = {}
+        for p in self.purchases.values():
+            counts[p.status] = counts.get(p.status, 0) + 1
+        return counts
 
 
 class FakeInventory:

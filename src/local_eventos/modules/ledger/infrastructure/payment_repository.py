@@ -3,13 +3,14 @@
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import extract, func, select
+from sqlalchemy import case, extract, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from local_eventos.modules.ledger.application.errors import PaymentAlreadyVoidedError
 from local_eventos.modules.ledger.application.ports.payment_repository import (
+    ContractPaidTotals,
     MonthlyPaymentTotal,
     PaymentEntry,
 )
@@ -116,6 +117,34 @@ class SqlAlchemyPaymentRepository:
             )
             for y, m, kind, total in result
         ]
+
+    async def paid_totals(self, contract_ids: list[UUID]) -> dict[UUID, ContractPaidTotals]:
+        if not contract_ids:
+            return {}
+        refund = PaymentRow.kind == PaymentKind.REFUND.value
+        result = await self._session.execute(
+            select(
+                PaymentRow.contract_id,
+                func.sum(case((refund, 0), else_=PaymentRow.amount_cents)),
+                func.sum(case((refund, PaymentRow.amount_cents), else_=0)),
+            )
+            .outerjoin(PaymentVoidRow, PaymentVoidRow.payment_id == PaymentRow.id)
+            .where(PaymentVoidRow.payment_id.is_(None), PaymentRow.contract_id.in_(contract_ids))
+            .group_by(PaymentRow.contract_id)
+        )
+        return {
+            contract_id: ContractPaidTotals(paid_cents=int(paid), refunded_cents=int(refunded))
+            for contract_id, paid, refunded in result
+        }
+
+    async def entries_between(self, date_from: date, date_to: date) -> list[PaymentEntry]:
+        result = await self._session.execute(
+            select(PaymentRow, PaymentVoidRow)
+            .outerjoin(PaymentVoidRow, PaymentVoidRow.payment_id == PaymentRow.id)
+            .where(PaymentRow.paid_on >= date_from, PaymentRow.paid_on <= date_to)
+            .order_by(PaymentRow.paid_on, PaymentRow.recorded_at, PaymentRow.number)
+        )
+        return [_to_entry(row, void) for row, void in result]
 
 
 def _to_entry(row: PaymentRow, void: PaymentVoidRow | None) -> PaymentEntry:

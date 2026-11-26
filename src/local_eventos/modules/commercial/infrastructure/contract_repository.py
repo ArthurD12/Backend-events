@@ -129,6 +129,22 @@ class SqlAlchemyContractRepository:
         ]
         return items, int(total or 0)
 
+    async def get_many(self, contract_ids: list[UUID]) -> list[Contract]:
+        if not contract_ids:
+            return []
+        rows = await self._session.scalars(
+            select(ContractRow).where(ContractRow.id.in_(contract_ids))
+        )
+        return [_to_contract(row) for row in rows]
+
+    async def list_by_status(self, status: ContractStatus) -> list[Contract]:
+        rows = await self._session.scalars(
+            select(ContractRow)
+            .where(ContractRow.status == status.value)
+            .order_by(ContractRow.event_date, ContractRow.code)
+        )
+        return [_to_contract(row) for row in rows]
+
 
 def _conditions(filters: ContractFilters) -> list[ColumnElement[bool]]:
     conditions: list[ColumnElement[bool]] = []

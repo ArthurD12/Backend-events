@@ -14,6 +14,7 @@ from local_eventos.modules.ledger.application.ports.movement_repository import (
     MovementState,
 )
 from local_eventos.modules.ledger.application.ports.payment_repository import (
+    ContractPaidTotals,
     MonthlyPaymentTotal,
     PaymentEntry,
 )
@@ -69,6 +70,26 @@ class InMemoryPaymentRepository:
             raise PaymentAlreadyVoidedError()
         self.voids[void.payment_id] = void
 
+    async def paid_totals(self, contract_ids: list[UUID]) -> dict[UUID, ContractPaidTotals]:
+        totals: dict[UUID, ContractPaidTotals] = {}
+        for p in self.payments:
+            if p.id in self.voids or p.contract_id not in contract_ids:
+                continue
+            t = totals.get(p.contract_id, ContractPaidTotals())
+            refund = p.kind is PaymentKind.REFUND
+            totals[p.contract_id] = ContractPaidTotals(
+                paid_cents=t.paid_cents + (0 if refund else p.amount_cents),
+                refunded_cents=t.refunded_cents + (p.amount_cents if refund else 0),
+            )
+        return totals
+
+    async def entries_between(self, date_from: date, date_to: date) -> list[PaymentEntry]:
+        return [
+            PaymentEntry(p, self.voids.get(p.id))
+            for p in sorted(self.payments, key=lambda p: (p.paid_on, p.recorded_at))
+            if date_from <= p.paid_on <= date_to
+        ]
+
     async def monthly_totals(self, date_from: date, date_to: date) -> list[MonthlyPaymentTotal]:
         totals: dict[tuple[int, int, PaymentKind], int] = {}
         for p in self.payments:
@@ -98,6 +119,13 @@ class InMemoryMovementRepository:
         if void.movement_id in self.voids:
             raise MovementAlreadyVoidedError()
         self.voids[void.movement_id] = void
+
+    async def entries_between(self, date_from: date, date_to: date) -> list[MovementEntry]:
+        return [
+            MovementEntry(m, self.voids.get(m.id))
+            for m in sorted(self.movements, key=lambda m: (m.occurred_on, m.recorded_at))
+            if date_from <= m.occurred_on <= date_to
+        ]
 
     async def search(
         self, filters: MovementFilters, *, limit: int, offset: int

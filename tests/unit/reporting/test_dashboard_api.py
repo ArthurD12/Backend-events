@@ -12,8 +12,11 @@ from local_eventos.modules.commercial.domain.quotes.quote import EventType, Quot
 from local_eventos.modules.commercial.public_api import QuoteStats, QuoteSummary
 from local_eventos.modules.identity.domain.permissions import Role
 from local_eventos.modules.identity.public_api import get_current_user
+from local_eventos.modules.reporting.presentation import dependencies as deps
 from local_eventos.modules.reporting.presentation.dependencies import get_quote_stats
 from tests.unit.current_user import signed_in_as
+from tests.unit.reporting import report_fakes as fakes
+from tests.unit.reporting.test_dashboard import cash
 
 CALLS: list[tuple[int | None, int | None]] = []
 
@@ -58,6 +61,15 @@ def api() -> Iterator[TestClient]:
 
     app = create_app(readiness_check=_no_database)
     app.dependency_overrides[get_quote_stats] = stats_dep
+    app.dependency_overrides.update(
+        {
+            deps.get_cash_totals: lambda: cash,
+            deps.get_upcoming_events: lambda: fakes.upcoming,
+            deps.get_receivables: lambda: fakes.receivables,
+            deps.get_stock_report: lambda: fakes.stock,
+            deps.get_open_purchases: lambda: fakes.open_purchases,
+        }
+    )
     app.dependency_overrides[get_current_user] = signed_in_as(Role.ADMIN)
     with TestClient(app) as client:
         yield client
@@ -73,6 +85,12 @@ def test_ca31_admin_ve_el_panel_con_los_numeros(api: TestClient) -> None:
     assert body["quotes"]["accepted_amount_cents"] == 545_000
     assert body["quotes"]["upcoming"][0]["client_name"] == "José Ramírez"
     assert CALLS == [(None, None)]
+    assert [e["code"] for e in body["upcoming_events"]] == ["EVT-2026-0001"]
+    assert body["upcoming_events"][0]["balance_cents"] == 500_000
+    assert body["cash"] == {"income_cents": 290_000, "expense_cents": 50_000, "net_cents": 240_000}
+    assert body["receivables"]["overdue_contracts"] == 1
+    assert body["inventory"] == {"low_stock": 1, "expiring_soon": 1}
+    assert body["purchases"] == {"requested": 2, "ordered": 1, "open": 3}
 
 
 def test_ca31_6_el_mes_se_elige(api: TestClient) -> None:

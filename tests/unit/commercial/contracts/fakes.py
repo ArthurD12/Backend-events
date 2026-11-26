@@ -11,7 +11,7 @@ from local_eventos.modules.commercial.application.contracts.ports.contract_repos
     ContractFilters,
     ContractSummary,
 )
-from local_eventos.modules.commercial.domain.contracts.contract import Contract
+from local_eventos.modules.commercial.domain.contracts.contract import Contract, ContractStatus
 
 
 class InMemoryContractRepository:
@@ -37,6 +37,12 @@ class InMemoryContractRepository:
 
     async def update(self, contract: Contract) -> None:
         self.contracts[contract.id] = replace(contract)
+
+    async def get_many(self, contract_ids: list[UUID]) -> list[Contract]:
+        return [replace(self.contracts[c]) for c in contract_ids if c in self.contracts]
+
+    async def list_by_status(self, status: ContractStatus) -> list[Contract]:
+        return [replace(c) for c in self.contracts.values() if c.status is status]
 
     async def next_number(self, year: int) -> int:
         self.counters[year] = self.counters.get(year, 0) + 1

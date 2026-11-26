@@ -30,6 +30,14 @@ class MonthlyPaymentTotal:
     amount_cents: int
 
 
+@dataclass(frozen=True)
+class ContractPaidTotals:
+    """Pagos vigentes de un contrato: pagado (adelanto y parciales) y devuelto (RN15)."""
+
+    paid_cents: int = 0
+    refunded_cents: int = 0
+
+
 class PaymentRepository(Protocol):
     async def add(self, payment: Payment) -> None: ...
 
@@ -53,4 +61,12 @@ class PaymentRepository(Protocol):
 
     async def monthly_totals(self, date_from: date, date_to: date) -> list[MonthlyPaymentTotal]:
         """Pagos vigentes del rango, sumados por mes y tipo."""
+        ...
+
+    async def paid_totals(self, contract_ids: list[UUID]) -> dict[UUID, ContractPaidTotals]:
+        """Pagos vigentes de esos contratos, sumados; los que no tienen pagos no aparecen."""
+        ...
+
+    async def entries_between(self, date_from: date, date_to: date) -> list[PaymentEntry]:
+        """Pagos del rango (por fecha de pago) con su anulación, del más antiguo al más reciente."""
         ...

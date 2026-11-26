@@ -18,3 +18,10 @@ class ReportRangeInvalidError(ReportingError):
 class ReportEventNotFoundError(ReportingError):
     def __init__(self) -> None:
         super().__init__("event.not_found", "No se encontró el evento.")
+
+
+class ReportUnavailableError(ReportingError):
+    """El reporte depende de un módulo que aún no publica sus datos (responde 503)."""
+
+    def __init__(self, what: str) -> None:
+        super().__init__("report.unavailable", f"{what} todavía no está disponible.")

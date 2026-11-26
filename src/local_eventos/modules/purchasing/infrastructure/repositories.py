@@ -166,6 +166,10 @@ class SqlAlchemyPurchaseRepository:
             conditions.append(PurchaseRow.event_id == filters.event_id)
         if filters.supplier_id is not None:
             conditions.append(PurchaseRow.supplier_id == filters.supplier_id)
+        if filters.created_from is not None:
+            conditions.append(PurchaseRow.created_at >= filters.created_from)
+        if filters.created_before is not None:
+            conditions.append(PurchaseRow.created_at < filters.created_before)
         total = await self._session.scalar(
             select(func.count()).select_from(PurchaseRow).where(*conditions)
         )
@@ -179,6 +183,12 @@ class SqlAlchemyPurchaseRepository:
             )
         )
         return await self._to_purchases(rows), int(total or 0)
+
+    async def count_by_status(self) -> dict[PurchaseStatus, int]:
+        rows = await self._session.execute(
+            select(PurchaseRow.status, func.count()).group_by(PurchaseRow.status)
+        )
+        return {PurchaseStatus(status): int(count) for status, count in rows}
 
     async def _to_purchases(self, rows: list[PurchaseRow]) -> list[Purchase]:
         if not rows:
