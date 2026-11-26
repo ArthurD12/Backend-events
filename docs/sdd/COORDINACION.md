@@ -16,7 +16,7 @@ Un agente **no modifica** un módulo de otro dueño. Si necesita algo de él, lo
 ## 2. En curso
 | Trabajo | Dueño | Rama | Estado |
 |---|---|---|---|
-| HU17 (asignaciones) | Harold | `feat/hu17-asignaciones` (desde `developer-b`) | spec/plan aprobados; implementación |
+| HU17 (asignaciones) | Harold | `feat/hu17-asignaciones` (desde `developer-b`) | T-01..T-12; gate ADR 0005 y migración |
 | HU16 (disponibilidad) | Harold | `feat/hu16-disponibilidad` (solo docs, otra sesión) | spec/plan en paralelo; implementación bloqueada por HU17 (necesita asignaciones) |
 | HU18 (asistencia) | Harold | — | después de HU17 |
 | Lote 6: reportes (HU31 completo, HU32–HU34) | César | `feat/reportes` | spec |
