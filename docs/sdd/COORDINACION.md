@@ -33,7 +33,7 @@ Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunc
 ## 4. Puntos de conexión entre dueños
 | Necesita | Quién lo expone | Qué | Estado |
 |---|---|---|---|
-| Ficha del evento (HU14, `reporting`) muestra el personal | Harold, `staff.public_api` | `event_assignments(session)(event_id) -> list[...]` con nombre del trabajador, función, inicio y fin (UTC), **sin pago** | **en curso** (HU17); `reporting` cambiará su adaptador nulo `NoEventStaff` cuando pase a listo |
+| Ficha del evento (HU14, `reporting`) muestra el personal | Harold, `staff.public_api` | `event_assignments(session)(event_id) -> list[...]` con nombre del trabajador, función, inicio y fin (UTC), **sin pago** | **listo** (HU17); `reporting` debe sustituir su adaptador nulo `NoEventStaff` por `event_assignments` (lo hace su dueño) |
 | Asignar a un evento (HU17) valida estado y horario | César, `commercial.public_api` | `event_lookup` (id, código, estado, fecha, horario) | **listo** |
 | Cancelar un evento libera al personal | — | No se requiere hook: la liberación es **perezosa** al escribir sobre el trabajador (decisión 25/11/2026); si se quiere inmediata, reevaluar con un evento de dominio | **acordado** |
 

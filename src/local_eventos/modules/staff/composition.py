@@ -18,6 +18,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from local_eventos.modules.commercial.public_api import event_lookup
 from local_eventos.modules.staff.application.assignment_occupancy import AssignmentOccupancy
+from local_eventos.modules.staff.application.ports.assignment_repository import (
+    EventAssignment,
+    EventAssignmentLookup,
+)
 from local_eventos.modules.staff.application.ports.clock import Clock
 from local_eventos.modules.staff.application.ports.worker_repository import (
     WorkerLookup,
@@ -36,6 +40,9 @@ from local_eventos.modules.staff.application.use_cases.get_worker import GetWork
 from local_eventos.modules.staff.application.use_cases.get_worker_ref import GetWorkerRef
 from local_eventos.modules.staff.application.use_cases.list_event_assignments import (
     ListEventAssignments,
+)
+from local_eventos.modules.staff.application.use_cases.list_event_assignments_for_sheet import (
+    ListEventAssignmentsForSheet,
 )
 from local_eventos.modules.staff.application.use_cases.register_assignment import (
     RegisterAssignment,
@@ -151,6 +158,15 @@ def worker_lookup(session: AsyncSession) -> WorkerLookup:
     return _WorkerLookup(GetWorkerRef(worker_repository(session)))
 
 
+def event_assignments(session: AsyncSession) -> EventAssignmentLookup:
+    """Consulta pública de las asignaciones de un evento para HU14 (sin pago).
+
+    Devuelve nombre, función, descripción e instantes UTC; nunca pago, documento,
+    teléfono ni tarifa. `reporting` la usa en lugar de su adaptador nulo.
+    """
+    return _EventAssignments(ListEventAssignmentsForSheet(assignment_repository(session)))
+
+
 class _WorkerLookup:
     """Adaptador del caso de uso `GetWorkerRef` al puerto `WorkerLookup`."""
 
@@ -161,6 +177,16 @@ class _WorkerLookup:
         return await self._use_case.execute(worker_id)
 
 
+class _EventAssignments:
+    """Adaptador de `ListEventAssignmentsForSheet` al puerto `EventAssignmentLookup`."""
+
+    def __init__(self, use_case: ListEventAssignmentsForSheet) -> None:
+        self._use_case = use_case
+
+    async def __call__(self, event_id: UUID) -> list[EventAssignment]:
+        return await self._use_case.execute(event_id)
+
+
 __all__ = [
     "WorkerLookup",
     "activate_worker",
@@ -169,6 +195,7 @@ __all__ = [
     "cancel_assignment",
     "clock",
     "deactivate_worker",
+    "event_assignments",
     "get_assignment",
     "get_worker",
     "list_event_assignments",

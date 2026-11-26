@@ -84,6 +84,12 @@ class EventAssignment:
     ends_at: datetime
 
 
+class EventAssignmentLookup(Protocol):
+    """Consulta pública de asignaciones de un evento para HU14 (sin pago)."""
+
+    async def __call__(self, event_id: UUID) -> list[EventAssignment]: ...
+
+
 class AssignmentRepository(Protocol):
     """Operaciones que necesitan los casos de uso de asignaciones."""
 
