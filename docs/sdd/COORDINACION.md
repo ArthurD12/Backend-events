@@ -1,7 +1,7 @@
 # Coordinación del equipo (backend)
 
 > Lo leen las personas y sus agentes antes de empezar una tarea. Actualizar al tomar o terminar trabajo.
-> Última actualización: 25/11/2026.
+> Última actualización: 26/11/2026.
 
 ## 1. Dueños por módulo
 | Módulo / área | Dueño | Historias |
@@ -18,7 +18,7 @@ Un agente **no modifica** un módulo de otro dueño. Si necesita algo de él, lo
 |---|---|---|---|
 | HU16–HU18 | Harold | `feat/hu16-...` (desde `developer-b`) | por empezar |
 | Lote 6: reportes (HU31 completo, HU32–HU34) | César | `feat/reportes` | backend listo (T-01 a T-06); falta frontend (T-07) |
-| Lote 7: HU24, HU25, HU30 (backend y frontend) | César | `feat/materiales-menu` | en desarrollo |
+| Lote 7: HU24, HU25, HU30 (backend y frontend) | César | `feat/materiales-menu` | backend listo (T-01 a T-05); falta frontend (T-06) |
 
 ## 3. Archivos compartidos (conflictos frecuentes)
 Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunca solo una:
@@ -39,7 +39,7 @@ Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunc
 Cuando un punto pase a "listo", avisar al otro dueño para que lo conecte.
 
 ## 5. Migraciones (Alembic)
-- Head actual de `developer-b`: **`6900ec1af5f8`**.
+- Head actual de `developer-b`: **`6900ec1af5f8`**. Lote 7 (`feat/materiales-menu`) agrega `ba34931b5de5` (recetas, reservas y `expense_movement_id`) encadenada a ese head.
 - Antes de crear una migración: `git fetch origin developer-b`, unir `developer-b` en tu rama y `uv run alembic heads` = **un solo head**; la tuya va encadenada a ese.
 - Si mientras tanto entró otra migración a `developer-b`: cambia el `down_revision` de **tu** migración (si nunca se unió) o agrega una migración de unión (`alembic merge`). **Nunca** se edita una migración ya unida (regla 8).
 
