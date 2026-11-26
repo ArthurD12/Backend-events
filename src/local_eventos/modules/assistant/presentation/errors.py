@@ -8,6 +8,7 @@ from local_eventos.modules.assistant.application.errors import (
     AssistantProviderError,
     AssistantRateLimitedError,
     AssistantUnavailableError,
+    QueryNotFoundError,
 )
 from local_eventos.shared.presentation.problems import problem_response
 
@@ -18,6 +19,9 @@ def problem_for(error: AssistantError) -> JSONResponse:
                                 detail=str(error))  # fmt: skip
     if isinstance(error, AssistantRateLimitedError):
         return problem_response(status=429, title="Demasiadas preguntas", code=error.code,
+                                detail=str(error))  # fmt: skip
+    if isinstance(error, QueryNotFoundError):
+        return problem_response(status=404, title="Consulta no encontrada", code=error.code,
                                 detail=str(error))  # fmt: skip
     assert isinstance(error, AssistantProviderError)
     return problem_response(status=502, title="Falló el proveedor del asistente", code=error.code,

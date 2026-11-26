@@ -4,6 +4,7 @@ Agrupa clientes, cotizaciones, contratos y eventos (ADR 0003). Otro módulo (por
 ledger o assistant) importa solo desde aquí, nunca desde sus capas internas (AGENTS.md, regla 3).
 """
 
+from datetime import date
 from typing import Protocol
 from uuid import UUID
 
@@ -35,7 +36,11 @@ from local_eventos.modules.commercial.application.events.use_cases.event_reports
     LookupEventRefs,
     Receivables,
 )
-from local_eventos.modules.commercial.application.events.use_cases.event_search import SearchEvents
+from local_eventos.modules.commercial.application.events.use_cases.event_search import (
+    EventFindResult,
+    FindEvents,
+    SearchEvents,
+)
 from local_eventos.modules.commercial.application.events.use_cases.event_sheet import (
     AccountPaymentInfo,
     ActivityInfo,
@@ -50,7 +55,12 @@ from local_eventos.modules.commercial.application.events.use_cases.event_sheet i
 )
 from local_eventos.modules.commercial.application.quotes.ports.document import CompanyProfile
 from local_eventos.modules.commercial.application.quotes.ports.quote_repository import (
+    QuoteFilters,
     QuoteSummary,
+)
+from local_eventos.modules.commercial.application.quotes.use_cases.query_quotes import (
+    QuotePage,
+    SearchQuotes,
 )
 from local_eventos.modules.commercial.application.quotes.use_cases.quote_stats import (
     GetQuoteStats,
@@ -59,7 +69,12 @@ from local_eventos.modules.commercial.application.quotes.use_cases.quote_stats i
 from local_eventos.modules.commercial.domain.contracts.contract import ContractStatus
 from local_eventos.modules.commercial.domain.events.activity import ActivityStatus
 from local_eventos.modules.commercial.domain.events.event import EventStatus
-from local_eventos.modules.commercial.domain.quotes.quote import EventType, LineKind, LineUnit
+from local_eventos.modules.commercial.domain.quotes.quote import (
+    EventType,
+    LineKind,
+    LineUnit,
+    QuoteStatus,
+)
 
 
 class ClientLookup(Protocol):
@@ -217,6 +232,37 @@ class ClientSearchLookup(Protocol):
     async def __call__(self, text: str, limit: int = 10) -> list[ClientSummary]: ...
 
 
+class EventFindLookup(Protocol):
+    """Eventos por fecha, texto (código o cliente), tipo y estado, con el total (asistente)."""
+
+    async def __call__(
+        self,
+        *,
+        text: str = "",
+        status: EventStatus | None = None,
+        event_type: EventType | None = None,
+        date_from: date | None = None,
+        date_to: date | None = None,
+        limit: int = 15,
+    ) -> EventFindResult: ...
+
+
+class QuoteSearchLookup(Protocol):
+    """Cotizaciones por estado (con `EXPIRED` según la vigencia), cliente y fecha del evento."""
+
+    async def __call__(
+        self, filters: QuoteFilters, *, page: int = 1, page_size: int = 20
+    ) -> QuotePage: ...
+
+
+def events_find(session: AsyncSession) -> EventFindLookup:
+    return FindEvents(composition.event_repository(session))
+
+
+def quotes_search(session: AsyncSession) -> QuoteSearchLookup:
+    return SearchQuotes(composition.quote_repository(session), composition.clock())
+
+
 def events_search(session: AsyncSession) -> EventSearchLookup:
     return SearchEvents(composition.event_repository(session))
 
@@ -245,6 +291,8 @@ __all__ = [
     "EventDetailLookup",
     "EventFinance",
     "EventFinanceLookup",
+    "EventFindLookup",
+    "EventFindResult",
     "EventFollowUp",
     "EventFollowUpLookup",
     "EventInfo",
@@ -262,8 +310,12 @@ __all__ = [
     "LineKind",
     "LineUnit",
     "NoteInfo",
+    "QuoteFilters",
+    "QuotePage",
+    "QuoteSearchLookup",
     "QuoteStats",
     "QuoteStatsLookup",
+    "QuoteStatus",
     "QuoteSummary",
     "Receivables",
     "ReceivablesLookup",
@@ -276,9 +328,11 @@ __all__ = [
     "event_follow_up",
     "event_lookup",
     "event_refs",
+    "events_find",
     "events_report",
     "events_search",
     "quote_stats",
+    "quotes_search",
     "receivables",
     "upcoming_events",
 ]
