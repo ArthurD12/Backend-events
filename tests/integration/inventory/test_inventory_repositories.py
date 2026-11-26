@@ -63,7 +63,10 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
     async with engine.begin() as connection:
         # TRUNCATE no dispara el trigger de UPDATE/DELETE: solo se usa para limpiar las pruebas.
         await connection.execute(
-            text("TRUNCATE inventory_stock, inventory_movements, inventory_products")
+            text(
+                "TRUNCATE inventory_stock, inventory_movements, inventory_recipe_lines,"
+                " inventory_reservations, inventory_products"
+            )
         )
     await engine.dispose()
 
