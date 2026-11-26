@@ -1,5 +1,7 @@
 # Tasks: Asignación de trabajadores a eventos
 
+> Estado: T-01..T-27 completadas (26/11/2026).
+
 Formato: `- [ ] T-NN [capa] descripción — archivos — hecho cuando …`
 Una tarea = un subagente = un commit. Marcar `[P]` si puede ir en paralelo.
 
