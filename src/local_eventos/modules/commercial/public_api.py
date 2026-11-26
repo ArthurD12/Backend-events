@@ -13,6 +13,10 @@ from local_eventos.modules.commercial import composition
 from local_eventos.modules.commercial.application.clients.use_cases.get_client_summary import (
     ClientSummary,
 )
+from local_eventos.modules.commercial.application.clients.use_cases.search_clients_lookup import (
+    SearchClientSummaries,
+)
+from local_eventos.modules.commercial.application.events.ports.event_repository import EventSummary
 from local_eventos.modules.commercial.application.events.use_cases.event_finance import (
     EventFinance,
     GetEventFinance,
@@ -31,6 +35,7 @@ from local_eventos.modules.commercial.application.events.use_cases.event_reports
     LookupEventRefs,
     Receivables,
 )
+from local_eventos.modules.commercial.application.events.use_cases.event_search import SearchEvents
 from local_eventos.modules.commercial.application.events.use_cases.event_sheet import (
     AccountPaymentInfo,
     ActivityInfo,
@@ -200,6 +205,26 @@ def event_refs(session: AsyncSession) -> EventRefsLookup:
     )
 
 
+class EventSearchLookup(Protocol):
+    """Eventos cuyo código o cliente contiene el texto (asistente, solo lectura)."""
+
+    async def __call__(self, text: str, limit: int = 10) -> list[EventSummary]: ...
+
+
+class ClientSearchLookup(Protocol):
+    """Clientes cuyo nombre, documento o teléfono contiene el texto (asistente, solo lectura)."""
+
+    async def __call__(self, text: str, limit: int = 10) -> list[ClientSummary]: ...
+
+
+def events_search(session: AsyncSession) -> EventSearchLookup:
+    return SearchEvents(composition.event_repository(session))
+
+
+def clients_search(session: AsyncSession) -> ClientSearchLookup:
+    return SearchClientSummaries(composition.client_repository(session))
+
+
 def company_profile() -> CompanyProfile:
     """Datos de Darze del `.env` (COMPANY_*) para el encabezado de los documentos."""
     return composition.company_profile()
@@ -211,6 +236,7 @@ __all__ = [
     "ActivityInfo",
     "ActivityStatus",
     "ClientLookup",
+    "ClientSearchLookup",
     "ClientSummary",
     "ContractStatus",
     "EventAccount",
@@ -228,8 +254,10 @@ __all__ = [
     "EventReportFilters",
     "EventReportItem",
     "EventReportLookup",
+    "EventSearchLookup",
     "EventServiceInfo",
     "EventStatus",
+    "EventSummary",
     "EventType",
     "LineKind",
     "LineUnit",
@@ -240,6 +268,7 @@ __all__ = [
     "Receivables",
     "ReceivablesLookup",
     "UpcomingEventsLookup",
+    "clients_search",
     "company_profile",
     "event_account",
     "event_detail",
@@ -248,6 +277,7 @@ __all__ = [
     "event_lookup",
     "event_refs",
     "events_report",
+    "events_search",
     "quote_stats",
     "receivables",
     "upcoming_events",

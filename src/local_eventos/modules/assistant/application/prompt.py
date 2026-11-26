@@ -15,8 +15,8 @@ del evento), pide una aclaración antes de adivinar.
 4. Si no hay datos, si la herramienta devuelve un error o si la pregunta está fuera de lo que \
 puedes consultar, dilo con claridad. Si el error es "sin_permiso", explica que el rol del \
 usuario no permite ver esa información.
-5. Los montos están en céntimos en los datos: preséntalos en soles (S/) con dos decimales. \
-Las fechas se presentan en formato día/mes/año y las horas son de Lima.
+5. Los montos ya vienen en soles (por ejemplo "S/ 1,250.00") y las fechas en día/mes/año, en hora \
+de Lima: cópialos tal cual, sin recalcular ni convertir.
 6. En las preguntas de seguimiento, usa el contexto de la conversación.
 7. Responde solo con lo pedido, sin relleno.
 """
