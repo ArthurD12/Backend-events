@@ -17,8 +17,10 @@ from local_eventos.modules.commercial.public_api import (
     clients_search,
     event_account,
     event_detail,
+    events_find,
     events_report,
     events_search,
+    quotes_search,
     upcoming_events,
 )
 from local_eventos.modules.identity.public_api import user_names
@@ -55,6 +57,8 @@ def tools(session: AsyncSession) -> ToolRegistry:
             upcoming_events=upcoming_events(session),
             events_report=events_report(session),
             events_search=events_search(session),
+            events_find=events_find(session),
+            quotes_search=quotes_search(session),
             event_detail=event_detail(session),
             event_account=event_account(session),
             stock_report=stock_report(session),

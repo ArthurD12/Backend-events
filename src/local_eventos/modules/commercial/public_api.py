@@ -248,7 +248,7 @@ class EventFindLookup(Protocol):
 
 
 class QuoteSearchLookup(Protocol):
-    """Cotizaciones por estado (incluye `EXPIRED`, según la vigencia), cliente y fecha del evento."""
+    """Cotizaciones por estado (con `EXPIRED` según la vigencia), cliente y fecha del evento."""
 
     async def __call__(
         self, filters: QuoteFilters, *, page: int = 1, page_size: int = 20
