@@ -1,5 +1,7 @@
 """Ensamblaje de dependencias del módulo assistant."""
 
+from functools import cache
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from local_eventos.modules.assistant.application.ports.language_model import LanguageModel
@@ -26,10 +28,15 @@ from local_eventos.modules.purchasing.public_api import purchases_report
 from local_eventos.shared.infrastructure.config import AssistantSettings
 
 
+@cache
+def _anthropic(api_key: str) -> LanguageModel:
+    return AnthropicLanguageModel.from_api_key(api_key)  # un solo cliente HTTP por proceso
+
+
 def language_model() -> LanguageModel | None:
     """El proveedor real si hay `ANTHROPIC_API_KEY`; sin clave, `None` (asistente no disponible)."""
     key = AssistantSettings().anthropic_api_key.strip()
-    return AnthropicLanguageModel.from_api_key(key) if key else None
+    return _anthropic(key) if key else None
 
 
 def query_log(session: AsyncSession) -> QueryLog:
