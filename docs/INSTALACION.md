@@ -66,6 +66,8 @@ just migrate    # alembic upgrade head
 
 El esquema se crea **solo** con migraciones de Alembic, nunca con SQL a mano.
 
+> **Extensión `btree_gist`.** El esquema de asignaciones de personal (HU17) usa la extensión PostgreSQL `btree_gist` para impedir horarios solapados. La migración la crea con `CREATE EXTENSION IF NOT EXISTS btree_gist` y su `downgrade` **no** la elimina. En local y en CI se usa la imagen `postgres:17-alpine`, que ya la incluye (verificado). Antes de desplegar en staging o producción confirma que el servidor la tenga disponible. Si `CREATE EXTENSION` falla por privilegios, pide al administrador de la base que la habilite (`CREATE EXTENSION btree_gist;`); **no** se debe desactivar la comprobación ni degradar a validación solo en la aplicación, porque el no solape dejaría de estar garantizado.
+
 Después crea el **primer administrador**. Se hace una sola vez: sin él nadie puede crear usuarios.
 
 ```bash
@@ -119,4 +121,5 @@ Si los dos terminan en verde, la instalación es correcta.
 - **`just migrate` falla con `connection was closed in the middle of operation`** → hay otro PostgreSQL instalado en Windows usando el mismo puerto. Compruébalo con `netstat -ano | findstr :5433`: si aparecen dos números de proceso distintos, cambia `POSTGRES_PORT` y el puerto de `DATABASE_URL` en `.env` a otro libre (por ejemplo, 5434) y ejecuta `just up` de nuevo.
 - **`error during connect` / `Cannot connect to the Docker daemon`** → Docker Desktop no está abierto.
 - **`Field required: jwt_secret`** o **`String should have at least 32 characters`** al iniciar sesión → falta `JWT_SECRET` en `.env` o es muy corta (paso 3).
+- **`just migrate` falla con `could not open extension control file` o `permission denied to create extension "btree_gist"`** → el usuario de la base no puede crear la extensión. Pide al administrador de PostgreSQL que la habilite (`CREATE EXTENSION btree_gist;`) en esa base antes de reintentar `just migrate`. No la sustituyas por validación solo en la aplicación: el no solape de asignaciones quedaría sin garantía de base (ADR 0005).
 - **`just check` dice "Would reformat"** → ejecuta `just fmt` y configura la extensión Ruff en VS Code (paso 1).
