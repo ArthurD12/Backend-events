@@ -6,9 +6,10 @@ su fábrica `worker_lookup(session)`, más los enums `WorkerFunction`/`WorkerSta
 Para HU14 expone `EventAssignment` y el puerto `EventAssignmentLookup` con su
 fábrica `event_assignments(session)`.
 
-La consulta pública de asignaciones **no** incluye pago, documento, teléfono ni
-tarifa, y no expone operaciones de escritura (AGENTS.md, regla 3; plan §1.3, §1.4).
-HU17 (asignaciones) consulta a los trabajadores solo por aquí.
+La consulta pública de asignaciones devuelve solo las **activas** (nombre, función,
+descripción e instantes UTC; lista vacía si no hay) y **no** incluye pago, documento,
+teléfono ni tarifa; tampoco expone operaciones de escritura (AGENTS.md, regla 3;
+plan §1.4, CA-17.21). HU17 (asignaciones) consulta a los trabajadores solo por aquí.
 """
 
 from local_eventos.modules.staff.application.ports.assignment_repository import (

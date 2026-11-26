@@ -3,14 +3,18 @@
 Flujo: el evento debe existir y admitir cambios (`SCHEDULED`/`CONFIRMED`/
 `IN_PROGRESS`), el trabajador debe existir y estar `ACTIVE`, la fecha debe ser la
 del evento (o la siguiente si el evento cruza medianoche, Q5) y la función se copia
-de la ficha si el cuerpo la omite. Antes de crear la asignación se bloquea la fila
-del trabajador, se liberan las asignaciones de eventos cancelados y se comprueban
-los solapes para devolver un 409 con el código, la fecha y el horario de cada
-evento en conflicto (nunca datos personales).
+de la ficha si el cuerpo la omite. Antes de crear la asignación se **bloquea la fila
+del trabajador** (`staff_workers` antes que `staff_assignments`, orden fijo para
+evitar deadlocks), se liberan las asignaciones de eventos cancelados (liberación
+perezosa) y se comprueban los solapes para devolver un 409 con el código, la fecha y
+el horario de cada evento en conflicto (nunca datos personales). La garantía real del
+no solape es la restricción de exclusión de PostgreSQL, no esta comprobación previa.
 
-La auditoría `CREATED` se escribe en la misma transacción que la asignación. El
-evento se consulta solo por `commercial.public_api` (R-ASG-13). Python puro: sin
-FastAPI, SQLAlchemy ni Pydantic (AGENTS.md, regla 2).
+El pago acordado es un importe en céntimos `PEN` que **no es un egreso**: no se
+escribe en el ledger ni genera movimiento contable (R-ASG-7). La auditoría `CREATED`
+se escribe en la misma transacción que la asignación. El evento se consulta solo por
+`commercial.public_api` (R-ASG-13). Python puro: sin FastAPI, SQLAlchemy ni Pydantic
+(AGENTS.md, regla 2).
 """
 
 from __future__ import annotations

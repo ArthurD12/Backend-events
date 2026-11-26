@@ -1,13 +1,18 @@
 """Ensamblaje de dependencias del módulo staff.
 
 Es el único lugar que conoce las clases concretas de `infrastructure`: el resto del
-módulo trabaja con los puertos (`WorkerRepository`, `Clock`). Construye el
-repositorio sobre la sesión de la petición, el reloj del sistema y los casos de uso
-(`RegisterWorker`, `UpdateWorker`, `GetWorker`, `SearchWorkers`, `DeactivateWorker`,
-`ActivateWorker`); la presentación solo adapta HTTP y delega aquí.
+módulo trabaja con los puertos (`WorkerRepository`, `AssignmentRepository`, `Clock`).
+Construye los repositorios sobre la sesión de la petición, el reloj del sistema y los
+casos de uso: personal (`RegisterWorker`, `UpdateWorker`, `GetWorker`,
+`SearchWorkers`, `DeactivateWorker`, `ActivateWorker`) y asignaciones HU17
+(`RegisterAssignment`, `UpdateAssignment`, `CancelAssignment`,
+`ListEventAssignments`, `GetAssignment`). La presentación solo adapta HTTP y delega
+aquí. El evento se obtiene por `commercial.public_api.event_lookup` y la ocupación
+(`AssignmentOccupancy`) libera los eventos cancelados de forma perezosa.
 
-`worker_lookup` es la fábrica del puerto público que usarán otros módulos (por
-ejemplo HU17) para consultar estado y función sin acceder a datos sensibles.
+`worker_lookup` y `event_assignments` son las fábricas de los puertos públicos que
+usarán otros módulos: la primera expone estado y función del trabajador; la segunda,
+las asignaciones de un evento **sin pago** para la ficha consolidada (HU14).
 """
 
 from __future__ import annotations
