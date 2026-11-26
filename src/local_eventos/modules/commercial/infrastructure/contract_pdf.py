@@ -182,33 +182,33 @@ class ReportLabContractRenderer:
 
         story: list[Flowable] = [
             header,
-            Spacer(1, 8 * mm),
+            Spacer(1, 5 * mm),
             info,
-            Spacer(1, 8 * mm),
+            Spacer(1, 5 * mm),
             services,
             Spacer(1, 3 * mm),
             p("Precios finales en soles (PEN). No incluye IGV aparte.", "muted"),
-            Spacer(1, 6 * mm),
+            Spacer(1, 4 * mm),
             p("<b>MONTOS Y PLAZOS</b>", "section"),
             amounts,
         ]
         if contract.signature is not None:  # CA-43.4
             signature = contract.signature
             story += [
-                Spacer(1, 3 * mm),
+                Spacer(1, 2 * mm),
                 p(
                     f"Firmado el {_long_date(signature.signed_on)} por "
                     f"<b>{escape(signature.signer_name)}</b>."
                 ),
             ]
-        story += [Spacer(1, 8 * mm), p("<b>CONDICIONES Y POLÍTICA DE CANCELACIÓN</b>", "section")]
+        story += [Spacer(1, 5 * mm), p("<b>CONDICIONES Y POLÍTICA DE CANCELACIÓN</b>", "section")]
         for number, term in enumerate(document.terms, start=1):
             story.append(p(f"{number}. {escape(term)}"))
-            story.append(Spacer(1, 1.5 * mm))
+            story.append(Spacer(1, 1 * mm))
 
         lines = Table(
             [
-                [p("<br/><br/><br/>"), "", p("<br/><br/><br/>"), ""],
+                [p("<br/><br/>"), "", p("<br/><br/>"), ""],
                 [
                     p(
                         f"<b>Firma del cliente</b><br/>{escape(client.name)}<br/>"
@@ -236,11 +236,11 @@ class ReportLabContractRenderer:
             )
         )
         story += [
-            Spacer(1, 12 * mm),
+            Spacer(1, 4 * mm),
             KeepTogether(
                 [
                     p("<b>FIRMAS</b>", "section"),
-                    Spacer(1, 6 * mm),
+                    Spacer(1, 2 * mm),
                     lines,
                 ]
             ),
