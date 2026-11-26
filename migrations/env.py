@@ -19,6 +19,7 @@ from local_eventos.modules.identity.infrastructure import orm_models as identity
 from local_eventos.modules.inventory.infrastructure import orm_models as inventory_orm  # noqa: F401
 from local_eventos.modules.ledger.infrastructure import orm_models as ledger_orm  # noqa: F401
 from local_eventos.modules.purchasing.infrastructure import orm_models as purchasing_orm  # noqa: F401
+from local_eventos.modules.staff.infrastructure import orm_models as staff_orm  # noqa: F401
 from local_eventos.shared.infrastructure.config import Settings
 from local_eventos.shared.infrastructure.orm import Base
 
