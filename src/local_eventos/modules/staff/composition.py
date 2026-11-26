@@ -24,17 +24,30 @@ from local_eventos.modules.staff.application.ports.worker_repository import (
     WorkerRef,
     WorkerRepository,
 )
+from local_eventos.modules.staff.application.use_cases.cancel_assignment import (
+    CancelAssignment,
+)
 from local_eventos.modules.staff.application.use_cases.change_worker_status import (
     ActivateWorker,
     DeactivateWorker,
 )
+from local_eventos.modules.staff.application.use_cases.get_assignment import GetAssignment
 from local_eventos.modules.staff.application.use_cases.get_worker import GetWorker
 from local_eventos.modules.staff.application.use_cases.get_worker_ref import GetWorkerRef
+from local_eventos.modules.staff.application.use_cases.list_event_assignments import (
+    ListEventAssignments,
+)
+from local_eventos.modules.staff.application.use_cases.register_assignment import (
+    RegisterAssignment,
+)
 from local_eventos.modules.staff.application.use_cases.register_worker import (
     RegisterWorker,
 )
 from local_eventos.modules.staff.application.use_cases.search_workers import (
     SearchWorkers,
+)
+from local_eventos.modules.staff.application.use_cases.update_assignment import (
+    UpdateAssignment,
 )
 from local_eventos.modules.staff.application.use_cases.update_worker import (
     UpdateWorker,
@@ -92,6 +105,47 @@ def activate_worker(session: AsyncSession) -> ActivateWorker:
     return ActivateWorker(worker_repository(session), clock())
 
 
+def register_assignment(session: AsyncSession) -> RegisterAssignment:
+    """Alta de asignación con repositorio, trabajadores, eventos, ocupación y reloj (HU17)."""
+    assignments = assignment_repository(session)
+    events = event_lookup(session)
+    return RegisterAssignment(
+        assignments,
+        worker_lookup(session),
+        events,
+        AssignmentOccupancy(assignments, events),
+        clock(),
+    )
+
+
+def update_assignment(session: AsyncSession) -> UpdateAssignment:
+    """Edición de asignación con el mismo cableado que el alta (HU17)."""
+    assignments = assignment_repository(session)
+    events = event_lookup(session)
+    return UpdateAssignment(
+        assignments,
+        worker_lookup(session),
+        events,
+        AssignmentOccupancy(assignments, events),
+        clock(),
+    )
+
+
+def cancel_assignment(session: AsyncSession) -> CancelAssignment:
+    """Anulación lógica de una asignación (HU17)."""
+    return CancelAssignment(assignment_repository(session), event_lookup(session), clock())
+
+
+def list_event_assignments(session: AsyncSession) -> ListEventAssignments:
+    """Listado de asignaciones vigentes de un evento (HU17)."""
+    return ListEventAssignments(assignment_repository(session), event_lookup(session))
+
+
+def get_assignment(session: AsyncSession) -> GetAssignment:
+    """Detalle de una asignación, incluidas las anuladas (HU17)."""
+    return GetAssignment(assignment_repository(session))
+
+
 def worker_lookup(session: AsyncSession) -> WorkerLookup:
     """Consulta mínima del personal para otros módulos (solo lectura)."""
     return _WorkerLookup(GetWorkerRef(worker_repository(session)))
@@ -112,11 +166,16 @@ __all__ = [
     "activate_worker",
     "assignment_occupancy",
     "assignment_repository",
+    "cancel_assignment",
     "clock",
     "deactivate_worker",
+    "get_assignment",
     "get_worker",
+    "list_event_assignments",
+    "register_assignment",
     "register_worker",
     "search_workers",
+    "update_assignment",
     "update_worker",
     "worker_lookup",
     "worker_repository",
