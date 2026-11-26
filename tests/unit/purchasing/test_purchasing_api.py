@@ -6,16 +6,27 @@ from typing import Any
 from uuid import uuid4
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from local_eventos.main import create_app
+from local_eventos.modules.commercial.public_api import CompanyProfile
 from local_eventos.modules.identity.domain.permissions import Role
 from local_eventos.modules.identity.public_api import get_current_user
+from local_eventos.modules.purchasing.infrastructure.purchase_pdf import (
+    ReportLabPurchaseRenderer,
+)
 from local_eventos.modules.purchasing.presentation import dependencies as deps
 from tests.unit.current_user import signed_in_as
-from tests.unit.inventory.fakes import FakeClock
+from tests.unit.inventory.fakes import FakeClock, FakeEventLookup
 
-from .fakes import FakeInventory, InMemoryPurchaseRepository, InMemorySupplierRepository
+from .fakes import (
+    FakeExpenses,
+    FakeInventory,
+    FakeRequirement,
+    InMemoryPurchaseRepository,
+    InMemorySupplierRepository,
+)
 
 
 async def _no_database() -> None:
@@ -26,6 +37,10 @@ async def _no_database() -> None:
 class Api:
     client: TestClient
     inventory: FakeInventory
+    requirement: FakeRequirement
+    expenses: FakeExpenses
+    events: FakeEventLookup
+    app: FastAPI
 
     def supplier(self, number: str = "20123456789", **changes: Any) -> dict[str, Any]:
         body = {"name": "Distribuidora Lima", "document_type": "RUC",
@@ -50,15 +65,25 @@ def api() -> Iterator[Api]:
     app = create_app(readiness_check=_no_database)
     suppliers, purchases = InMemorySupplierRepository(), InMemoryPurchaseRepository()
     inventory = FakeInventory()
+    requirement, expenses, events = FakeRequirement(inventory), FakeExpenses(), FakeEventLookup()
     app.dependency_overrides[deps.get_supplier_repository] = lambda: suppliers
     app.dependency_overrides[deps.get_purchase_repository] = lambda: purchases
     app.dependency_overrides[deps.get_product_lookup] = lambda: inventory.lookup
     app.dependency_overrides[deps.get_low_stock_lookup] = lambda: inventory.low_stock
     app.dependency_overrides[deps.get_stock_receiver] = lambda: inventory.receive
+    app.dependency_overrides[deps.get_event_requirement] = lambda: requirement
+    app.dependency_overrides[deps.get_expense_recorder] = lambda: expenses
+    app.dependency_overrides[deps.get_event_lookup] = lambda: events
+    app.dependency_overrides[deps.get_document_renderer] = lambda: ReportLabPurchaseRenderer(
+        compress=False
+    )
+    app.dependency_overrides[deps.get_company_profile] = lambda: CompanyProfile(
+        name="Darze Catering", ruc="20999999999"
+    )
     app.dependency_overrides[deps.get_clock] = FakeClock
     app.dependency_overrides[get_current_user] = signed_in_as(Role.PURCHASING_MANAGER)
     with TestClient(app) as client:
-        yield Api(client, inventory)
+        yield Api(client, inventory, requirement, expenses, events, app)
 
 
 def test_hu27_proveedores_documento_unico_busqueda_y_desactivar(api: Api) -> None:

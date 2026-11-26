@@ -11,6 +11,11 @@ class PurchasingNotFoundError(Exception):
         self.code = code
 
 
+class EventNotFoundError(PurchasingNotFoundError):
+    def __init__(self) -> None:
+        super().__init__("purchasing.event_not_found", "No se encontró el evento.")
+
+
 class SupplierNotFoundError(PurchasingNotFoundError):
     def __init__(self) -> None:
         super().__init__("purchasing.supplier_not_found", "No se encontró el proveedor.")

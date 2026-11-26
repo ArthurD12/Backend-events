@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from local_eventos.modules.ledger import composition
 from local_eventos.modules.ledger.application.errors import PaymentNotFoundError
+from local_eventos.modules.ledger.application.ports.movement_repository import MovementEntry
 from local_eventos.modules.ledger.application.ports.payment_repository import (
     ContractPaidTotals,
     PaymentEntry,
@@ -26,6 +27,10 @@ from local_eventos.modules.ledger.application.use_cases.cash import (
     EventCash,
     MonthlyCash,
 )
+from local_eventos.modules.ledger.application.use_cases.movements import (
+    MovementRequest,
+    RecordMovement,
+)
 from local_eventos.modules.ledger.application.use_cases.payments import (
     ContractPaymentEntries,
     ContractPayments,
@@ -34,7 +39,7 @@ from local_eventos.modules.ledger.application.use_cases.payments import (
     RecordPayment,
     VoidPayment,
 )
-from local_eventos.modules.ledger.domain.movement import MovementCategory
+from local_eventos.modules.ledger.domain.movement import MovementCategory, MovementType
 from local_eventos.modules.ledger.domain.payment import (
     LedgerValidationError,
     Payment,
@@ -46,6 +51,12 @@ from local_eventos.modules.ledger.domain.payment import (
 
 class PaymentRecorder(Protocol):
     async def __call__(self, request: PaymentRequest, *, now: datetime, today: date) -> Payment: ...
+
+
+class MovementRecorder(Protocol):
+    """Registra un ingreso o egreso de caja (HU21), p. ej. el egreso de una compra recibida."""
+
+    async def __call__(self, request: MovementRequest) -> MovementEntry: ...
 
 
 class PaymentsLookup(Protocol):
@@ -99,6 +110,10 @@ def payment_recorder(session: AsyncSession) -> PaymentRecorder:
     return RecordPayment(composition.payment_repository(session))
 
 
+def movement_recorder(session: AsyncSession) -> MovementRecorder:
+    return RecordMovement(composition.movement_repository(session), composition.clock())
+
+
 def payments_lookup(session: AsyncSession) -> PaymentsLookup:
     return ContractPayments(composition.payment_repository(session))
 
@@ -147,6 +162,10 @@ __all__ = [
     "EventCashLookup",
     "LedgerValidationError",
     "MonthlyCash",
+    "MovementEntry",
+    "MovementRecorder",
+    "MovementRequest",
+    "MovementType",
     "MovementCategory",
     "Payment",
     "PaymentEntriesLookup",
@@ -162,6 +181,7 @@ __all__ = [
     "PaymentsLookup",
     "cash_entries",
     "cash_totals",
+    "movement_recorder",
     "contract_paid_totals",
     "event_cash",
     "payment_entries",

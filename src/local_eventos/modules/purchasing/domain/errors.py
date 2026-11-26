@@ -22,3 +22,24 @@ class InvalidTransitionError(PurchasingRuleError):
 
     def __init__(self, message: str) -> None:
         super().__init__("purchasing.invalid_transition", message)
+
+
+class ExpenseNotAvailableError(PurchasingRuleError):
+    """R-COM-3: solo una compra recibida y con total se registra como egreso."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__("purchasing.expense_not_available", message)
+
+
+class ExpenseAlreadyRegisteredError(PurchasingRuleError):
+    def __init__(self) -> None:
+        super().__init__(
+            "purchasing.expense_already_registered", "El egreso de esta compra ya se registró."
+        )
+
+
+class NoShortagesError(PurchasingRuleError):
+    def __init__(self) -> None:
+        super().__init__(
+            "purchasing.no_shortages", "El evento no tiene faltantes: no hay nada que comprar."
+        )
