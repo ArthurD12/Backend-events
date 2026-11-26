@@ -27,7 +27,7 @@ Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunc
 - `src/local_eventos/main.py` (routers y manejadores de errores de cada módulo).
 - `src/local_eventos/modules/identity/domain/permissions.py` y `tests/unit/identity/test_user.py`.
 - `docs/DOMAIN.md` (§9 tabla de permisos y §11 registro de decisiones: se agregan filas).
-- Listas de `TRUNCATE` en `tests/integration/**`.
+- Listas de `TRUNCATE` en `tests/integration/**`: si una tabla nueva referencia a otra, incluir ambas en **todas** las listas (pasó con `staff_assignments` y `staff_workers`).
 - `openapi.json`: no se edita a mano; después del merge se regenera con `just openapi`.
 
 ## 4. Puntos de conexión entre dueños
