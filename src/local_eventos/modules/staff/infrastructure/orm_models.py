@@ -214,8 +214,8 @@ class StaffAssignmentAuditRow(Base):
     reason: Mapped[str | None] = mapped_column(Text)
     actor_id: Mapped[UUID]  # usuario de identity: sin FK entre módulos (regla 3)
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    previous_values: Mapped[dict[str, object] | None] = mapped_column(JSONB)
-    new_values: Mapped[dict[str, object] | None] = mapped_column(JSONB)
+    previous_values: Mapped[dict[str, object] | None] = mapped_column(JSONB(none_as_null=True))
+    new_values: Mapped[dict[str, object] | None] = mapped_column(JSONB(none_as_null=True))
 
 
 Index(

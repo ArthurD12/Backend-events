@@ -31,6 +31,11 @@ class AssignmentView:
     El pago se incluye porque la lectura con `staff:manage` lo devuelve (decisión
     del PO, 25/11/2026); la consulta pública de HU14 usa `EventAssignment`, que no
     lo expone. `start_at`/`end_at` están en UTC aware.
+
+    `event_code`/`event_status` los rellena la capa de aplicación con
+    `commercial.public_api`: el repositorio no puede leer tablas de `commercial`
+    (regla 3) y los deja en `None`. `ListEventAssignments` los completa; las
+    consultas que no tienen el evento a mano (p. ej. `GetAssignment`) los dejan nulos.
     """
 
     id: UUID
@@ -44,8 +49,8 @@ class AssignmentView:
     pay_cents: int
     currency: str
     status: AssignmentStatus
-    event_code: str
-    event_status: EventStatus
+    event_code: str | None = None
+    event_status: EventStatus | None = None
 
 
 @dataclass(frozen=True)

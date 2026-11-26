@@ -11,6 +11,7 @@ Python puro: sin FastAPI, SQLAlchemy ni Pydantic (AGENTS.md, regla 2).
 
 from __future__ import annotations
 
+from dataclasses import replace
 from uuid import UUID
 
 from local_eventos.modules.commercial.public_api import EventLookup
@@ -43,4 +44,7 @@ class ListEventAssignments:
         event = await self._event_lookup(event_id)
         if event is None:
             raise EventNotFoundError()
-        return await self._assignments.list_by_event(event_id)
+        views = await self._assignments.list_by_event(event_id)
+        # El repositorio no consulta `commercial` (regla 3); aquí se completan el
+        # código y el estado del evento con la consulta de `public_api`.
+        return [replace(view, event_code=event.code, event_status=event.status) for view in views]
