@@ -118,7 +118,8 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 | Productos, almacén, requerimientos y compras | ✔ | lectura del almacén y materiales de sus eventos (`inventory:read`) | ✔ |
 | Reportes financieros (caja, flujo de caja, resultado por evento) | ✔ | – | – |
 | Reportes de eventos (montos solo con `payments:record`), almacén y compras (020) | ✔ | eventos (con montos) y almacén | eventos (sin montos), almacén y compras |
-| Agente de IA | ✔ | ✔ | ✔ |
+| Agente de IA (cada función exige además el permiso de su dato; R-IA-5) | ✔ | ✔ | ✔ |
+| Historial del asistente (`assistant_log:read`) | ✔ | – | – |
 
 Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. ej. `quotes:create`), no por nombre de rol. Los registros con operaciones relacionadas no se eliminan: se desactivan (RN02). Correcciones y anulaciones guardan usuario, fecha, hora y motivo (RN03).
 
@@ -195,3 +196,8 @@ La gestión del **personal (trabajadores)** exige el permiso `staff:manage`; el 
 | 26/11/2026 | Requerimiento del evento (021) | Se calcula al momento, no se guarda; un evento finalizado o cancelado no se calcula (solo se ve lo que salió) (R-REC-2) | Equipo **(provisional)** |
 | 26/11/2026 | Reservas de materiales (021) | Apartado sin movimiento de stock; el disponible para otros es stock menos reservas vigentes y nunca queda negativo; la salida al evento consume primero su reserva; vence al cancelar o finalizar el evento (R-REC-3) | Equipo **(provisional)** |
 | 26/11/2026 | Egreso de la compra (021, cambia R-COM-1) | Una compra recibida se registra como egreso de insumos con un clic (monto = total, evento y código de la compra), una sola vez; no es automático (R-COM-3) | Equipo **(provisional)** |
+| 26/11/2026 | Proveedor del asistente (022, R-IA-1) | Anthropic (Claude), modelo `claude-opus-5-5`, detrás del puerto `LanguageModel` (ADR 0005); sin clave el asistente aparece no disponible | Equipo **(provisional)** |
+| 26/11/2026 | Límite del asistente (022, R-IA-2) | 30 preguntas por usuario por hora (se cuentan las del registro de auditoría) y respuestas cortas; al pasarlo responde 429 `assistant.rate_limited` | Equipo **(provisional)** |
+| 26/11/2026 | Conversación del asistente (022, R-IA-3) | Vive en el chat: el frontend envía hasta 10 turnos previos; el backend no guarda contexto entre días. La auditoría sí se guarda y es de solo inserción | Equipo **(provisional)** |
+| 26/11/2026 | Formato de respuestas (022, R-IA-4) | Español; las funciones entregan montos en soles y fechas día/mes/año de Lima, y el modelo los copia tal cual | Equipo **(provisional)** |
+| 26/11/2026 | Permisos del asistente (022, R-IA-5) | Cada función exige el permiso de su dato: eventos `events:read`; cuentas, cobros e historial del cliente `payments:record`; almacén `inventory:read`; compras `purchasing:manage`; caja `finance:read`; clientes `clients:manage`. Historial: `assistant_log:read` (solo administrador). Sin permiso, el asistente lo dice. Falta la herramienta de personal hasta que `staff` publique la consulta | Equipo **(provisional)** |

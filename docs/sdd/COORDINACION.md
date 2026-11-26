@@ -9,7 +9,7 @@
 | `staff` (personal, disponibilidad, asignaciones, asistencia) | **Harold** | HU15 ✓, HU16, HU17, HU18 |
 | `commercial`, `ledger`, `inventory`, `purchasing`, `reporting` | **César** | HU11, HU13, HU14, HU19–HU30, HU31–HU34 |
 | Frontend (repo `Frontend-events`), todas las pantallas | **César** | — |
-| `assistant` (IA) | sin asignar | HU35–HU40 (al final) |
+| `assistant` (IA) | **César** | HU35–HU40 |
 
 Un agente **no modifica** un módulo de otro dueño. Si necesita algo de él, lo pide aquí (sección 4) y usa su `public_api` cuando exista.
 
@@ -19,6 +19,7 @@ Un agente **no modifica** un módulo de otro dueño. Si necesita algo de él, lo
 | HU16–HU18 | Harold | `feat/hu16-...` (desde `developer-b`) | por empezar |
 | Lote 6: reportes (HU31 completo, HU32–HU34) | César | `feat/reportes` | backend listo (T-01 a T-06); falta frontend (T-07) |
 | Lote 7: HU24, HU25, HU30 (backend y frontend) | César | `feat/materiales-menu` | backend listo (T-01 a T-05); falta frontend (T-06) |
+| 022 Asistente de IA (HU35–HU40) | César | `feat/asistente-ia` | backend listo (T-01 a T-05); falta frontend (T-06) |
 
 ## 3. Archivos compartidos (conflictos frecuentes)
 Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunca solo una:
@@ -39,7 +40,7 @@ Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunc
 Cuando un punto pase a "listo", avisar al otro dueño para que lo conecte.
 
 ## 5. Migraciones (Alembic)
-- Head actual de `developer-b`: **`6900ec1af5f8`**. Lote 7 (`feat/materiales-menu`) agrega `ba34931b5de5` (recetas, reservas y `expense_movement_id`) encadenada a ese head.
+- Head actual de `developer-b`: **`6900ec1af5f8`**. Lote 7 (`feat/materiales-menu`) agrega `ba34931b5de5` (recetas, reservas y `expense_movement_id`) encadenada a ese head. El asistente (`feat/asistente-ia`) agrega `c3a9e5d7f1b2` (`assistant_queries`) encadenada a `ba34931b5de5`.
 - Antes de crear una migración: `git fetch origin developer-b`, unir `developer-b` en tu rama y `uv run alembic heads` = **un solo head**; la tuya va encadenada a ese.
 - Si mientras tanto entró otra migración a `developer-b`: cambia el `down_revision` de **tu** migración (si nunca se unió) o agrega una migración de unión (`alembic merge`). **Nunca** se edita una migración ya unida (regla 8).
 
