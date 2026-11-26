@@ -41,6 +41,9 @@ from local_eventos.modules.staff.application.ports.worker_repository import (
     WorkerLookup,
     WorkerRef,
 )
+from local_eventos.modules.staff.application.use_cases.cancel_assignment import (
+    CancelAssignment,
+)
 from local_eventos.modules.staff.application.use_cases.register_assignment import (
     RegisterAssignment,
 )
@@ -1048,3 +1051,159 @@ async def test_ca17_15_worker_id_y_event_id_no_forman_parte_de_la_entrada() -> N
         "reason",
         "actor_id",
     }
+
+
+# --- T-09: CancelAssignment ---------------------------------------------------
+
+
+class _OrderRepository(FakeAssignmentRepository):
+    """Registra el orden de bloqueo del trabajador y de la asignación."""
+
+    async def lock_worker(self, worker_id: UUID) -> None:
+        self.calls.append("lock_worker")
+        await super().lock_worker(worker_id)
+
+    async def get_for_update(self, assignment_id: UUID) -> Assignment | None:
+        self.calls.append("get_for_update")
+        return await super().get_for_update(assignment_id)
+
+
+def _cancel(
+    *,
+    repository: FakeAssignmentRepository | None = None,
+    events: FakeEventLookup | None = None,
+    clock: Clock | None = None,
+) -> tuple[CancelAssignment, FakeAssignmentRepository]:
+    repo = repository if repository is not None else FakeAssignmentRepository()
+    use_case = CancelAssignment(
+        assignments=repo,
+        event_lookup=events if events is not None else FakeEventLookup(),
+        clock=clock if clock is not None else FakeClock(),
+    )
+    return use_case, repo
+
+
+async def _execute_cancel(
+    use_case: CancelAssignment,
+    *,
+    assignment_id: UUID = ASSIGNMENT_ID,
+    reason: str = "El cliente canceló el evento",
+) -> Assignment:
+    return await use_case.execute(
+        assignment_id=assignment_id,
+        reason=reason,
+        actor_id=ACTOR_ID,
+    )
+
+
+async def test_ca17_16_anular_libera_y_audita_cancelled_con_motivo() -> None:
+    repository = FakeAssignmentRepository()
+    existing = _existing_assignment()
+    await repository.save(existing, _audit(existing.id))
+    use_case, _repo = _cancel(repository=repository)
+
+    assignment = await _execute_cancel(
+        use_case,
+        reason="El cliente canceló el evento",
+    )
+
+    assert assignment is existing
+    assert assignment.status is AssignmentStatus.CANCELLED
+    assert assignment.occupies is False
+    assert repository.assignments[ASSIGNMENT_ID] is existing
+    assert len(repository.audits) == 2
+    audit = repository.audits[-1]
+    assert audit.action is AssignmentAction.CANCELLED
+    assert audit.assignment_id == ASSIGNMENT_ID
+    assert audit.actor_id == ACTOR_ID
+    assert audit.occurred_at == NOW
+    assert audit.reason == "El cliente canceló el evento"
+    assert audit.previous_values is None
+    assert audit.new_values is None
+
+
+async def test_anular_ya_cancelada_es_idempotente_sin_segunda_auditoria() -> None:
+    repository = FakeAssignmentRepository()
+    existing = _existing_assignment()
+    existing.cancel()
+    await repository.save(existing, _audit(existing.id))
+    repository.calls.clear()
+    use_case, _repo = _cancel(repository=repository)
+
+    assignment = await _execute_cancel(use_case)
+
+    assert assignment is existing
+    assert assignment.status is AssignmentStatus.CANCELLED
+    assert assignment.occupies is False
+    assert len(repository.audits) == 1
+    assert "save" not in repository.calls
+
+
+async def test_ca17_16_motivo_vacio_se_rechaza_antes_de_leer_o_bloquear() -> None:
+    use_case, repository = _cancel()
+
+    with pytest.raises(AssignmentReasonRequiredError) as error:
+        await _execute_cancel(use_case, reason="   ")
+
+    assert error.value.code == "staff.assignment_reason_required"
+    assert repository.calls == []
+
+
+async def test_anular_asignacion_inexistente_lanza_not_found() -> None:
+    use_case, repository = _cancel()
+
+    with pytest.raises(AssignmentNotFoundError) as error:
+        await _execute_cancel(use_case)
+
+    assert error.value.code == "staff.assignment_not_found"
+    assert repository.calls == []
+
+
+async def test_anular_con_evento_inexistente_lanza_event_not_found() -> None:
+    repository = FakeAssignmentRepository()
+    existing = _existing_assignment()
+    await repository.save(existing, _audit(existing.id))
+    use_case, _repo = _cancel(repository=repository, events=FakeEventLookup({}))
+
+    with pytest.raises(EventNotFoundError) as error:
+        await _execute_cancel(use_case)
+
+    assert error.value.code == "staff.event_not_found"
+    assert existing.status is AssignmentStatus.ACTIVE
+    assert existing.occupies is True
+    assert len(repository.audits) == 1
+
+
+@pytest.mark.parametrize("status", [EventStatus.FINISHED, EventStatus.CANCELLED])
+async def test_ca17_24_anular_evento_finalizado_o_cancelado_es_rechazado(
+    status: EventStatus,
+) -> None:
+    repository = FakeAssignmentRepository()
+    existing = _existing_assignment()
+    await repository.save(existing, _audit(existing.id))
+    use_case, _repo = _cancel(
+        repository=repository,
+        events=FakeEventLookup({EVENT_ID: _event(status=status)}),
+    )
+
+    with pytest.raises(EventNotAssignableError) as error:
+        await _execute_cancel(use_case)
+
+    assert error.value.code == "staff.event_not_assignable"
+    assert status.value in str(error.value)
+    assert existing.status is AssignmentStatus.ACTIVE
+    assert existing.occupies is True
+    assert len(repository.audits) == 1
+
+
+async def test_anular_bloquea_primero_trabajador_y_luego_asignacion() -> None:
+    repository = _OrderRepository()
+    existing = _existing_assignment()
+    await repository.save(existing, _audit(existing.id))
+    repository.calls.clear()
+    use_case, _repo = _cancel(repository=repository)
+
+    await _execute_cancel(use_case)
+
+    assert repository.calls.index("lock_worker") < repository.calls.index("get_for_update")
+    assert repository.locked_workers == [WORKER_ID]
