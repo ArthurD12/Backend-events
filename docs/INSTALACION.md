@@ -48,7 +48,7 @@ Para el **asistente con IA** (ADR 0005), pon tu clave de Anthropic en `ANTHROPIC
 just install    # uv sync: crea .venv e instala las versiones exactas de uv.lock
 ```
 
-Incluye ReportLab (PDF de cotizaciones) y el SDK `anthropic` (asistente con IA): no hace falta instalar nada más en Windows.
+Incluye ReportLab (PDF de cotizaciones), el SDK `anthropic` (asistente con IA) y `tzdata` (zona horaria `America/Lima`, que Windows no trae): no hace falta instalar nada más en Windows.
 
 ## 5. Levantar PostgreSQL
 
