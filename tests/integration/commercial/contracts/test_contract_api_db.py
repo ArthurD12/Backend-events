@@ -103,6 +103,29 @@ def test_r_con_5_una_cotizacion_un_solo_contrato(env: tuple[TestClient, str]) ->
     assert (again.status_code, again.json()["code"]) == (409, "contract.already_exists")
 
 
+def test_ca43_descarga_el_pdf_del_contrato_con_los_datos_de_la_base(
+    env: tuple[TestClient, str],
+) -> None:
+    api, _ = env
+    contract = api.post("/v1/contracts", json={"quote_id": _accepted_quote(api, "40000004")}).json()
+    pending = api.get(f"/v1/contracts/{contract['id']}/pdf")
+    api.post(
+        f"/v1/contracts/{contract['id']}/sign",
+        json={"signed_on": TODAY.isoformat(), "signer_name": "José Ramírez",
+              "advance": {"paid_on": TODAY.isoformat(), "method": "CASH"}},
+    )  # fmt: skip
+    signed = api.get(f"/v1/contracts/{contract['id']}/pdf")
+    api.post(f"/v1/contracts/{contract['id']}/cancel", json={"reason": "El cliente canceló"})
+    cancelled = api.get(f"/v1/contracts/{contract['id']}/pdf")
+
+    disposition = f'attachment; filename="{contract["code"]}.pdf"'
+    for response in (pending, signed):
+        assert response.status_code == 200
+        assert response.headers["content-disposition"] == disposition
+        assert response.content.startswith(b"%PDF")
+    assert (cancelled.status_code, cancelled.json()["code"]) == (409, "contract.pdf_not_available")
+
+
 def test_hu19_a_hu22_pagos_caja_y_reportes_en_la_base(env: tuple[TestClient, str]) -> None:
     api, _ = env
     contract = api.post("/v1/contracts", json={"quote_id": _accepted_quote(api, "40000003")}).json()

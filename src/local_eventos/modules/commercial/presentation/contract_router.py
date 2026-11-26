@@ -4,10 +4,13 @@
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 
 from local_eventos.modules.commercial.application.contracts.ports.contract_repository import (
     ContractFilters,
+)
+from local_eventos.modules.commercial.application.contracts.use_cases.contract_document import (
+    GetContractDocument,
 )
 from local_eventos.modules.commercial.application.contracts.use_cases.contracts import (
     MAX_PAGE_SIZE,
@@ -36,6 +39,8 @@ from local_eventos.modules.commercial.presentation.contract_schemas import (
 )
 from local_eventos.modules.commercial.presentation.dependencies import (
     Clients,
+    Company,
+    ContractRenderer,
     Contracts,
     Events,
     PaymentHistory,
@@ -120,6 +125,36 @@ async def get_contract(
     """El contrato con su firma, su anulación, sus pagos y su evento, si ya lo es."""
     contract = await GetContract(contracts)(contract_id)
     return await _out(contract, user, quotes, clients, history, events)
+
+
+@router.get(
+    "/{contract_id}/pdf",
+    operation_id="contracts_pdf",
+    response_class=Response,
+    responses={
+        200: {"content": {"application/pdf": {}}, "description": "El PDF del contrato"},
+        **_NOT_FOUND,
+        409: {"model": Problem, "description": "`contract.pdf_not_available`"},
+    },
+)
+async def contract_pdf(
+    contract_id: UUID,
+    contracts: Contracts,
+    quotes: Quotes,
+    clients: Clients,
+    renderer: ContractRenderer,
+    company: Company,
+    clock: Today,
+) -> Response:
+    """Descarga el contrato en PDF (HU43). Pendiente de firma o firmado; no lo modifica."""
+    filename, content = await GetContractDocument(
+        contracts, quotes, clients, renderer, company, clock
+    )(contract_id)
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.post(
