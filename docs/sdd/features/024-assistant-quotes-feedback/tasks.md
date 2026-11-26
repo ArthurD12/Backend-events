@@ -5,4 +5,4 @@
 - [x] T-03 [assistant/tools] `search_events`, `search_quotes`, regla del prompt + tests
 - [x] T-04 [assistant] tabla `assistant_feedback` (solo inserción) + migración, `RateQuery`, `SearchQueries` con valoración, `query_id` en `assistant_ask`
 - [x] T-05 [presentation] `assistant_feedback_create`, `assistant_my_queries`, valoración en `assistant_log_list` + tests unit e integración + `just openapi`
-- [ ] T-06 [frontend] botones de valoración, "Mis consultas", nombres de herramientas, valoración en `/historial-asistente`
+- [x] T-06 [frontend] botones de valoración, "Mis consultas", nombres de herramientas, valoración en `/historial-asistente`
