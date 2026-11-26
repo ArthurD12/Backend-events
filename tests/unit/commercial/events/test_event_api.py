@@ -3,7 +3,7 @@
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -138,6 +138,7 @@ def api() -> Iterator[Api]:
             deps.get_service_lookup: dep(FakeServiceLookup()),
             deps.get_payment_recorder: dep(RecordPayment(payments)),
             deps.get_payments_lookup: dep(ContractPaymentEntries(payments)),
+            deps.get_reservation_releaser: dep(_no_reservations),
             deps.get_clock: lambda: clock,
             deps.get_user_names: lambda: _names,
             get_current_user: current,
@@ -145,6 +146,10 @@ def api() -> Iterator[Api]:
     )
     with TestClient(app) as client:
         yield Api(client, me, other, customer_id=str(customer.id), clock=clock)
+
+
+async def _no_reservations(event_id: UUID) -> None:
+    return None
 
 
 def test_ca10_convierte_y_relaciona_contrato_y_evento(api: Api) -> None:

@@ -23,6 +23,9 @@ from local_eventos.modules.commercial.application.events.ports.event_repository 
     EventRepository,
     EventSummary,
 )
+from local_eventos.modules.commercial.application.events.ports.reservation_releaser import (
+    ReservationReleaser,
+)
 from local_eventos.modules.commercial.application.quotes.ports.clock import Clock
 from local_eventos.modules.commercial.application.quotes.ports.quote_repository import (
     QuoteRepository,
@@ -159,11 +162,13 @@ class CancelEvent:
         contracts: ContractRepository,
         payments: PaymentRecorder,
         clock: Clock,
+        reservations: ReservationReleaser,
     ) -> None:
         self._events = events
         self._contracts = contracts
         self._payments = payments
         self._clock = clock
+        self._reservations = reservations
 
     async def __call__(
         self,
@@ -211,4 +216,5 @@ class CancelEvent:
             now=now,
         )
         await self._contracts.update(contract)
+        await self._reservations(event.id)  # R-REC-3: lo reservado vuelve a estar disponible
         return event

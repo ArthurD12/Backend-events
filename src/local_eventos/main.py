@@ -36,7 +36,11 @@ from local_eventos.modules.identity.presentation.errors import (
 from local_eventos.modules.inventory.presentation import (
     movement_router as inventory_movement_router,
 )
-from local_eventos.modules.inventory.presentation import product_router
+from local_eventos.modules.inventory.presentation import (
+    product_router,
+    recipe_router,
+    requirement_router,
+)
 from local_eventos.modules.inventory.presentation.errors import (
     register_error_handlers as register_inventory_errors,
 )
@@ -120,6 +124,8 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     app.include_router(service_router.router)
     app.include_router(product_router.router)
     app.include_router(inventory_movement_router.router)
+    app.include_router(recipe_router.router)
+    app.include_router(requirement_router.router)
     app.include_router(supplier_router.router)
     app.include_router(purchase_router.router)
     app.include_router(worker_router.router)

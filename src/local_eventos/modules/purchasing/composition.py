@@ -2,20 +2,35 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from local_eventos.modules.commercial.public_api import (
+    CompanyProfile,
+    EventLookup,
+    company_profile,
+    event_lookup,
+)
 from local_eventos.modules.inventory.public_api import (
+    EventRequirementLookup,
     LowStockLookup,
     ProductLookup,
     StockReceiver,
+    event_requirement,
     low_stock_lookup,
     product_lookup,
     stock_receiver,
 )
+from local_eventos.modules.ledger.public_api import MovementRecorder, movement_recorder
 from local_eventos.modules.purchasing.application.ports.clock import Clock
+from local_eventos.modules.purchasing.application.ports.document import (
+    PurchaseDocumentRenderer,
+)
 from local_eventos.modules.purchasing.application.ports.repositories import (
     PurchaseRepository,
     SupplierRepository,
 )
 from local_eventos.modules.purchasing.infrastructure.clock import LimaClock
+from local_eventos.modules.purchasing.infrastructure.purchase_pdf import (
+    ReportLabPurchaseRenderer,
+)
 from local_eventos.modules.purchasing.infrastructure.repositories import (
     SqlAlchemyPurchaseRepository,
     SqlAlchemySupplierRepository,
@@ -46,3 +61,26 @@ def receiver(session: AsyncSession) -> StockReceiver:
 
 def clock() -> Clock:
     return LimaClock()
+
+
+def requirement(session: AsyncSession) -> EventRequirementLookup:
+    """Requerimiento del evento (faltantes), por `inventory.public_api`."""
+    return event_requirement(session)
+
+
+def events(session: AsyncSession) -> EventLookup:
+    """Código del evento para el PDF, por `commercial.public_api`."""
+    return event_lookup(session)
+
+
+def expenses(session: AsyncSession) -> MovementRecorder:
+    """Egresos de caja en la misma sesión (misma transacción) que la compra."""
+    return movement_recorder(session)
+
+
+def document_renderer() -> PurchaseDocumentRenderer:
+    return ReportLabPurchaseRenderer()
+
+
+def company() -> CompanyProfile:
+    return company_profile()

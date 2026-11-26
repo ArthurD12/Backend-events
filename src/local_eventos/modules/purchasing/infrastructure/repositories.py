@@ -233,6 +233,7 @@ def _to_purchase(row: PurchaseRow, lines: list[PurchaseLine]) -> Purchase:
         received=_stamp(row.received_by, row.received_at),
         cancelled=_stamp(row.cancelled_by, row.cancelled_at),
         cancel_reason=row.cancel_reason,
+        expense_movement_id=row.expense_movement_id,
     )
 
 
@@ -250,6 +251,7 @@ def _copy_purchase(purchase: Purchase, row: PurchaseRow) -> None:
     row.cancelled_by = purchase.cancelled.by if purchase.cancelled else None
     row.cancelled_at = purchase.cancelled.at if purchase.cancelled else None
     row.cancel_reason = purchase.cancel_reason
+    row.expense_movement_id = purchase.expense_movement_id
 
 
 def _to_supplier(row: SupplierRow) -> Supplier:

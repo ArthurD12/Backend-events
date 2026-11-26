@@ -209,3 +209,6 @@ class ListMovementsBetween:
             for m in movements
             if m.product_id in products
         ]
+
+
+product_info = _info  # para otros casos de uso del módulo

@@ -1,7 +1,7 @@
 """Convertir un contrato en evento (HU10), cancelarlo, planificarlo y avanzar sus estados
 (HU11) con piezas en memoria."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, time, timedelta
 from uuid import UUID, uuid4
 
@@ -81,6 +81,10 @@ class Setup:
     events: InMemoryEventRepository
     payments: InMemoryPaymentRepository
     coordinators: FakeCoordinators
+    released: list[UUID] = field(default_factory=list)
+
+    async def release(self, event_id: UUID) -> None:
+        self.released.append(event_id)
 
     def convert(self) -> ConvertContractToEvent:
         return ConvertContractToEvent(
@@ -94,7 +98,11 @@ class Setup:
 
     def cancel_event(self) -> CancelEvent:
         return CancelEvent(
-            self.events, self.contracts, RecordPayment(self.payments), self.world.clock
+            self.events,
+            self.contracts,
+            RecordPayment(self.payments),
+            self.world.clock,
+            self.release,
         )
 
     async def contract(
@@ -230,6 +238,7 @@ async def test_ca11_c4_cancelar_evento_anula_contrato_y_registra_devolucion(setu
     stored = await setup.contracts.get(contract.id)
     advance, refund = setup.payments.payments
     assert cancelled.status is EventStatus.CANCELLED
+    assert setup.released == [event.id]  # R-REC-3
     assert cancelled.cancellation is not None
     assert cancelled.cancellation.reason == "El cliente canceló"
     assert await GetEvent(setup.events)(event.id) == cancelled
@@ -470,11 +479,12 @@ async def test_ca11_4_ciclo_completo_con_historial(setup: Setup) -> None:
     await StartEvent(setup.events, clock)(event.id, by=MANAGER.id)
     with pytest.raises(EventRuleError) as edit:
         await _update(setup)(event.id, _planning(event, guests=90), by=MANAGER.id)
-    finished = await FinishEvent(setup.events, clock)(event.id, by=ADMIN.id)
+    finished = await FinishEvent(setup.events, clock, setup.release)(event.id, by=ADMIN.id)
 
     assert early.value.code == "event.not_event_day"
     assert edit.value.code == "event.not_editable"
     assert finished.status is EventStatus.FINISHED
+    assert setup.released == [event.id]  # R-REC-3
     assert await GetEvent(setup.events)(event.id) == finished
     changes = await ListEventChanges(setup.events)(event.id)
     assert [(c.action, c.changed_by) for c in changes] == [
@@ -489,7 +499,7 @@ async def test_ca11_4_no_vuelve_atras(setup: Setup) -> None:
     clock = setup.world.clock
 
     with pytest.raises(EventRuleError) as error:
-        await FinishEvent(setup.events, clock)(event.id, by=MANAGER.id)
+        await FinishEvent(setup.events, clock, setup.release)(event.id, by=MANAGER.id)
 
     assert error.value.code == "event.invalid_transition"
     assert await ListEventChanges(setup.events)(event.id) == []

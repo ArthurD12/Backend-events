@@ -20,18 +20,25 @@ from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from testcontainers.community.postgres import PostgresContainer
 
-from local_eventos.modules.inventory.application.errors import CodeTakenError
+from local_eventos.modules.inventory.application.errors import (
+    CodeTakenError,
+    InsufficientAvailableError,
+)
 from local_eventos.modules.inventory.application.ports.product_repository import ProductFilters
 from local_eventos.modules.inventory.application.use_cases.movements import (
     MovementCommand,
     RecordMovement,
 )
+from local_eventos.modules.inventory.application.use_cases.reservations import ReserveMaterials
 from local_eventos.modules.inventory.domain.errors import InsufficientStockError
 from local_eventos.modules.inventory.domain.movement import MovementKind
 from local_eventos.modules.inventory.domain.product import Category, Product, ProductKind, Unit
 from local_eventos.modules.inventory.domain.stock import StockLevel
 from local_eventos.modules.inventory.infrastructure.product_repository import (
     SqlAlchemyProductRepository,
+)
+from local_eventos.modules.inventory.infrastructure.reservation_repository import (
+    SqlAlchemyReservationRepository,
 )
 from local_eventos.modules.inventory.infrastructure.stock_repository import (
     SqlAlchemyMovementRepository,
@@ -63,7 +70,10 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
     async with engine.begin() as connection:
         # TRUNCATE no dispara el trigger de UPDATE/DELETE: solo se usa para limpiar las pruebas.
         await connection.execute(
-            text("TRUNCATE inventory_stock, inventory_movements, inventory_products")
+            text(
+                "TRUNCATE inventory_stock, inventory_movements, inventory_recipe_lines,"
+                " inventory_reservations, inventory_products"
+            )
         )
     await engine.dispose()
 
@@ -93,6 +103,7 @@ def _recorder(session: AsyncSession, *, slow: bool = False) -> RecordMovement:
         stock,
         SqlAlchemyMovementRepository(session),
         EVENTS,
+        SqlAlchemyReservationRepository(session),
         FakeClock(),
     )
 
@@ -149,6 +160,39 @@ async def test_rn20_dos_salidas_simultaneas_no_dejan_stock_negativo(
         )
     assert levels[product.id].quantity == Decimal("4.000")
     assert total == 2
+
+
+async def _reserve(
+    sessions: async_sessionmaker[AsyncSession], product: Product, event_id: UUID, quantity: str
+) -> None:
+    async with sessions.begin() as session:
+        await ReserveMaterials(
+            SqlAlchemyProductRepository(session),
+            SlowStock(session),
+            SqlAlchemyReservationRepository(session),
+            EVENTS,
+            FakeClock(),
+        )(event_id, [(product.id, Decimal(quantity))], by=USER)
+
+
+async def test_ca25_4_dos_reservas_simultaneas_no_dejan_disponible_negativo(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    product = await _product(sessions)
+    await _move(sessions, _entry(product, "10"))
+    other = EVENTS.add()
+
+    results = await asyncio.gather(
+        _reserve(sessions, product, EVENT, "6"),
+        _reserve(sessions, product, other, "6"),
+        return_exceptions=True,
+    )
+
+    assert sorted(type(r).__name__ for r in results) == ["InsufficientAvailableError", "NoneType"]
+    assert any(isinstance(r, InsufficientAvailableError) for r in results)
+    async with sessions() as session:
+        totals = await SqlAlchemyReservationRepository(session).active_totals([product.id])
+    assert totals[product.id] == Decimal("6.000")
 
 
 async def test_check_de_la_base_impide_stock_negativo(

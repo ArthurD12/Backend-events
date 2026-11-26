@@ -90,6 +90,8 @@ class PurchaseRow(Base):
     cancelled_by: Mapped[UUID | None]
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     cancel_reason: Mapped[str | None] = mapped_column(String(500))
+    # Egreso de ledger de esta compra (R-COM-3); único: se registra una sola vez.
+    expense_movement_id: Mapped[UUID | None] = mapped_column(unique=True)
 
 
 class PurchaseLineRow(Base):

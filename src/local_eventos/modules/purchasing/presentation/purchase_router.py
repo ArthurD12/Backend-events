@@ -4,34 +4,43 @@ from decimal import Decimal
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 
 from local_eventos.modules.identity.public_api import CurrentUser, Permission, require_permission
 from local_eventos.modules.purchasing.application.ports.repositories import PurchaseFilters
 from local_eventos.modules.purchasing.application.use_cases.purchases import (
     MAX_PAGE_SIZE,
     CancelPurchase,
+    CreatePurchaseFromEvent,
     CreatePurchaseRequest,
     GetPurchase,
+    GetPurchaseDocument,
     ListPurchases,
     OrderPurchase,
     PurchaseDetailsBuilder,
     PurchaseRequestCommand,
     ReceivePurchase,
+    RegisterPurchaseExpense,
     SuggestShortages,
 )
 from local_eventos.modules.purchasing.domain.errors import PurchasingValidationError
 from local_eventos.modules.purchasing.domain.purchase import PurchaseStatus, ReceivedLine
 from local_eventos.modules.purchasing.presentation.dependencies import (
+    Company,
+    Events,
+    Expenses,
     LowStock,
     Products,
     Purchases,
     Receiver,
+    Renderer,
+    Requirement,
     Suppliers,
     Today,
 )
 from local_eventos.modules.purchasing.presentation.schemas import (
     CancelIn,
+    ExpenseIn,
     OrderIn,
     PurchaseOut,
     PurchasePageOut,
@@ -214,4 +223,94 @@ async def cancel_purchase(
 ) -> PurchaseOut:
     """Cancela una compra solicitada u ordenada, con motivo."""
     await CancelPurchase(purchases, clock)(purchase_id, reason=body.reason, cancelled_by=user.id)
+    return await _detail(purchase_id, purchases, products, suppliers)
+
+
+@router.post(
+    "/purchases/from-event/{event_id}",
+    status_code=status.HTTP_201_CREATED,
+    operation_id="purchasing_purchases_from_event",
+    responses={
+        404: {"model": Problem, "description": "`purchasing.event_not_found`"},
+        409: {"model": Problem, "description": "`purchasing.no_shortages`"},
+        422: {"model": Problem, "description": "`purchasing.validation`"},
+    },
+)
+async def create_purchase_from_event(
+    event_id: UUID,
+    user: Manager,
+    purchases: Purchases,
+    products: Products,
+    suppliers: Suppliers,
+    requirement: Requirement,
+    clock: Today,
+) -> PurchaseOut:
+    """CA-25.6: solicitud con los faltantes del requerimiento, vinculada al evento."""
+    create = CreatePurchaseRequest(purchases, products, clock)
+    purchase = await CreatePurchaseFromEvent(create, requirement)(event_id, created_by=user.id)
+    return await _detail(purchase.id, purchases, products, suppliers)
+
+
+@router.get(
+    "/purchases/{purchase_id}/pdf",
+    dependencies=_MANAGE,
+    operation_id="purchasing_purchases_pdf",
+    response_class=Response,
+    responses={
+        200: {"content": {"application/pdf": {}}, "description": "La orden de compra en PDF"},
+        **_NOT_FOUND,
+    },
+)
+async def purchase_pdf(
+    purchase_id: UUID,
+    purchases: Purchases,
+    products: Products,
+    suppliers: Suppliers,
+    events: Events,
+    renderer: Renderer,
+    company: Company,
+) -> Response:
+    """CA-30.2: descarga la compra como orden de compra en PDF. No la modifica."""
+    details = PurchaseDetailsBuilder(products, suppliers)
+    filename, content = await GetPurchaseDocument(purchases, details, events, renderer, company)(
+        purchase_id
+    )
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post(
+    "/purchases/{purchase_id}/expense",
+    dependencies=[Depends(require_permission(Permission.PAYMENTS_RECORD))],
+    operation_id="purchasing_purchases_expense",
+    responses={
+        **_NOT_FOUND,
+        403: {
+            "model": Problem,
+            "description": "`auth.forbidden` (exige también `payments:record`)",
+        },
+        409: {
+            "model": Problem,
+            "description": "`purchasing.expense_not_available`,"
+            " `purchasing.expense_already_registered`",
+        },
+    },
+)
+async def register_expense(
+    purchase_id: UUID,
+    body: ExpenseIn,
+    user: Manager,
+    purchases: Purchases,
+    products: Products,
+    suppliers: Suppliers,
+    expenses: Expenses,
+    clock: Today,
+) -> PurchaseOut:
+    """CA-30.3 y R-COM-3: egreso de insumos por el total de la compra recibida, una sola vez."""
+    await RegisterPurchaseExpense(purchases, expenses, clock)(
+        purchase_id, method=body.method, reference=body.reference, recorded_by=user.id
+    )
     return await _detail(purchase_id, purchases, products, suppliers)

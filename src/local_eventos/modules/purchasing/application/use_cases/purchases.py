@@ -9,25 +9,42 @@ from datetime import date
 from decimal import Decimal
 from uuid import UUID
 
+from local_eventos.modules.commercial.public_api import CompanyProfile, EventLookup
 from local_eventos.modules.inventory.public_api import (
+    EventRequirementLookup,
     LowStockLookup,
     ProductInfo,
     ProductLookup,
     StockEntry,
     StockReceiver,
 )
+from local_eventos.modules.ledger.public_api import (
+    MovementCategory,
+    MovementRecorder,
+    MovementRequest,
+    MovementType,
+    PaymentMethod,
+)
 from local_eventos.modules.purchasing.application.errors import (
+    EventNotFoundError,
     PurchaseNotFoundError,
     SupplierInactiveError,
 )
 from local_eventos.modules.purchasing.application.ports.clock import Clock
+from local_eventos.modules.purchasing.application.ports.document import (
+    PurchaseDocument,
+    PurchaseDocumentRenderer,
+)
 from local_eventos.modules.purchasing.application.ports.repositories import (
     PurchaseFilters,
     PurchaseRepository,
     SupplierRepository,
 )
 from local_eventos.modules.purchasing.application.use_cases.suppliers import GetSupplier
-from local_eventos.modules.purchasing.domain.errors import PurchasingValidationError
+from local_eventos.modules.purchasing.domain.errors import (
+    NoShortagesError,
+    PurchasingValidationError,
+)
 from local_eventos.modules.purchasing.domain.purchase import (
     Purchase,
     ReceivedLine,
@@ -127,6 +144,28 @@ class CreatePurchaseRequest:
         )  # fmt: skip
         await self._purchases.add(purchase)
         return purchase
+
+
+class CreatePurchaseFromEvent:
+    """CA-25.6: solicitud con los faltantes del requerimiento del evento, vinculada a él."""
+
+    def __init__(self, create: CreatePurchaseRequest, requirement: EventRequirementLookup) -> None:
+        self._create = create
+        self._requirement = requirement
+
+    async def __call__(self, event_id: UUID, *, created_by: UUID) -> Purchase:
+        found = await self._requirement(event_id)
+        if found is None:
+            raise EventNotFoundError()
+        lines = [(line.product.id, line.shortage) for line in found.lines if line.shortage > 0]
+        if not lines:
+            raise NoShortagesError()
+        return await self._create(
+            PurchaseRequestCommand(
+                lines=lines, event_id=event_id, notes=f"Faltantes del evento {found.event_code}"
+            ),
+            created_by=created_by,
+        )
 
 
 class SuggestShortages:
@@ -260,6 +299,79 @@ class ListPurchases:
             filters, limit=page_size, offset=(page - 1) * page_size
         )
         return PurchasePage(await self._details(items), total, page, page_size)
+
+
+class GetPurchaseDocument:
+    """CA-30.2: orden de compra en PDF con los datos de Darze, proveedor, líneas y evento."""
+
+    def __init__(
+        self,
+        purchases: PurchaseRepository,
+        details: PurchaseDetailsBuilder,
+        events: EventLookup,
+        renderer: PurchaseDocumentRenderer,
+        company: CompanyProfile,
+    ) -> None:
+        self._purchases = purchases
+        self._details = details
+        self._events = events
+        self._renderer = renderer
+        self._company = company
+
+    async def __call__(self, purchase_id: UUID) -> tuple[str, bytes]:
+        purchase = await _get(self._purchases, purchase_id)
+        details = (await self._details([purchase]))[0]
+        event = await self._events(purchase.event_id) if purchase.event_id else None
+        document = PurchaseDocument(
+            details.purchase,
+            details.products,
+            details.supplier,
+            self._company,
+            event.code if event else None,
+        )
+        return f"{purchase.code}.pdf", self._renderer.render(document)
+
+
+class RegisterPurchaseExpense:
+    """CA-30.3 y R-COM-3: egreso de insumos por el total de la compra recibida, una sola vez.
+
+    La compra se bloquea: dos clics simultáneos no duplican el egreso (y la columna
+    `expense_movement_id` es única en la base).
+    """
+
+    def __init__(
+        self, purchases: PurchaseRepository, expenses: MovementRecorder, clock: Clock
+    ) -> None:
+        self._purchases = purchases
+        self._expenses = expenses
+        self._clock = clock
+
+    async def __call__(
+        self,
+        purchase_id: UUID,
+        *,
+        method: PaymentMethod,
+        reference: str | None,
+        recorded_by: UUID,
+    ) -> Purchase:
+        purchase = await _get(self._purchases, purchase_id, for_update=True)
+        amount = purchase.expense_amount()
+        entry = await self._expenses(
+            MovementRequest(
+                type=MovementType.EXPENSE,
+                category=MovementCategory.SUPPLIES,
+                concept=f"Compra {purchase.code}",
+                amount_cents=amount,
+                method=method,
+                reference=reference or purchase.invoice_number,
+                occurred_on=self._clock.today(),
+                event_id=purchase.event_id,
+                recorded_by=recorded_by,
+            )
+        )
+        purchase.mark_expensed(entry.movement.id)
+        await self._purchases.update(purchase)
+        return purchase
 
 
 async def _get(

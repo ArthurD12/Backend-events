@@ -25,6 +25,9 @@ from local_eventos.modules.commercial.application.events.ports.event_log_reposit
 from local_eventos.modules.commercial.application.events.ports.event_repository import (
     EventRepository,
 )
+from local_eventos.modules.commercial.application.events.ports.reservation_releaser import (
+    ReservationReleaser,
+)
 from local_eventos.modules.commercial.application.quotes.ports.clock import Clock
 from local_eventos.modules.commercial.application.quotes.ports.document import (
     CompanyProfile,
@@ -34,6 +37,7 @@ from local_eventos.modules.commercial.application.quotes.ports.quote_repository 
     QuoteRepository,
 )
 from local_eventos.modules.identity.public_api import CoordinatorLookup, UserNamesLookup
+from local_eventos.modules.inventory.public_api import reservation_releaser
 from local_eventos.modules.ledger.public_api import (
     PaymentEntriesLookup,
     PaymentFinder,
@@ -139,6 +143,16 @@ async def get_event_repository(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> EventRepository:
     return composition.event_repository(session)
+
+
+async def get_reservation_releaser(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ReservationReleaser:
+    """Libera los materiales reservados por `inventory.public_api` (R-REC-3)."""
+    return reservation_releaser(session)
+
+
+Reservations = Annotated[ReservationReleaser, Depends(get_reservation_releaser)]
 
 
 async def get_coordinator_lookup(

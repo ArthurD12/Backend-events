@@ -9,9 +9,19 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from local_eventos.modules.inventory.public_api import LowStockLookup, ProductLookup, StockReceiver
+from local_eventos.modules.commercial.public_api import CompanyProfile, EventLookup
+from local_eventos.modules.inventory.public_api import (
+    EventRequirementLookup,
+    LowStockLookup,
+    ProductLookup,
+    StockReceiver,
+)
+from local_eventos.modules.ledger.public_api import MovementRecorder
 from local_eventos.modules.purchasing import composition
 from local_eventos.modules.purchasing.application.ports.clock import Clock
+from local_eventos.modules.purchasing.application.ports.document import (
+    PurchaseDocumentRenderer,
+)
 from local_eventos.modules.purchasing.application.ports.repositories import (
     PurchaseRepository,
     SupplierRepository,
@@ -41,6 +51,26 @@ async def get_stock_receiver(session: Session) -> StockReceiver:
     return composition.receiver(session)
 
 
+async def get_event_requirement(session: Session) -> EventRequirementLookup:
+    return composition.requirement(session)
+
+
+async def get_event_lookup(session: Session) -> EventLookup:
+    return composition.events(session)
+
+
+async def get_expense_recorder(session: Session) -> MovementRecorder:
+    return composition.expenses(session)
+
+
+def get_document_renderer() -> PurchaseDocumentRenderer:
+    return composition.document_renderer()
+
+
+def get_company_profile() -> CompanyProfile:
+    return composition.company()
+
+
 def get_clock() -> Clock:
     return composition.clock()
 
@@ -51,3 +81,8 @@ Products = Annotated[ProductLookup, Depends(get_product_lookup)]
 LowStock = Annotated[LowStockLookup, Depends(get_low_stock_lookup)]
 Receiver = Annotated[StockReceiver, Depends(get_stock_receiver)]
 Today = Annotated[Clock, Depends(get_clock)]
+Requirement = Annotated[EventRequirementLookup, Depends(get_event_requirement)]
+Events = Annotated[EventLookup, Depends(get_event_lookup)]
+Expenses = Annotated[MovementRecorder, Depends(get_expense_recorder)]
+Renderer = Annotated[PurchaseDocumentRenderer, Depends(get_document_renderer)]
+Company = Annotated[CompanyProfile, Depends(get_company_profile)]
