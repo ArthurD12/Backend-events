@@ -16,7 +16,7 @@ Un agente **no modifica** un módulo de otro dueño. Si necesita algo de él, lo
 ## 2. En curso
 | Trabajo | Dueño | Rama | Estado |
 |---|---|---|---|
-| HU17 (asignaciones) | Harold | `feat/hu17-asignaciones` (desde `developer-b`) | T-01..T-12; gate ADR 0005 y migración |
+| HU17 (asignaciones) | Harold | `feat/hu17-asignaciones` (desde `developer-b`) | T-01..T-14; faltan T-11 (tras T-15), T-15..T-27 |
 | HU16 (disponibilidad) | Harold | `feat/hu16-disponibilidad` (solo docs, otra sesión) | spec/plan en paralelo; implementación bloqueada por HU17 (necesita asignaciones) |
 | HU18 (asistencia) | Harold | — | después de HU17 |
 | Lote 6: reportes (HU31 completo, HU32–HU34) | César | `feat/reportes` | spec |
@@ -41,6 +41,7 @@ Cuando un punto pase a "listo", avisar al otro dueño para que lo conecte.
 
 ## 5. Migraciones (Alembic)
 - Head actual de `developer-b`: **`6900ec1af5f8`**.
+- Head de la rama `feat/hu17-asignaciones`: **`8df99a56ff18`** (asignaciones, pendiente de mergear).
 - Antes de crear una migración: `git fetch origin developer-b`, unir `developer-b` en tu rama y `uv run alembic heads` = **un solo head**; la tuya va encadenada a ese.
 - Si mientras tanto entró otra migración a `developer-b`: cambia el `down_revision` de **tu** migración (si nunca se unió) o agrega una migración de unión (`alembic merge`). **Nunca** se edita una migración ya unida (regla 8).
 
