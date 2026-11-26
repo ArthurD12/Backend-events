@@ -25,6 +25,7 @@ from local_eventos.modules.staff.application.errors import DuplicateDocumentErro
 from local_eventos.modules.staff.application.use_cases.change_worker_status import (
     DeactivateWorker,
 )
+from local_eventos.modules.staff.composition import assignment_occupancy
 from local_eventos.modules.staff.domain.audit import AuditAction, WorkerAudit
 from local_eventos.modules.staff.domain.document import WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import WorkerFunction, WorkerStatus
@@ -277,7 +278,9 @@ async def test_hu15_dos_desactivaciones_simultaneas_auditan_una_sola_vez(
 
     async def deactivate(reason: str) -> WorkerStatus:
         async with sessions.begin() as session:
-            use_case = DeactivateWorker(SqlAlchemyWorkerRepository(session), clock)
+            use_case = DeactivateWorker(
+                SqlAlchemyWorkerRepository(session), clock, assignment_occupancy(session)
+            )
             result = await use_case.execute(worker.id, reason, _ACTOR)
             return result.status
 
