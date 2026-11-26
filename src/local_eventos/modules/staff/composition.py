@@ -16,6 +16,8 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from local_eventos.modules.commercial.public_api import event_lookup
+from local_eventos.modules.staff.application.assignment_occupancy import AssignmentOccupancy
 from local_eventos.modules.staff.application.ports.clock import Clock
 from local_eventos.modules.staff.application.ports.worker_repository import (
     WorkerLookup,
@@ -37,6 +39,9 @@ from local_eventos.modules.staff.application.use_cases.search_workers import (
 from local_eventos.modules.staff.application.use_cases.update_worker import (
     UpdateWorker,
 )
+from local_eventos.modules.staff.infrastructure.assignment_repository import (
+    SqlAlchemyAssignmentRepository,
+)
 from local_eventos.modules.staff.infrastructure.clock import SystemClock
 from local_eventos.modules.staff.infrastructure.worker_repository import (
     SqlAlchemyWorkerRepository,
@@ -46,6 +51,16 @@ from local_eventos.modules.staff.infrastructure.worker_repository import (
 def worker_repository(session: AsyncSession) -> WorkerRepository:
     """Repositorio sobre la sesión transaccional de la petición."""
     return SqlAlchemyWorkerRepository(session)
+
+
+def assignment_repository(session: AsyncSession) -> SqlAlchemyAssignmentRepository:
+    """Repositorio de asignaciones sobre la sesión de la petición (HU17)."""
+    return SqlAlchemyAssignmentRepository(session)
+
+
+def assignment_occupancy(session: AsyncSession) -> AssignmentOccupancy:
+    """Ocupación del trabajador: libera eventos cancelados y detecta futuras."""
+    return AssignmentOccupancy(assignment_repository(session), event_lookup(session))
 
 
 def clock() -> Clock:
@@ -70,7 +85,7 @@ def search_workers(session: AsyncSession) -> SearchWorkers:
 
 
 def deactivate_worker(session: AsyncSession) -> DeactivateWorker:
-    return DeactivateWorker(worker_repository(session), clock())
+    return DeactivateWorker(worker_repository(session), clock(), assignment_occupancy(session))
 
 
 def activate_worker(session: AsyncSession) -> ActivateWorker:
@@ -95,6 +110,8 @@ class _WorkerLookup:
 __all__ = [
     "WorkerLookup",
     "activate_worker",
+    "assignment_occupancy",
+    "assignment_repository",
     "clock",
     "deactivate_worker",
     "get_worker",

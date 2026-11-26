@@ -17,6 +17,7 @@ from local_eventos.modules.identity.public_api import (
     require_permission,
 )
 from local_eventos.modules.staff import composition
+from local_eventos.modules.staff.application.assignment_occupancy import AssignmentOccupancy
 from local_eventos.modules.staff.application.ports.clock import Clock
 from local_eventos.modules.staff.application.ports.worker_repository import (
     WorkerRepository,
@@ -27,9 +28,11 @@ __all__ = [
     "Clock",
     "CurrentUser",
     "Now",
+    "Occupancy",
     "Permission",
     "StaffManager",
     "Workers",
+    "get_assignment_occupancy",
     "get_clock",
     "get_worker_repository",
     "require_permission",
@@ -45,6 +48,16 @@ async def get_worker_repository(
 
 
 Workers = Annotated[WorkerRepository, Depends(get_worker_repository)]
+
+
+async def get_assignment_occupancy(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> AssignmentOccupancy:
+    """Ocupación del trabajador sobre la sesión de la petición (HU17)."""
+    return composition.assignment_occupancy(session)
+
+
+Occupancy = Annotated[AssignmentOccupancy, Depends(get_assignment_occupancy)]
 
 
 def get_clock() -> Clock:

@@ -22,6 +22,7 @@ from local_eventos.modules.identity.presentation.errors import (
 from local_eventos.modules.identity.public_api import get_current_user
 from local_eventos.modules.staff.domain.enums import WorkerStatus
 from local_eventos.modules.staff.presentation.dependencies import (
+    get_assignment_occupancy,
     get_clock,
     get_worker_repository,
 )
@@ -31,6 +32,7 @@ from tests.unit.current_user import signed_in_as
 from tests.unit.staff.test_worker_api import (
     ANA,
     BETO,
+    EmptyOccupancy,
     FixedClock,
     InMemoryWorkerRepository,
 )
@@ -51,6 +53,7 @@ def api() -> Iterator[tuple[TestClient, InMemoryWorkerRepository]]:
     register_identity_errors(app)
     app.dependency_overrides[get_worker_repository] = in_memory
     app.dependency_overrides[get_clock] = FixedClock
+    app.dependency_overrides[get_assignment_occupancy] = EmptyOccupancy
     app.dependency_overrides[get_current_user] = signed_in_as(Role.ADMIN)
     with TestClient(app) as client:
         yield client, repository

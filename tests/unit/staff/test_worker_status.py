@@ -7,10 +7,14 @@ Cubren CA-15.9, CA-15.10 y CA-15.24, incluida la idempotencia sin auditoría.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import cast
 from uuid import UUID
 
 import pytest
 
+from local_eventos.modules.staff.application.assignment_occupancy import (
+    AssignmentOccupancy,
+)
 from local_eventos.modules.staff.application.errors import WorkerNotFoundError
 from local_eventos.modules.staff.application.ports.worker_repository import (
     WorkerPage,
@@ -36,6 +40,27 @@ class FixedClock:
 
     def now(self) -> datetime:
         return self._now
+
+
+class FakeAssignmentOccupancy:
+    """Ocupación en memoria: sin asignaciones no libera ni bloquea."""
+
+    def __init__(self, *, has_future: bool = False) -> None:
+        self._has_future = has_future
+        self.release_calls: list[UUID] = []
+        self.has_future_calls: list[tuple[UUID, datetime]] = []
+
+    async def release_cancelled(self, worker_id: UUID) -> int:
+        self.release_calls.append(worker_id)
+        return 0
+
+    async def has_future(self, worker_id: UUID, moment: datetime) -> bool:
+        self.has_future_calls.append((worker_id, moment))
+        return self._has_future
+
+
+def _occupancy(*, has_future: bool = False) -> AssignmentOccupancy:
+    return cast(AssignmentOccupancy, FakeAssignmentOccupancy(has_future=has_future))
 
 
 class FakeWorkerRepository:
@@ -89,7 +114,7 @@ def _repository_with_worker(*, status: WorkerStatus = WorkerStatus.ACTIVE) -> Fa
 
 async def test_ca15_9_desactiva_con_motivo_y_auditoria() -> None:
     repository = _repository_with_worker()
-    deactivate = DeactivateWorker(repository, FixedClock(NOW))
+    deactivate = DeactivateWorker(repository, FixedClock(NOW), _occupancy())
 
     worker = await deactivate.execute(WORKER_ID, "Fin de temporada", ACTOR_ID)
 
@@ -106,7 +131,7 @@ async def test_ca15_9_desactiva_con_motivo_y_auditoria() -> None:
 
 async def test_ca15_9_motivo_es_opcional_y_vacio_queda_none() -> None:
     repository = _repository_with_worker()
-    deactivate = DeactivateWorker(repository, FixedClock(NOW))
+    deactivate = DeactivateWorker(repository, FixedClock(NOW), _occupancy())
 
     await deactivate.execute(WORKER_ID, "   ", ACTOR_ID)
 
@@ -115,7 +140,7 @@ async def test_ca15_9_motivo_es_opcional_y_vacio_queda_none() -> None:
 
 async def test_motivo_omitido_queda_none() -> None:
     repository = _repository_with_worker()
-    deactivate = DeactivateWorker(repository, FixedClock(NOW))
+    deactivate = DeactivateWorker(repository, FixedClock(NOW), _occupancy())
 
     await deactivate.execute(WORKER_ID, None, ACTOR_ID)
 
@@ -139,7 +164,7 @@ async def test_ca15_10_reactiva() -> None:
 
 async def test_actor_y_fecha_correctos() -> None:
     repository = _repository_with_worker()
-    deactivate = DeactivateWorker(repository, FixedClock(NOW))
+    deactivate = DeactivateWorker(repository, FixedClock(NOW), _occupancy())
 
     await deactivate.execute(WORKER_ID, None, ACTOR_ID)
 
@@ -150,7 +175,7 @@ async def test_actor_y_fecha_correctos() -> None:
 
 async def test_repetir_la_baja_no_crea_otra_auditoria() -> None:
     repository = _repository_with_worker()
-    deactivate = DeactivateWorker(repository, FixedClock(NOW))
+    deactivate = DeactivateWorker(repository, FixedClock(NOW), _occupancy())
 
     await deactivate.execute(WORKER_ID, "Primera baja", ACTOR_ID)
     worker = await deactivate.execute(WORKER_ID, "Repetida", ACTOR_ID)
@@ -173,7 +198,7 @@ async def test_repetir_la_reactivacion_no_crea_otra_auditoria() -> None:
 
 async def test_no_encontrado() -> None:
     repository = FakeWorkerRepository()
-    deactivate = DeactivateWorker(repository, FixedClock(NOW))
+    deactivate = DeactivateWorker(repository, FixedClock(NOW), _occupancy())
     activate = ActivateWorker(repository, FixedClock(NOW))
 
     with pytest.raises(WorkerNotFoundError):
