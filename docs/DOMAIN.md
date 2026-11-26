@@ -70,6 +70,28 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 - **R-STF-15** Se puede **reactivar** a un trabajador inactivo; la reactivación se audita igual que la baja.
 - **Listado:** filtros por función y estado, búsqueda por nombre o documento y resultado paginado.
 
+### 5.2 Asignaciones (HU17)
+Una **asignación** vincula un trabajador activo con un evento, con la función que realmente cumple, su propio horario y el **pago acordado**. No es la ficha del trabajador y no modifica su tarifa referencial ni su función. Fuente completa: `docs/sdd/features/033-staff-assignments/spec.md`.
+
+- **R-ASG-1** *(RN13)*: **evento, trabajador, función, horario y pago acordado** son obligatorios. El trabajador y el evento se fijan al crear y **no se cambian** después (son inmutables); para corregirlos se anula la asignación y se crea otra.
+- **R-ASG-2** *(RN11, R-STF-4)*: solo se asignan trabajadores **activos**. Si un trabajador se desactiva después, conserva sus asignaciones e historial; no se borran.
+- **R-ASG-3** *(RN12)*: un trabajador **no puede tener dos asignaciones vigentes que compartan algún instante**, en el mismo evento ni en eventos distintos. La garantía real es la **restricción de exclusión de PostgreSQL** `staff_assignments_no_overlap` (con `btree_gist`, ADR 0005), no solo la validación en la aplicación; resiste altas simultáneas.
+- **R-ASG-4** *(R-COT-1)*: el horario es **propio**: fecha + hora de inicio + hora de fin. Si la hora de fin es menor que la de inicio, termina al **día siguiente**; si es igual, es inválido (duración cero). Se interpreta en `America/Lima` y se guarda en **UTC**; el intervalo es semiabierto `[inicio, fin)`, por lo que dos asignaciones contiguas (`12:00` y `12:00`) no se solapan.
+- **R-ASG-5**: ante un cruce, la respuesta es **409** e incluye el **código** del evento en conflicto (`EVT-AAAA-NNNN`), su **fecha** y su **horario**; no expone documento, teléfono, tarifa ni pago.
+- **R-ASG-6** *(R-STF-12, R-STF-17)*: la ficha **propone** la función al asignar; el administrador puede **elegir otra** de la lista fija (cocinero, mozo, bartender, ayudante, coordinador) o "otro" con descripción breve. La asignación conserva la función elegida aunque la ficha cambie después.
+- **R-ASG-7** *(R-PAG-3, RN13)*: el **pago acordado** es obligatorio, entero en **céntimos de `PEN`** y **mayor o igual a cero**. Es independiente de la tarifa referencial y **no es un egreso**: no genera movimiento en el ledger hasta que se registre un egreso de categoría "personal"; cambiarlo aquí no altera ninguna cuenta.
+- **R-ASG-8** *(RN03)*: las asignaciones se **editan** (horario, función y pago) y se **anulan**, pero **no se borran físicamente**. Toda edición y toda anulación guardan usuario, fecha-hora y motivo; el motivo es obligatorio en ambas. Editar una asignación **anulada** está permitido: no la reactiva ni cambia su estado, y el cambio se audita igual.
+- **R-ASG-9** *(RN03)*: el historial es **de solo inserción**: registra alta (`CREATED`), edición (`UPDATED`) y anulación (`CANCELLED`) con actor y fecha-hora; en la edición, además, motivo y valores anteriores/nuevos de horario, función y pago. Se conserva aunque el trabajador se desactive, el evento se cancele o la asignación se anule.
+- **R-ASG-10** *(R-EVT-5/6/8)*: se asigna en eventos **`programado`**, **`confirmado`** y **`en ejecución`** (reemplazos del día); **nunca** en `finalizado` ni `cancelado`. En `finalizado` y `cancelado`, las asignaciones quedan de **solo lectura**.
+- **R-ASG-11** *(R-EVT-9)*: si cambia la fecha u horario del evento, el sistema **solo avisa**; no recalcula, no mueve ni anula asignaciones. La revisión y corrección son manuales y quedan auditadas.
+- **R-ASG-12** *(RN10, por analogía)*: al cancelarse un evento, sus asignaciones **se conservan** en el historial, dejan de contar como ocupación y no bloquean al trabajador; no se eliminan. La liberación es **perezosa**: se aplica al escribir sobre ese trabajador (decisión del 25/11/2026, §11).
+- **R-ASG-13** *(regla 3 de AGENTS.md)*: la asignación referencia el evento por **ID, sin clave foránea** a `commercial`; código, estado, fecha y horario se obtienen por `commercial.public_api.event_lookup`, nunca por sus tablas.
+- **R-ASG-14** *(R-STF-5, R-STF-16)*: crear, editar y anular exigen `staff:assign`, concedido **solo al administrador**; leer exige `staff:manage`, que tienen administrador y encargado de eventos. El encargado de compras y almacén **no tiene ninguno de los dos**, ni de lectura. La lectura **sí incluye el pago acordado** para quien tiene `staff:manage` (decisión del PO, 25/11/2026).
+- **R-ASG-15**: un mismo trabajador puede tener **varias asignaciones al mismo evento** si los horarios no se superponen (p. ej. montaje y servicio); se muestran como líneas separadas.
+- **R-ASG-16** *(R-STF-15, Q7)*: no se puede **desactivar** a un trabajador con asignaciones **futuras vigentes**; primero hay que anularlas o reasignarlas. Las pasadas o anuladas no bloquean la baja.
+- **R-ASG-17** *(R-STF-13, Q6)*: si la ficha no tiene función, la asignación **exige elegirla** en ese momento y **no modifica la ficha** del trabajador.
+- **R-ASG-18** *(Q3)*: pago y horario se pueden **corregir** mientras el evento está `programado`, `confirmado` o `en ejecución`, siempre con motivo y auditoría; cuando el evento pasa a `finalizado`, la asignación queda de **solo lectura**. Una corrección posterior se resuelve fuera de la asignación (ledger), no reescribiendo el acuerdo.
+
 ## 6. Dinero (pagos y flujo de caja)
 - Moneda `PEN`, enteros en céntimos. Sin pasarela: los cobros se **registran** (efectivo, transferencia, tarjeta, Yape/Plin) con referencia y usuario.
 - El importe de un pago es mayor que cero y no supera el saldo pendiente (RN14). **Saldo = total contratado − pagos + anulaciones** (RN15).
@@ -111,7 +133,8 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 | Catálogo de servicios | ✔ | lectura | lectura |
 | Clientes | ✔ | ✔ | – |
 | Cotizaciones y contratos | ✔ | ✔ | – |
-| Eventos y asignaciones | ✔ | ✔ | lectura |
+| Eventos | ✔ | ✔ | lectura |
+| Asignaciones (personal del evento) | ✔ | lectura | – |
 | Personal (trabajadores) | ✔ | ✔ | – |
 | Observaciones del evento (bitácora) | ✔ | ✔ | ✔ (R-ACT-5) |
 | Pagos, ingresos y egresos | ✔ | ✔ | – |
@@ -122,6 +145,8 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. ej. `quotes:create`), no por nombre de rol. Los registros con operaciones relacionadas no se eliminan: se desactivan (RN02). Correcciones y anulaciones guardan usuario, fecha, hora y motivo (RN03).
 
 La gestión del **personal (trabajadores)** exige el permiso `staff:manage`; el encargado de compras y almacén **no lo tiene**, ni siquiera de lectura (decisión del 24/11/2026, §5 R-STF-5/R-STF-16). En el negocio, **"vendedor"** designa al encargado de eventos: es el mismo rol, no uno nuevo.
+
+Sobre las **asignaciones** (§5.2, R-ASG-14): crear, editar y anular exige `staff:assign`, que solo tiene el administrador; leer exige `staff:manage`, que tienen administrador y encargado de eventos. El **encargado de eventos sí ve el pago acordado** al leer una asignación (decisión del PO, 25/11/2026); el encargado de compras y almacén no accede a las asignaciones, ni de lectura. La ficha consolidada del evento (HU14) oculta el bloque de personal a compras.
 
 ## 10. Preguntas abiertas para el negocio
 1. ~~Política de cancelación y devolución del adelanto.~~ Resuelta: sin reglas automáticas (§11).
@@ -186,3 +211,10 @@ La gestión del **personal (trabajadores)** exige el permiso `staff:manage`; el 
 | 24/11/2026 | Baja y reactivación del trabajador (HU15) | Baja lógica sin borrado, reactivación permitida, motivo opcional, usuario y fecha-hora siempre (R-STF-2, R-STF-15) | Product Owner |
 | 24/11/2026 | Listado de personal (HU15) | Filtros por función y estado, búsqueda por nombre o documento y paginación | Product Owner |
 | 24/11/2026 | Permisos de personal (HU15) | Administrador y encargado de eventos; el encargado de compras y almacén sin acceso, ni de lectura (R-STF-5, R-STF-16) | Product Owner |
+| 25/11/2026 | Permisos de asignaciones (HU17) | Escribir (crear, editar, anular) exige `staff:assign`, solo administrador; leer exige `staff:manage`, administrador y encargado de eventos; compras sin acceso, ni de lectura. La lectura incluye el pago acordado (R-ASG-14) | Product Owner |
+| 25/11/2026 | Anulación de asignaciones (HU17) | Anulación lógica con motivo obligatorio, sin borrado físico; la asignación se conserva en el historial, deja de ocupar y de aparecer en la lista vigente (R-ASG-8, R-ASG-9) | Product Owner |
+| 25/11/2026 | Evento cancelado y asignaciones (HU17) | Las asignaciones se conservan, dejan de contar como ocupación y no se borran; la liberación es perezosa y se aplica al escribir sobre el trabajador (R-ASG-12) | Equipo **(provisional)** |
+| 25/11/2026 | Baja de trabajador con asignaciones futuras (HU17) | Se bloquea hasta anular o reasignar las asignaciones futuras vigentes; las pasadas o anuladas no bloquean (R-ASG-16) | Product Owner |
+| 25/11/2026 | Función elegible en la asignación (HU17) | La ficha propone la función, pero el administrador puede elegir otra de la lista (o "otro" con descripción); la asignación conserva la elegida, la ficha no se modifica (R-ASG-6, R-ASG-17) | Product Owner |
+| 26/11/2026 | Editar una asignación anulada (HU17) | Se permite editar horario, función o pago de una asignación anulada; no se reactiva ni cambia de estado y el cambio se audita como `UPDATED` | Product Owner |
+| 26/11/2026 | `btree_gist` y restricción de exclusión (HU17) | Se aprueba usar la extensión PostgreSQL `btree_gist` para garantizar el no solape con `staff_assignments_no_overlap`; el `downgrade` no la elimina (ADR 0005) | Equipo (ADR 0005) |
