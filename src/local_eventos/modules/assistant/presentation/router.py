@@ -9,21 +9,28 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
+from fastapi import status as http_status
 from fastapi.responses import JSONResponse
 
-from local_eventos.modules.assistant.application.errors import AssistantProviderError
+from local_eventos.modules.assistant.application.errors import (
+    AssistantError,
+    AssistantProviderError,
+)
 from local_eventos.modules.assistant.application.ports.query_log import QueryFilter
 from local_eventos.modules.assistant.application.use_cases.ask_assistant import (
     AskAssistant,
     Asker,
     HistoryTurn,
 )
+from local_eventos.modules.assistant.application.use_cases.rate_query import RateQuery
 from local_eventos.modules.assistant.application.use_cases.search_queries import (
     MAX_PAGE_SIZE,
     SearchQueries,
 )
+from local_eventos.modules.assistant.domain.feedback import FeedbackValue
 from local_eventos.modules.assistant.presentation.dependencies import (
     ClockDep,
+    FeedbackLogDep,
     ModelDep,
     QueryLogDep,
     ToolsDep,
@@ -33,6 +40,9 @@ from local_eventos.modules.assistant.presentation.errors import problem_for
 from local_eventos.modules.assistant.presentation.schemas import (
     AskIn,
     AskOut,
+    FeedbackIn,
+    FeedbackOut,
+    MyQueriesPageOut,
     QueryLogPageOut,
     StatusOut,
     ToolUseOut,
@@ -84,7 +94,11 @@ async def ask(
     except AssistantProviderError as error:
         # Se responde (no se relanza) para que la auditoría del intento fallido se confirme.
         return problem_for(error)
-    return AskOut(answer=result.answer, tools=[ToolUseOut.from_use(t) for t in result.tools])
+    return AskOut(
+        query_id=result.query_id,
+        answer=result.answer,
+        tools=[ToolUseOut.from_use(t) for t in result.tools],
+    )
 
 
 @router.get("/status", operation_id="assistant_status")
@@ -100,6 +114,7 @@ async def status(_: Viewer, model: ModelDep) -> StatusOut:
 )
 async def list_log(
     log: QueryLogDep,
+    feedback: FeedbackLogDep,
     names: UserNamesDep,
     user_id: UUID | None = None,
     since: Annotated[datetime | None, Query(description="Desde (con zona horaria)")] = None,
@@ -107,8 +122,51 @@ async def list_log(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = 50,
 ) -> QueryLogPageOut:
-    """Historial de consultas al asistente, de la más reciente a la más antigua (solo lectura)."""
-    found = await SearchQueries(log)(
+    """Historial de consultas al asistente, de la más reciente a la más antigua, con la última
+    valoración de cada una (solo lectura)."""
+    found = await SearchQueries(log, feedback)(
         QueryFilter(user_id=user_id, since=since, until=until), page=page, page_size=page_size
     )
     return QueryLogPageOut.from_page(found, await names({r.user_id for r in found.items}))
+
+
+@router.get("/my-queries", operation_id="assistant_my_queries")
+async def my_queries(
+    user: Viewer,
+    log: QueryLogDep,
+    feedback: FeedbackLogDep,
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = 20,
+) -> MyQueriesPageOut:
+    """Mis conversaciones anteriores (solo las del usuario), de la más reciente a la más antigua,
+    con mi última valoración de cada respuesta."""
+    found = await SearchQueries(log, feedback)(
+        QueryFilter(user_id=user.id), page=page, page_size=page_size
+    )
+    return MyQueriesPageOut.from_page(found)
+
+
+@router.post(
+    "/queries/{query_id}/feedback",
+    operation_id="assistant_feedback_create",
+    response_model=FeedbackOut,
+    status_code=http_status.HTTP_201_CREATED,
+    responses={404: {"model": Problem, "description": "`assistant.query_not_found`"}},
+)
+async def rate_query(
+    query_id: UUID,
+    body: FeedbackIn,
+    user: Viewer,
+    log: QueryLogDep,
+    feedback: FeedbackLogDep,
+    clock: ClockDep,
+) -> FeedbackOut | JSONResponse:
+    """Marca una respuesta propia como correcta o incorrecta. Valorar de nuevo reemplaza la
+    anterior (vale la última); no se edita ni borra nada. Solo el autor de la consulta."""
+    try:
+        saved = await RateQuery(log, feedback, clock)(
+            user.id, query_id, FeedbackValue(body.value), body.comment
+        )
+    except AssistantError as error:
+        return problem_for(error)
+    return FeedbackOut.from_feedback(saved)

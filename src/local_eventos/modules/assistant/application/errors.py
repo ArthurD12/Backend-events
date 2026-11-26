@@ -25,3 +25,10 @@ class AssistantProviderError(AssistantError):
 
     def __init__(self, message: str = "El proveedor del asistente no respondió.") -> None:
         super().__init__("assistant.provider_error", message)
+
+
+class QueryNotFoundError(AssistantError):
+    """La consulta no existe o es de otro usuario (no se distingue)."""
+
+    def __init__(self) -> None:
+        super().__init__("assistant.query_not_found", "No existe esa consulta.")
