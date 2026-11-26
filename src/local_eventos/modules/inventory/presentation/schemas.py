@@ -24,6 +24,7 @@ from local_eventos.modules.inventory.application.use_cases.requirement import (
     EventRequirement,
     RequirementLine,
 )
+from local_eventos.modules.inventory.application.use_cases.reservations import ReservationLine
 from local_eventos.modules.inventory.domain.movement import Movement, MovementKind
 from local_eventos.modules.inventory.domain.product import Category, ProductKind, Unit
 from local_eventos.modules.inventory.domain.recipe import RecipeBasis
@@ -328,4 +329,33 @@ class EventRequirementOut(BaseModel):
             calculated=requirement.calculated,
             lines=[RequirementLineOut.from_line(line) for line in requirement.lines],
             without_recipe=requirement.without_recipe,
+        )
+
+
+class ReservationLineIn(BaseModel):
+    product_id: UUID
+    quantity: PositiveQuantityIn = Field(
+        description="Cantidad a apartar, se suma a la ya reservada"
+    )
+
+
+class ReservationsIn(BaseModel):
+    lines: list[ReservationLineIn]
+
+
+class ReservationOut(BaseModel):
+    product_id: UUID
+    code: str
+    name: str
+    unit: Unit
+    quantity: QuantityOut = Field(description="Total vigente reservado para el evento")
+
+    @classmethod
+    def from_line(cls, line: ReservationLine) -> Self:
+        return cls(
+            product_id=line.product.id,
+            code=line.product.code,
+            name=line.product.name,
+            unit=line.product.unit,
+            quantity=quantity_text(line.reservation.quantity),
         )

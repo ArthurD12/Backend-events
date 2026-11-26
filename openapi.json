@@ -4978,6 +4978,83 @@
         "title": "RequirementLineOut",
         "type": "object"
       },
+      "ReservationLineIn": {
+        "properties": {
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Cantidad a apartar, se suma a la ya reservada",
+            "examples": [
+              "12.5"
+            ],
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "title": "Quantity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity"
+        ],
+        "title": "ReservationLineIn",
+        "type": "object"
+      },
+      "ReservationOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Total vigente reservado para el evento",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Quantity",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "product_id",
+          "code",
+          "name",
+          "unit",
+          "quantity"
+        ],
+        "title": "ReservationOut",
+        "type": "object"
+      },
+      "ReservationsIn": {
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/ReservationLineIn"
+            },
+            "title": "Lines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "lines"
+        ],
+        "title": "ReservationsIn",
+        "type": "object"
+      },
       "Role": {
         "enum": [
           "ADMIN",
@@ -11269,6 +11346,191 @@
           }
         ],
         "summary": "Event Requirement",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/events/{event_id}/reservations": {
+      "post": {
+        "description": "CA-25.4: aparta lo disponible para el evento sin mover el stock (R-REC-3).\n\nDevuelve todo lo vigente reservado del evento.",
+        "operationId": "inventory_reservations_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReservationsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReservationOut"
+                  },
+                  "title": "Response Inventory Reservations Create",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.event_not_found`, `inventory.product_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.insufficient_available`, `inventory.event_not_assignable`, `inventory.product_inactive`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Reservations",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/events/{event_id}/reservations/{product_id}": {
+      "delete": {
+        "description": "Libera la reserva vigente del producto en el evento.",
+        "operationId": "inventory_reservations_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Product Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.reservation_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Reservation",
         "tags": [
           "almacén"
         ]

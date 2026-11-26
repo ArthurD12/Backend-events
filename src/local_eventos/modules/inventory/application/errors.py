@@ -28,6 +28,24 @@ class ServiceNotFoundError(InventoryNotFoundError):
         super().__init__("inventory.service_not_found", "No se encontró el servicio del catálogo.")
 
 
+class ReservationNotFoundError(InventoryNotFoundError):
+    def __init__(self) -> None:
+        super().__init__(
+            "inventory.reservation_not_found",
+            "El evento no tiene una reserva vigente del producto.",
+        )
+
+
+class InsufficientAvailableError(InventoryRuleError):
+    """CA-25.4: no se aparta más de lo disponible (stock menos reservas vigentes)."""
+
+    def __init__(self, available: object) -> None:
+        super().__init__(
+            "inventory.insufficient_available",
+            f"No hay suficiente disponible para reservar: solo hay {available}.",
+        )
+
+
 class CodeTakenError(InventoryRuleError):
     def __init__(self) -> None:
         super().__init__("inventory.code_taken", "Ya existe un producto con ese código.")

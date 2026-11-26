@@ -23,12 +23,18 @@ from local_eventos.modules.inventory.application.ports.clock import Clock
 from local_eventos.modules.inventory.application.ports.product_repository import (
     ProductRepository,
 )
+from local_eventos.modules.inventory.application.ports.reservation_repository import (
+    ReservationRepository,
+)
 from local_eventos.modules.inventory.application.ports.stock_repository import (
     MovementRepository,
     StockRepository,
 )
+from local_eventos.modules.inventory.domain.errors import InsufficientStockError
 from local_eventos.modules.inventory.domain.event_materials import EventMaterials
 from local_eventos.modules.inventory.domain.movement import Movement, MovementKind
+from local_eventos.modules.inventory.domain.quantity import ZERO
+from local_eventos.modules.inventory.domain.reservation import Reservation
 from local_eventos.modules.inventory.domain.stock import StockLevel
 
 _ASSIGNABLE = (EventStatus.SCHEDULED, EventStatus.CONFIRMED, EventStatus.IN_PROGRESS)
@@ -65,8 +71,10 @@ class RecordMovement:
         stock: StockRepository,
         movements: MovementRepository,
         events: EventLookup,
+        reservations: ReservationRepository,
         clock: Clock,
     ) -> None:
+        self._reservations = reservations
         self._products = products
         self._stock = stock
         self._movements = movements
@@ -113,10 +121,35 @@ class RecordMovement:
                 if movement.kind is MovementKind.RETURN:
                     raise ReturnExceedsError(materials.at_event)
                 raise WasteExceedsError(materials.at_event)
+        consumed = await self._check_reserved(movement, level)
         new_level = level.apply(movement)
         await self._movements.add(movement)
         await self._stock.save(new_level)
+        if consumed is not None:
+            reservation, amount = consumed
+            reservation.consume(amount, self._clock.now())
+            await self._reservations.save(reservation)
         return RecordedMovement(movement=movement, stock=new_level)
+
+    async def _check_reserved(
+        self, movement: Movement, level: StockLevel
+    ) -> tuple[Reservation, Decimal] | None:
+        """Lo reservado por otros eventos no se toca (CA-25.4); una salida consume primero la
+        reserva de su propio evento (CA-25.5). Devuelve la reserva a descontar, si hay.
+        """
+        reduction = -movement.stock_delta
+        if reduction <= 0:
+            return None
+        own = None
+        if movement.kind is MovementKind.EXIT and movement.event_id is not None:
+            own = await self._reservations.get_active(movement.event_id, movement.product_id)
+        consumed = min(own.quantity, reduction) if own is not None else ZERO
+        totals = await self._reservations.active_totals([movement.product_id])
+        still_reserved = totals.get(movement.product_id, ZERO) - consumed
+        available = level.quantity - still_reserved
+        if reduction > available:
+            raise InsufficientStockError(max(ZERO, available))
+        return (own, consumed) if own is not None and consumed > 0 else None
 
 
 @dataclass(frozen=True)

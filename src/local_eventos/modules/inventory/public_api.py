@@ -35,6 +35,9 @@ from local_eventos.modules.inventory.application.use_cases.requirement import (
     GetEventRequirement,
     RequirementLine,
 )
+from local_eventos.modules.inventory.application.use_cases.reservations import (
+    ReleaseEventReservations,
+)
 from local_eventos.modules.inventory.domain.errors import (
     InsufficientStockError,
     InventoryRuleError,
@@ -66,6 +69,12 @@ class EventRequirementLookup(Protocol):
     """Requerimiento del evento por producto y su faltante (HU25). `None` si no existe."""
 
     async def __call__(self, event_id: UUID) -> EventRequirement | None: ...
+
+
+class ReservationReleaser(Protocol):
+    """Libera las reservas vigentes del evento (al cancelarlo o finalizarlo, R-REC-3)."""
+
+    async def __call__(self, event_id: UUID) -> None: ...
 
 
 class StockReceiver(Protocol):
@@ -121,6 +130,13 @@ def event_requirement(session: AsyncSession) -> EventRequirementLookup:
     )
 
 
+def reservation_releaser(session: AsyncSession) -> ReservationReleaser:
+    """Misma transacción que cancelar o finalizar el evento: o se hace todo, o nada."""
+    return ReleaseEventReservations(
+        composition.reservation_repository(session), composition.clock()
+    )
+
+
 def stock_receiver(session: AsyncSession) -> StockReceiver:
     return RecordEntries(composition.record_movement(session))
 
@@ -161,6 +177,7 @@ __all__ = [
     "ProductLookup",
     "RecordedMovement",
     "RequirementLine",
+    "ReservationReleaser",
     "StockEntry",
     "StockItem",
     "StockReceiver",
@@ -171,6 +188,7 @@ __all__ = [
     "low_stock_lookup",
     "movements_report",
     "product_lookup",
+    "reservation_releaser",
     "stock_receiver",
     "stock_report",
 ]

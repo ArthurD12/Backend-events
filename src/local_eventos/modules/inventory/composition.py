@@ -83,5 +83,6 @@ def record_movement(session: AsyncSession) -> RecordMovement:
         stock_repository(session),
         movement_repository(session),
         events(session),
+        reservation_repository(session),
         clock(),
     )
