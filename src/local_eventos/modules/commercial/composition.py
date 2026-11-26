@@ -14,6 +14,9 @@ from local_eventos.modules.commercial.application.clients.ports.client_repositor
 from local_eventos.modules.commercial.application.contracts.ports.contract_repository import (
     ContractRepository,
 )
+from local_eventos.modules.commercial.application.contracts.ports.document import (
+    ContractDocumentRenderer,
+)
 from local_eventos.modules.commercial.application.contracts.ports.receipt import (
     PaymentReceiptRenderer,
 )
@@ -36,6 +39,7 @@ from local_eventos.modules.commercial.infrastructure.client_repository import (
 )
 from local_eventos.modules.commercial.infrastructure.clock import LimaClock
 from local_eventos.modules.commercial.infrastructure.company_settings import CompanySettings
+from local_eventos.modules.commercial.infrastructure.contract_pdf import ReportLabContractRenderer
 from local_eventos.modules.commercial.infrastructure.contract_repository import (
     SqlAlchemyContractRepository,
 )
@@ -118,6 +122,10 @@ def find_payment(session: AsyncSession) -> PaymentFinder:
 
 def void_payment(session: AsyncSession) -> PaymentVoider:
     return payment_voider(session)
+
+
+def contract_renderer() -> ContractDocumentRenderer:
+    return ReportLabContractRenderer()
 
 
 def receipt_renderer() -> PaymentReceiptRenderer:

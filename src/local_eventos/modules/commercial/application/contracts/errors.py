@@ -23,3 +23,11 @@ class ContractAlreadyExistsError(ContractApplicationError):
 class ContractQuoteNotFoundError(ContractApplicationError):
     def __init__(self) -> None:
         super().__init__("contract.quote_not_found", "No se encontró la cotización.")
+
+
+class ContractPdfNotAvailableError(ContractApplicationError):
+    def __init__(self) -> None:
+        super().__init__(
+            "contract.pdf_not_available",
+            "Un contrato anulado no se descarga en PDF.",
+        )
