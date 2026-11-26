@@ -59,3 +59,11 @@ class EventRepository(Protocol):
     ) -> tuple[list[EventSummary], int]:
         """Una página, de la fecha más próxima a la más lejana, y el total que cumple el filtro."""
         ...
+
+    async def codes(self, event_ids: list[UUID]) -> dict[UUID, str]:
+        """Código de cada evento que exista (reportes)."""
+        ...
+
+    async def codes_by_contract(self, contract_ids: list[UUID]) -> dict[UUID, str]:
+        """Código del evento de cada contrato que ya es evento (reportes)."""
+        ...

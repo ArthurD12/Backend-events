@@ -28,6 +28,7 @@ from .fakes import (
     FakeEventLookup,
     InMemoryMovementRepository,
     InMemoryProductRepository,
+    InMemoryReservationRepository,
     InMemoryStockRepository,
 )
 
@@ -38,11 +39,16 @@ class World:
     stock: InMemoryStockRepository = field(default_factory=InMemoryStockRepository)
     movements: InMemoryMovementRepository = field(default_factory=InMemoryMovementRepository)
     events: FakeEventLookup = field(default_factory=FakeEventLookup)
+    reservations: InMemoryReservationRepository = field(
+        default_factory=InMemoryReservationRepository
+    )
     clock: FakeClock = field(default_factory=FakeClock)
     user: UUID = field(default_factory=uuid4)
 
     def record(self) -> RecordMovement:
-        return RecordMovement(self.products, self.stock, self.movements, self.events, self.clock)
+        return RecordMovement(
+            self.products, self.stock, self.movements, self.events, self.reservations, self.clock
+        )
 
     def views(self) -> ProductViews:
         return ProductViews(self.stock, self.movements, self.clock)

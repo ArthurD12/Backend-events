@@ -9,7 +9,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from local_eventos.main import create_app
-from local_eventos.modules.commercial.public_api import EventStatus
+from local_eventos.modules.commercial.public_api import EventInfo, EventStatus
 from local_eventos.modules.identity.domain.permissions import Role
 from local_eventos.modules.identity.public_api import get_current_user
 from local_eventos.modules.inventory.presentation import dependencies as deps
@@ -17,9 +17,13 @@ from tests.unit.current_user import signed_in_as
 
 from .fakes import (
     FakeClock,
+    FakeEventDetailLookup,
     FakeEventLookup,
+    FakeServiceLookup,
     InMemoryMovementRepository,
     InMemoryProductRepository,
+    InMemoryRecipeRepository,
+    InMemoryReservationRepository,
     InMemoryStockRepository,
 )
 
@@ -32,6 +36,8 @@ async def _no_database() -> None:
 class Api:
     client: TestClient
     events: FakeEventLookup
+    services: FakeServiceLookup
+    details: FakeEventDetailLookup
 
     def product(self, code: str = "PLA-01", **changes: Any) -> dict[str, Any]:
         body = {
@@ -48,6 +54,20 @@ class Api:
         result: dict[str, Any] = response.json()
         return result
 
+    def event(
+        self,
+        services: list[tuple[UUID | None, int]],
+        guests: int = 100,
+        status: EventStatus = EventStatus.SCHEDULED,
+    ) -> UUID:
+        """Un evento que `commercial` ve igual en la ficha y en la consulta simple."""
+        event_id = self.details.add(services, guests, status)
+        detail = self.details.events[event_id]
+        self.events.events[event_id] = EventInfo(
+            detail.id, detail.code, status, detail.event_date, detail.start_time, detail.end_time
+        )
+        return event_id
+
     def move(self, kind: str, **body: Any) -> Any:
         return self.client.post(f"/v1/inventory/movements/{kind}", json=body)
 
@@ -57,14 +77,20 @@ def api() -> Iterator[Api]:
     app = create_app(readiness_check=_no_database)
     products, stock = InMemoryProductRepository(), InMemoryStockRepository()
     movements, events = InMemoryMovementRepository(), FakeEventLookup()
+    recipes, services = InMemoryRecipeRepository(), FakeServiceLookup()
+    reservations, details = InMemoryReservationRepository(), FakeEventDetailLookup()
     app.dependency_overrides[deps.get_product_repository] = lambda: products
     app.dependency_overrides[deps.get_stock_repository] = lambda: stock
     app.dependency_overrides[deps.get_movement_repository] = lambda: movements
     app.dependency_overrides[deps.get_event_lookup] = lambda: events
+    app.dependency_overrides[deps.get_recipe_repository] = lambda: recipes
+    app.dependency_overrides[deps.get_service_lookup] = lambda: services
+    app.dependency_overrides[deps.get_reservation_repository] = lambda: reservations
+    app.dependency_overrides[deps.get_event_detail_lookup] = lambda: details
     app.dependency_overrides[deps.get_clock] = FakeClock
     app.dependency_overrides[get_current_user] = signed_in_as(Role.PURCHASING_MANAGER)
     with TestClient(app) as client:
-        yield Api(client, events)
+        yield Api(client, events, services, details)
 
 
 def test_ca23_1_crea_producto_con_stock_cero_como_texto_decimal(api: Api) -> None:

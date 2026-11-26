@@ -58,6 +58,7 @@ El repositorio del backend es público, así que Render lo lee sin instalar nada
    | `CORS_ORIGINS` | Por ahora `["http://localhost:3000"]`; se cambia en el paso 4 |
    | `COMPANY_NAME` | `Darze Catering` |
    | `COMPANY_RUC`, `COMPANY_ADDRESS`, `COMPANY_PHONE`, `COMPANY_EMAIL` | Los datos reales de Darze, si ya los tienen (los vacíos no se imprimen en el PDF) |
+   | `ANTHROPIC_API_KEY` | (Opcional) La clave de Anthropic para el asistente con IA. Sin ella el asistente aparece "no disponible". Pégala solo en el panel de Render |
 
 5. **Deploy Web Service**. En *Logs* debe aparecer `Running upgrade … cancelar eventos` y
    `Application startup complete`.

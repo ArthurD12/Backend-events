@@ -19,8 +19,15 @@ from local_eventos.modules.inventory.application.use_cases.products import (
     MovementPage,
     ProductView,
 )
+from local_eventos.modules.inventory.application.use_cases.recipes import RecipeView
+from local_eventos.modules.inventory.application.use_cases.requirement import (
+    EventRequirement,
+    RequirementLine,
+)
+from local_eventos.modules.inventory.application.use_cases.reservations import ReservationLine
 from local_eventos.modules.inventory.domain.movement import Movement, MovementKind
 from local_eventos.modules.inventory.domain.product import Category, ProductKind, Unit
+from local_eventos.modules.inventory.domain.recipe import RecipeBasis
 
 CURRENCY = "PEN"
 
@@ -227,4 +234,128 @@ class EventMaterialOut(BaseModel):
             returned=quantity_text(m.returned),
             wasted=quantity_text(m.wasted),
             pending_return=quantity_text(m.pending_return),
+        )
+
+
+class RecipeLineIn(BaseModel):
+    product_id: UUID
+    quantity: PositiveQuantityIn = Field(description="En la unidad del producto (R-INV-1)")
+    basis: RecipeBasis = Field(
+        description="PER_PERSON: por invitado del evento. PER_SERVICE: por unidad contratada"
+    )
+
+
+class RecipeIn(BaseModel):
+    lines: list[RecipeLineIn] = Field(description="Reemplaza todos los insumos del servicio")
+
+
+class RecipeLineOut(BaseModel):
+    product_id: UUID
+    code: str
+    name: str
+    unit: Unit
+    quantity: QuantityOut
+    basis: RecipeBasis
+
+
+class RecipeOut(BaseModel):
+    service_id: UUID
+    service_name: str
+    lines: list[RecipeLineOut]
+
+    @classmethod
+    def from_view(cls, view: RecipeView) -> Self:
+        return cls(
+            service_id=view.service_id,
+            service_name=view.service_name,
+            lines=[
+                RecipeLineOut(
+                    product_id=product.id,
+                    code=product.code,
+                    name=product.name,
+                    unit=product.unit,
+                    quantity=quantity_text(line.quantity),
+                    basis=line.basis,
+                )
+                for line, product in view.lines
+            ],
+        )
+
+
+class RequirementLineOut(BaseModel):
+    product_id: UUID
+    code: str
+    name: str
+    unit: Unit
+    required: QuantityOut = Field(description="Lo que piden los servicios contratados")
+    out: QuantityOut = Field(description="Ya salió para el evento")
+    reserved: QuantityOut = Field(description="Apartado para el evento")
+    available: QuantityOut = Field(description="Libre en almacén (stock menos reservas vigentes)")
+    shortage: QuantityOut = Field(
+        description="Falta comprar: requerido - salido - reservado - disponible (mínimo 0)"
+    )
+
+    @classmethod
+    def from_line(cls, line: RequirementLine) -> Self:
+        return cls(
+            product_id=line.product.id,
+            code=line.product.code,
+            name=line.product.name,
+            unit=line.product.unit,
+            required=quantity_text(line.required),
+            out=quantity_text(line.out),
+            reserved=quantity_text(line.reserved),
+            available=quantity_text(line.available),
+            shortage=quantity_text(line.shortage),
+        )
+
+
+class EventRequirementOut(BaseModel):
+    event_id: UUID
+    event_code: str
+    guests: int
+    calculated: bool = Field(
+        description="Falso en eventos finalizados o cancelados: solo se ve lo que salió"
+    )
+    lines: list[RequirementLineOut]
+    without_recipe: list[str] = Field(description="Servicios sin insumos definidos (CA-25.3)")
+
+    @classmethod
+    def from_requirement(cls, requirement: EventRequirement) -> Self:
+        return cls(
+            event_id=requirement.event_id,
+            event_code=requirement.event_code,
+            guests=requirement.guests,
+            calculated=requirement.calculated,
+            lines=[RequirementLineOut.from_line(line) for line in requirement.lines],
+            without_recipe=requirement.without_recipe,
+        )
+
+
+class ReservationLineIn(BaseModel):
+    product_id: UUID
+    quantity: PositiveQuantityIn = Field(
+        description="Cantidad a apartar, se suma a la ya reservada"
+    )
+
+
+class ReservationsIn(BaseModel):
+    lines: list[ReservationLineIn]
+
+
+class ReservationOut(BaseModel):
+    product_id: UUID
+    code: str
+    name: str
+    unit: Unit
+    quantity: QuantityOut = Field(description="Total vigente reservado para el evento")
+
+    @classmethod
+    def from_line(cls, line: ReservationLine) -> Self:
+        return cls(
+            product_id=line.product.id,
+            code=line.product.code,
+            name=line.product.name,
+            unit=line.product.unit,
+            quantity=quantity_text(line.reservation.quantity),
         )

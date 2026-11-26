@@ -40,13 +40,15 @@ El archivo `.env` está en `.gitignore`: nunca se sube a GitHub.
 
 Para el **PDF de las cotizaciones**, completa en `.env` los datos de Darze (`COMPANY_NAME`, `COMPANY_RUC`, `COMPANY_ADDRESS`, `COMPANY_PHONE`, `COMPANY_EMAIL`). Los que dejes vacíos no se imprimen.
 
+Para el **asistente con IA** (ADR 0005), pon tu clave de Anthropic en `ANTHROPIC_API_KEY` (opcional). Sin ella el asistente aparece "no disponible" y el resto del sistema funciona igual. La clave nunca se sube a GitHub; en producción va en el panel de Render.
+
 ## 4. Instalar las dependencias
 
 ```bash
 just install    # uv sync: crea .venv e instala las versiones exactas de uv.lock
 ```
 
-Incluye ReportLab, la librería del PDF de cotizaciones: no hace falta instalar nada más en Windows.
+Incluye ReportLab (PDF de cotizaciones) y el SDK `anthropic` (asistente con IA): no hace falta instalar nada más en Windows.
 
 ## 5. Levantar PostgreSQL
 

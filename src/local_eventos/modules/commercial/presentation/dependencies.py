@@ -16,6 +16,9 @@ from local_eventos.modules.commercial.application.clients.ports.client_repositor
 from local_eventos.modules.commercial.application.contracts.ports.contract_repository import (
     ContractRepository,
 )
+from local_eventos.modules.commercial.application.contracts.ports.document import (
+    ContractDocumentRenderer,
+)
 from local_eventos.modules.commercial.application.contracts.ports.receipt import (
     PaymentReceiptRenderer,
 )
@@ -24,6 +27,9 @@ from local_eventos.modules.commercial.application.events.ports.event_log_reposit
 )
 from local_eventos.modules.commercial.application.events.ports.event_repository import (
     EventRepository,
+)
+from local_eventos.modules.commercial.application.events.ports.reservation_releaser import (
+    ReservationReleaser,
 )
 from local_eventos.modules.commercial.application.quotes.ports.clock import Clock
 from local_eventos.modules.commercial.application.quotes.ports.document import (
@@ -34,6 +40,7 @@ from local_eventos.modules.commercial.application.quotes.ports.quote_repository 
     QuoteRepository,
 )
 from local_eventos.modules.identity.public_api import CoordinatorLookup, UserNamesLookup
+from local_eventos.modules.inventory.public_api import reservation_releaser
 from local_eventos.modules.ledger.public_api import (
     PaymentEntriesLookup,
     PaymentFinder,
@@ -116,6 +123,10 @@ async def get_payment_voider(
     return composition.void_payment(session)
 
 
+def get_contract_renderer() -> ContractDocumentRenderer:
+    return composition.contract_renderer()
+
+
 def get_receipt_renderer() -> PaymentReceiptRenderer:
     return composition.receipt_renderer()
 
@@ -131,6 +142,7 @@ Payments = Annotated[PaymentRecorder, Depends(get_payment_recorder)]
 PaymentHistory = Annotated[PaymentEntriesLookup, Depends(get_payments_lookup)]
 PaymentFind = Annotated[PaymentFinder, Depends(get_payment_finder)]
 PaymentVoid = Annotated[PaymentVoider, Depends(get_payment_voider)]
+ContractRenderer = Annotated[ContractDocumentRenderer, Depends(get_contract_renderer)]
 ReceiptRenderer = Annotated[PaymentReceiptRenderer, Depends(get_receipt_renderer)]
 UserNames = Annotated[UserNamesLookup, Depends(get_user_names)]
 
@@ -139,6 +151,16 @@ async def get_event_repository(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> EventRepository:
     return composition.event_repository(session)
+
+
+async def get_reservation_releaser(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ReservationReleaser:
+    """Libera los materiales reservados por `inventory.public_api` (R-REC-3)."""
+    return reservation_releaser(session)
+
+
+Reservations = Annotated[ReservationReleaser, Depends(get_reservation_releaser)]
 
 
 async def get_coordinator_lookup(

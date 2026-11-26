@@ -1,6 +1,7 @@
 """Puertos de los repositorios de proveedores y compras."""
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
@@ -33,6 +34,8 @@ class PurchaseFilters:
     status: PurchaseStatus | None = None
     event_id: UUID | None = None
     supplier_id: UUID | None = None
+    created_from: datetime | None = None  # desde este instante (incluido)
+    created_before: datetime | None = None  # hasta antes de este instante
 
 
 class PurchaseRepository(Protocol):
@@ -50,4 +53,8 @@ class PurchaseRepository(Protocol):
         self, filters: PurchaseFilters, *, limit: int, offset: int
     ) -> tuple[list[Purchase], int]:
         """Una página, de la más reciente a la más antigua, y el total."""
+        ...
+
+    async def count_by_status(self) -> dict[PurchaseStatus, int]:
+        """Cuántas compras hay en cada estado; los estados sin compras no aparecen."""
         ...

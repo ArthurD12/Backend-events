@@ -4,19 +4,25 @@ from dataclasses import replace
 from decimal import Decimal
 from uuid import UUID, uuid4
 
+from local_eventos.modules.commercial.public_api import EventStatus
 from local_eventos.modules.inventory.public_api import (
+    EventRequirement,
     LowStockItem,
     ProductInfo,
     ProductKind,
     RecordedMovement,
+    RequirementLine,
     StockEntry,
     Unit,
 )
+from local_eventos.modules.ledger.domain.movement import CashMovement
+from local_eventos.modules.ledger.public_api import MovementEntry, MovementRequest
 from local_eventos.modules.purchasing.application.errors import DocumentTakenError
 from local_eventos.modules.purchasing.application.ports.repositories import PurchaseFilters
 from local_eventos.modules.purchasing.application.search_text import normalize
-from local_eventos.modules.purchasing.domain.purchase import Purchase
+from local_eventos.modules.purchasing.domain.purchase import Purchase, PurchaseStatus
 from local_eventos.modules.purchasing.domain.supplier import DocumentType, Supplier
+from tests.unit.inventory.fakes import NOW, TODAY
 
 
 class InMemorySupplierRepository:
@@ -90,8 +96,16 @@ class InMemoryPurchaseRepository:
             if (filters.status is None or p.status is filters.status)
             and (filters.event_id is None or p.event_id == filters.event_id)
             and (filters.supplier_id is None or p.supplier_id == filters.supplier_id)
+            and (filters.created_from is None or p.created.at >= filters.created_from)
+            and (filters.created_before is None or p.created.at < filters.created_before)
         ]
         return found[offset : offset + limit], len(found)
+
+    async def count_by_status(self) -> dict[PurchaseStatus, int]:
+        counts: dict[PurchaseStatus, int] = {}
+        for p in self.purchases.values():
+            counts[p.status] = counts.get(p.status, 0) + 1
+        return counts
 
 
 class FakeInventory:
@@ -131,3 +145,63 @@ class FakeInventory:
     ) -> list[RecordedMovement]:
         self.received.extend(entries)
         return []
+
+
+class FakeRequirement:
+    """Hace de `inventory.public_api.event_requirement`."""
+
+    def __init__(self, inventory: FakeInventory) -> None:
+        self._inventory = inventory
+        self.events: dict[UUID, EventRequirement] = {}
+
+    def add(
+        self,
+        code: str,
+        shortages: list[tuple[UUID, str]],
+        *,
+        calculated: bool = True,
+        event_id: UUID | None = None,
+    ) -> UUID:
+        event_id = event_id or uuid4()
+        lines = [
+            RequirementLine(
+                product=self._inventory.products[product_id],
+                required=Decimal(shortage),
+                out=Decimal(0),
+                reserved=Decimal(0),
+                available=Decimal(0),
+                shortage=Decimal(shortage),
+            )
+            for product_id, shortage in shortages
+        ]
+        self.events[event_id] = EventRequirement(
+            event_id, code, EventStatus.SCHEDULED, calculated, 100, lines, []
+        )
+        return event_id
+
+    async def __call__(self, event_id: UUID) -> EventRequirement | None:
+        return self.events.get(event_id)
+
+
+class FakeExpenses:
+    """Hace de `ledger.public_api.movement_recorder`."""
+
+    def __init__(self) -> None:
+        self.requests: list[MovementRequest] = []
+
+    async def __call__(self, request: MovementRequest) -> MovementEntry:
+        self.requests.append(request)
+        movement = CashMovement.record(
+            type=request.type,
+            category=request.category,
+            concept=request.concept,
+            amount_cents=request.amount_cents,
+            method=request.method,
+            reference=request.reference,
+            occurred_on=request.occurred_on,
+            event_id=request.event_id,
+            recorded_by=request.recorded_by,
+            now=NOW,
+            today=TODAY,
+        )
+        return MovementEntry(movement)

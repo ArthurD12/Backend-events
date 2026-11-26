@@ -13,6 +13,7 @@
 | `pwdlib[argon2]` (o `argon2-cffi`) | Hash de contraseñas |
 | `pyjwt` | Tokens de acceso |
 | `reportlab` | PDF de cotizaciones (ADR 0004). Sin librerías del sistema: funciona igual en Windows y Docker |
+| `anthropic` | SDK oficial de Claude para el asistente de consulta (ADR 0005). Opcional en ejecución: sin `ANTHROPIC_API_KEY` el asistente queda no disponible |
 | `structlog` | Logs estructurados |
 | `sentry-sdk[fastapi]` | Errores en producción |
 | `httpx` | Cliente HTTP del conector `reporting` |

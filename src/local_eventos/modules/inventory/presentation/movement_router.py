@@ -23,6 +23,7 @@ from local_eventos.modules.inventory.presentation.dependencies import (
     Events,
     Movements,
     Products,
+    Reservations,
     Stock,
     Today,
 )
@@ -65,9 +66,15 @@ class _Recorder:
     """Arma el caso de uso con las dependencias de la petición."""
 
     def __init__(
-        self, products: Products, stock: Stock, movements: Movements, events: Events, clock: Today
+        self,
+        products: Products,
+        stock: Stock,
+        movements: Movements,
+        events: Events,
+        reservations: Reservations,
+        clock: Today,
     ) -> None:
-        self._use_case = RecordMovement(products, stock, movements, events, clock)
+        self._use_case = RecordMovement(products, stock, movements, events, reservations, clock)
 
     async def __call__(self, command: MovementCommand, user: CurrentUser) -> RecordedMovementOut:
         recorded = await self._use_case(command, recorded_by=user.id)

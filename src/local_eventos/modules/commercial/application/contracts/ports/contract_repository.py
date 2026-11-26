@@ -50,3 +50,11 @@ class ContractRepository(Protocol):
     ) -> tuple[list[ContractSummary], int]:
         """Una página, del más reciente al más antiguo, y el total que cumple el filtro."""
         ...
+
+    async def get_many(self, contract_ids: list[UUID]) -> list[Contract]:
+        """Los que existan, en cualquier orden (reportes)."""
+        ...
+
+    async def list_by_status(self, status: ContractStatus) -> list[Contract]:
+        """Todos los contratos en ese estado (p. ej., firmados para los cobros pendientes)."""
+        ...

@@ -10,6 +10,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from local_eventos.modules.assistant.presentation import router as assistant_router
+from local_eventos.modules.assistant.presentation.errors import (
+    register_error_handlers as register_assistant_errors,
+)
 from local_eventos.modules.catalog.presentation import category_router, service_router
 from local_eventos.modules.catalog.presentation.errors import (
     register_error_handlers as register_catalog_errors,
@@ -36,7 +40,11 @@ from local_eventos.modules.identity.presentation.errors import (
 from local_eventos.modules.inventory.presentation import (
     movement_router as inventory_movement_router,
 )
-from local_eventos.modules.inventory.presentation import product_router
+from local_eventos.modules.inventory.presentation import (
+    product_router,
+    recipe_router,
+    requirement_router,
+)
 from local_eventos.modules.inventory.presentation.errors import (
     register_error_handlers as register_inventory_errors,
 )
@@ -51,6 +59,7 @@ from local_eventos.modules.purchasing.presentation.errors import (
 from local_eventos.modules.reporting.presentation import (
     dashboard_router,
     finance_router,
+    report_router,
     sheet_router,
 )
 from local_eventos.modules.reporting.presentation.errors import (
@@ -114,14 +123,18 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     app.include_router(dashboard_router.router)
     app.include_router(finance_router.router)
     app.include_router(sheet_router.router)
+    app.include_router(report_router.router)
     app.include_router(category_router.router)
     app.include_router(service_router.router)
     app.include_router(product_router.router)
     app.include_router(inventory_movement_router.router)
+    app.include_router(recipe_router.router)
+    app.include_router(requirement_router.router)
     app.include_router(supplier_router.router)
     app.include_router(purchase_router.router)
     app.include_router(worker_router.router)
     app.include_router(assignment_router.router)
+    app.include_router(assistant_router.router)
     register_identity_errors(app)
     register_commercial_errors(app)
     register_ledger_errors(app)
@@ -130,6 +143,7 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     register_inventory_errors(app)
     register_purchasing_errors(app)
     register_staff_errors(app)
+    register_assistant_errors(app)
     return app
 
 

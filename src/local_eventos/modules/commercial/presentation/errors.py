@@ -12,6 +12,7 @@ from local_eventos.modules.commercial.application.contracts.errors import (
     ContractAlreadyExistsError,
     ContractApplicationError,
     ContractNotFoundError,
+    ContractPdfNotAvailableError,
     ContractQuoteNotFoundError,
 )
 from local_eventos.modules.commercial.application.events.errors import (
@@ -96,6 +97,7 @@ _CONTRACT_STATUS = {
     ContractNotFoundError: 404,
     ContractQuoteNotFoundError: 404,
     ContractAlreadyExistsError: 409,
+    ContractPdfNotAvailableError: 409,
 }
 
 
