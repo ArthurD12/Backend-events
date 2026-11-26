@@ -18,7 +18,7 @@ Un agente **no modifica** un módulo de otro dueño. Si necesita algo de él, lo
 |---|---|---|---|
 | HU16–HU18 | Harold | `feat/hu16-...` (desde `developer-b`) | por empezar |
 | Lote 6: reportes (HU31 completo, HU32–HU34) | César | `feat/reportes` | backend listo (T-01 a T-06); falta frontend (T-07) |
-| Lote 7: HU24, HU25, HU30 | César | — | después del lote 6 |
+| Lote 7: HU24, HU25, HU30 (backend y frontend) | César | `feat/materiales-menu` | en desarrollo |
 
 ## 3. Archivos compartidos (conflictos frecuentes)
 Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunca solo una:

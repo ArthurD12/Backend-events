@@ -1,7 +1,7 @@
 # Spec: Insumos por servicio, requerimiento del evento y documento de compra
 
 - **ID**: 021-recipes-requirements
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 26/11/2026)
 - **Módulos afectados**: `inventory` (recetas, requerimiento, reservas), `purchasing` (faltantes del evento, PDF, egreso), `commercial` y `catalog` (solo lectura), `ledger` (registrar egreso)
 - **Historias**: HU24 (#21), HU25 (#22), HU30 (#31)
 

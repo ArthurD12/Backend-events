@@ -1,7 +1,7 @@
 # Plan: Insumos por servicio, requerimiento del evento y documento de compra
 
 - **Spec**: ./spec.md
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 26/11/2026)
 
 ## 1. Módulos
 - `inventory`: `Recipe` (por `service_id` del catálogo, sin FK), `Reservation`, `EventRequirement`. Lee `catalog.public_api` (servicio y su forma de cobro) y `commercial.public_api` (`event_detail`: estado, invitados, servicios contratados con `service_id` y cantidad).
