@@ -19,8 +19,10 @@ from local_eventos.modules.inventory.application.use_cases.products import (
     MovementPage,
     ProductView,
 )
+from local_eventos.modules.inventory.application.use_cases.recipes import RecipeView
 from local_eventos.modules.inventory.domain.movement import Movement, MovementKind
 from local_eventos.modules.inventory.domain.product import Category, ProductKind, Unit
+from local_eventos.modules.inventory.domain.recipe import RecipeBasis
 
 CURRENCY = "PEN"
 
@@ -227,4 +229,49 @@ class EventMaterialOut(BaseModel):
             returned=quantity_text(m.returned),
             wasted=quantity_text(m.wasted),
             pending_return=quantity_text(m.pending_return),
+        )
+
+
+class RecipeLineIn(BaseModel):
+    product_id: UUID
+    quantity: PositiveQuantityIn = Field(description="En la unidad del producto (R-INV-1)")
+    basis: RecipeBasis = Field(
+        description="PER_PERSON: por invitado del evento. PER_SERVICE: por unidad contratada"
+    )
+
+
+class RecipeIn(BaseModel):
+    lines: list[RecipeLineIn] = Field(description="Reemplaza todos los insumos del servicio")
+
+
+class RecipeLineOut(BaseModel):
+    product_id: UUID
+    code: str
+    name: str
+    unit: Unit
+    quantity: QuantityOut
+    basis: RecipeBasis
+
+
+class RecipeOut(BaseModel):
+    service_id: UUID
+    service_name: str
+    lines: list[RecipeLineOut]
+
+    @classmethod
+    def from_view(cls, view: RecipeView) -> Self:
+        return cls(
+            service_id=view.service_id,
+            service_name=view.service_name,
+            lines=[
+                RecipeLineOut(
+                    product_id=product.id,
+                    code=product.code,
+                    name=product.name,
+                    unit=product.unit,
+                    quantity=quantity_text(line.quantity),
+                    basis=line.basis,
+                )
+                for line, product in view.lines
+            ],
         )

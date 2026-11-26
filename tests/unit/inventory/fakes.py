@@ -4,12 +4,14 @@ from dataclasses import replace
 from datetime import UTC, date, datetime, time
 from uuid import UUID, uuid4
 
+from local_eventos.modules.catalog.public_api import ServiceSummary
 from local_eventos.modules.commercial.public_api import EventInfo, EventStatus
 from local_eventos.modules.inventory.application.errors import CodeTakenError
 from local_eventos.modules.inventory.application.ports.product_repository import ProductFilters
 from local_eventos.modules.inventory.application.search_text import normalize
 from local_eventos.modules.inventory.domain.movement import Movement, MovementKind
 from local_eventos.modules.inventory.domain.product import Product
+from local_eventos.modules.inventory.domain.recipe import RecipeLine
 from local_eventos.modules.inventory.domain.stock import StockLevel
 
 TODAY = date(2026, 11, 25)
@@ -134,3 +136,38 @@ class FakeEventLookup:
 
     async def __call__(self, event_id: UUID) -> EventInfo | None:
         return self.events.get(event_id)
+
+
+class InMemoryRecipeRepository:
+    def __init__(self) -> None:
+        self.recipes: dict[UUID, list[RecipeLine]] = {}
+
+    async def get(self, service_id: UUID) -> list[RecipeLine]:
+        return list(self.recipes.get(service_id, []))
+
+    async def get_many(self, service_ids: list[UUID]) -> dict[UUID, list[RecipeLine]]:
+        return {i: list(self.recipes[i]) for i in service_ids if self.recipes.get(i)}
+
+    async def replace(self, service_id: UUID, lines: list[RecipeLine]) -> None:
+        self.recipes[service_id] = list(lines)
+
+
+class FakeServiceLookup:
+    def __init__(self) -> None:
+        self.services: dict[UUID, ServiceSummary] = {}
+
+    def add(self, name: str = "Menú criollo") -> UUID:
+        service_id = uuid4()
+        self.services[service_id] = ServiceSummary(
+            id=service_id,
+            name=name,
+            category_id=uuid4(),
+            price_unit="PER_PERSON",
+            reference_price_cents=5000,
+            currency="PEN",
+            active=True,
+        )
+        return service_id
+
+    async def __call__(self, service_id: UUID) -> ServiceSummary | None:
+        return self.services.get(service_id)

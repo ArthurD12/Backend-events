@@ -4487,6 +4487,128 @@
         "title": "ReceiveLineIn",
         "type": "object"
       },
+      "RecipeBasis": {
+        "enum": [
+          "PER_PERSON",
+          "PER_SERVICE"
+        ],
+        "title": "RecipeBasis",
+        "type": "string"
+      },
+      "RecipeIn": {
+        "properties": {
+          "lines": {
+            "description": "Reemplaza todos los insumos del servicio",
+            "items": {
+              "$ref": "#/components/schemas/RecipeLineIn"
+            },
+            "title": "Lines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "lines"
+        ],
+        "title": "RecipeIn",
+        "type": "object"
+      },
+      "RecipeLineIn": {
+        "properties": {
+          "basis": {
+            "$ref": "#/components/schemas/RecipeBasis",
+            "description": "PER_PERSON: por invitado del evento. PER_SERVICE: por unidad contratada"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "En la unidad del producto (R-INV-1)",
+            "examples": [
+              "12.5"
+            ],
+            "pattern": "^\\d+(\\.\\d+)?$",
+            "title": "Quantity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "quantity",
+          "basis"
+        ],
+        "title": "RecipeLineIn",
+        "type": "object"
+      },
+      "RecipeLineOut": {
+        "properties": {
+          "basis": {
+            "$ref": "#/components/schemas/RecipeBasis"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "quantity": {
+            "description": "Cantidad decimal con 3 decimales",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Quantity",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "product_id",
+          "code",
+          "name",
+          "unit",
+          "quantity",
+          "basis"
+        ],
+        "title": "RecipeLineOut",
+        "type": "object"
+      },
+      "RecipeOut": {
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "service_id": {
+            "format": "uuid",
+            "title": "Service Id",
+            "type": "string"
+          },
+          "service_name": {
+            "title": "Service Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "service_id",
+          "service_name",
+          "lines"
+        ],
+        "title": "RecipeOut",
+        "type": "object"
+      },
       "RecordedMovementOut": {
         "properties": {
           "avg_cost_cents": {
@@ -12005,6 +12127,172 @@
           }
         ],
         "summary": "List Movements",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/recipes/{service_id}": {
+      "get": {
+        "description": "CA-24.1: insumos del servicio (vacío si aún no tiene).",
+        "operationId": "inventory_recipe_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.service_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Recipe",
+        "tags": [
+          "almacén"
+        ]
+      },
+      "put": {
+        "description": "CA-24.3: reemplaza todos los insumos del servicio; un producto una sola vez (CA-24.2).",
+        "operationId": "inventory_recipe_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "service_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Service Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.service_not_found`, `inventory.product_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.validation`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put Recipe",
         "tags": [
           "almacén"
         ]

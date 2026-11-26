@@ -23,6 +23,11 @@ class EventNotFoundError(InventoryNotFoundError):
         super().__init__("inventory.event_not_found", "No se encontró el evento.")
 
 
+class ServiceNotFoundError(InventoryNotFoundError):
+    def __init__(self) -> None:
+        super().__init__("inventory.service_not_found", "No se encontró el servicio del catálogo.")
+
+
 class CodeTakenError(InventoryRuleError):
     def __init__(self) -> None:
         super().__init__("inventory.code_taken", "Ya existe un producto con ese código.")

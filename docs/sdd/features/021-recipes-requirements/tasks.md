@@ -1,6 +1,6 @@
 # Tasks: Insumos por servicio, requerimiento del evento y documento de compra
 
-- [ ] T-01 [inventory] Recetas: dominio, repo, rutas `inventory_recipe_get/put` + tests
+- [x] T-01 [inventory] Recetas: dominio, repo, rutas `inventory_recipe_get/put` + tests
 - [ ] T-02 [inventory] Requerimiento del evento (cálculo al momento) + `inventory_event_requirement` + tests
 - [ ] T-03 [inventory+commercial] Reservas (crear, eliminar, consumo en salida, liberación al cancelar/finalizar por puerto) + tests
 - [ ] T-04 [purchasing] Compra desde faltantes del evento, PDF de compra, egreso único + tests

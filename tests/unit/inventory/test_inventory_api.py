@@ -18,8 +18,10 @@ from tests.unit.current_user import signed_in_as
 from .fakes import (
     FakeClock,
     FakeEventLookup,
+    FakeServiceLookup,
     InMemoryMovementRepository,
     InMemoryProductRepository,
+    InMemoryRecipeRepository,
     InMemoryStockRepository,
 )
 
@@ -32,6 +34,7 @@ async def _no_database() -> None:
 class Api:
     client: TestClient
     events: FakeEventLookup
+    services: FakeServiceLookup
 
     def product(self, code: str = "PLA-01", **changes: Any) -> dict[str, Any]:
         body = {
@@ -57,14 +60,17 @@ def api() -> Iterator[Api]:
     app = create_app(readiness_check=_no_database)
     products, stock = InMemoryProductRepository(), InMemoryStockRepository()
     movements, events = InMemoryMovementRepository(), FakeEventLookup()
+    recipes, services = InMemoryRecipeRepository(), FakeServiceLookup()
     app.dependency_overrides[deps.get_product_repository] = lambda: products
     app.dependency_overrides[deps.get_stock_repository] = lambda: stock
     app.dependency_overrides[deps.get_movement_repository] = lambda: movements
     app.dependency_overrides[deps.get_event_lookup] = lambda: events
+    app.dependency_overrides[deps.get_recipe_repository] = lambda: recipes
+    app.dependency_overrides[deps.get_service_lookup] = lambda: services
     app.dependency_overrides[deps.get_clock] = FakeClock
     app.dependency_overrides[get_current_user] = signed_in_as(Role.PURCHASING_MANAGER)
     with TestClient(app) as client:
-        yield Api(client, events)
+        yield Api(client, events, services)
 
 
 def test_ca23_1_crea_producto_con_stock_cero_como_texto_decimal(api: Api) -> None:
