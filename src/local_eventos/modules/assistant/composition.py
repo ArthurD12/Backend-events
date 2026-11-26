@@ -4,6 +4,7 @@ from functools import cache
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from local_eventos.modules.assistant.application.ports.feedback_log import FeedbackLog
 from local_eventos.modules.assistant.application.ports.language_model import LanguageModel
 from local_eventos.modules.assistant.application.ports.query_log import Clock, QueryLog
 from local_eventos.modules.assistant.application.tool_catalog import Lookups, build_tools
@@ -12,6 +13,7 @@ from local_eventos.modules.assistant.infrastructure.anthropic_language_model imp
     AnthropicLanguageModel,
 )
 from local_eventos.modules.assistant.infrastructure.clock import SystemClock
+from local_eventos.modules.assistant.infrastructure.feedback_log import SqlAlchemyFeedbackLog
 from local_eventos.modules.assistant.infrastructure.query_log import SqlAlchemyQueryLog
 from local_eventos.modules.commercial.public_api import (
     clients_search,
@@ -43,6 +45,10 @@ def language_model() -> LanguageModel | None:
 
 def query_log(session: AsyncSession) -> QueryLog:
     return SqlAlchemyQueryLog(session)
+
+
+def feedback_log(session: AsyncSession) -> FeedbackLog:
+    return SqlAlchemyFeedbackLog(session)
 
 
 def clock() -> Clock:

@@ -20,6 +20,7 @@ Un agente **no modifica** un módulo de otro dueño. Si necesita algo de él, lo
 | Lote 6: reportes (HU31 completo, HU32–HU34) | César | `feat/reportes` | backend listo (T-01 a T-06); falta frontend (T-07) |
 | Lote 7: HU24, HU25, HU30 (backend y frontend) | César | `feat/materiales-menu` | backend listo (T-01 a T-05); falta frontend (T-06) |
 | 022 Asistente de IA (HU35–HU40) | César | `feat/asistente-ia` | backend listo (T-01 a T-05); falta frontend (T-06) |
+| 024 Asistente: cotizaciones, eventos con filtros, historial propio y valoración (HU36, HU40) | César | `feat/asistente-hu36-hu40` | backend y frontend en revisión |
 
 ## 3. Archivos compartidos (conflictos frecuentes)
 Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunca solo una:
@@ -40,7 +41,7 @@ Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunc
 Cuando un punto pase a "listo", avisar al otro dueño para que lo conecte.
 
 ## 5. Migraciones (Alembic)
-- Head actual de `developer-b`: **`6900ec1af5f8`**. Lote 7 (`feat/materiales-menu`) agrega `ba34931b5de5` (recetas, reservas y `expense_movement_id`) encadenada a ese head. El asistente (`feat/asistente-ia`) agrega `c3a9e5d7f1b2` (`assistant_queries`) encadenada a `ba34931b5de5`.
+- Head actual de `developer-b`: **`6900ec1af5f8`**. Lote 7 (`feat/materiales-menu`) agrega `ba34931b5de5` (recetas, reservas y `expense_movement_id`) encadenada a ese head. El asistente (`feat/asistente-ia`) agrega `c3a9e5d7f1b2` (`assistant_queries`) encadenada a `ba34931b5de5`. El lote 024 (`feat/asistente-hu36-hu40`) agrega `dca5fe5821e8` (`assistant_feedback`) encadenada a `c3a9e5d7f1b2`.
 - Antes de crear una migración: `git fetch origin developer-b`, unir `developer-b` en tu rama y `uv run alembic heads` = **un solo head**; la tuya va encadenada a ese.
 - Si mientras tanto entró otra migración a `developer-b`: cambia el `down_revision` de **tu** migración (si nunca se unió) o agrega una migración de unión (`alembic merge`). **Nunca** se edita una migración ya unida (regla 8).
 

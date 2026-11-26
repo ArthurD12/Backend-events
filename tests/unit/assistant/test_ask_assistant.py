@@ -78,6 +78,7 @@ async def test_answers_without_tools_and_logs() -> None:
     )  # fmt: skip
     assert "[Hoy en Lima: 26/11/2026]" in model.calls[0][-1].text  # la fecha va en el usuario
     assert "2026" not in model.systems[0]  # el sistema es estable (caché)
+    assert result.query_id == record.id  # el chat valora la respuesta con este id
 
 
 async def test_executes_tools_and_sends_all_results_in_one_turn() -> None:

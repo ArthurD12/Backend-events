@@ -32,6 +32,10 @@ class SqlAlchemyQueryLog:
         )
         await self._session.flush()
 
+    async def get(self, query_id: UUID) -> QueryRecord | None:
+        row = await self._session.get(QueryRow, query_id)
+        return None if row is None else _record(row)
+
     async def count_since(self, user_id: UUID, since: datetime) -> int:
         total = await self._session.scalar(
             select(func.count())

@@ -7,7 +7,17 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, DateTime, Index, Integer, String, Text
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    Identity,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -33,3 +43,23 @@ class QueryRow(Base):
     output_tokens: Mapped[int] = mapped_column(Integer)
     duration_ms: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(10))
+
+
+class FeedbackRow(Base):
+    """Valoraciones de las respuestas (HU40). Un trigger impide UPDATE y DELETE.
+
+    Valorar de nuevo agrega una fila; la vigente es la de mayor `id` de la consulta.
+    """
+
+    __tablename__ = "assistant_feedback"
+    __table_args__ = (
+        CheckConstraint("value IN ('correct', 'incorrect')", name="value_valid"),
+        Index("ix_assistant_feedback_query_id", "query_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    query_id: Mapped[UUID] = mapped_column(ForeignKey("assistant_queries.id"))
+    user_id: Mapped[UUID]
+    value: Mapped[str] = mapped_column(String(10))
+    comment: Mapped[str | None] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
