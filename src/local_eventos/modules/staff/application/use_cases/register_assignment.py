@@ -15,17 +15,19 @@ FastAPI, SQLAlchemy ni Pydantic (AGENTS.md, regla 2).
 
 from __future__ import annotations
 
-from collections.abc import Sequence
 from datetime import date as date_type
-from datetime import time, timedelta
+from datetime import time
 from uuid import UUID
 
 from local_eventos.modules.commercial.public_api import EventLookup, EventStatus
 from local_eventos.modules.staff.application.assignment_occupancy import (
     AssignmentOccupancy,
 )
+from local_eventos.modules.staff.application.assignment_rules import (
+    describe_conflicts,
+    validate_event_date,
+)
 from local_eventos.modules.staff.application.errors import (
-    AssignmentConflict,
     AssignmentOverlapError,
     EventNotAssignableError,
     EventNotFoundError,
@@ -33,7 +35,6 @@ from local_eventos.modules.staff.application.errors import (
     WorkerNotFoundError,
 )
 from local_eventos.modules.staff.application.ports.assignment_repository import (
-    AssignmentOverlap,
     AssignmentRepository,
 )
 from local_eventos.modules.staff.application.ports.clock import Clock
@@ -44,10 +45,7 @@ from local_eventos.modules.staff.domain.assignment import Assignment
 from local_eventos.modules.staff.domain.assignment_audit import AssignmentAudit
 from local_eventos.modules.staff.domain.assignment_schedule import AssignmentSchedule
 from local_eventos.modules.staff.domain.enums import WorkerFunction, WorkerStatus
-from local_eventos.modules.staff.domain.errors import (
-    AssignmentDateInvalidError,
-    AssignmentFunctionRequiredError,
-)
+from local_eventos.modules.staff.domain.errors import AssignmentFunctionRequiredError
 
 _ASSIGNABLE_EVENT_STATUSES = frozenset(
     {EventStatus.SCHEDULED, EventStatus.CONFIRMED, EventStatus.IN_PROGRESS}
@@ -103,7 +101,7 @@ class RegisterAssignment:
             raise WorkerInactiveError()
 
         schedule = AssignmentSchedule(date=date, start_time=start_time, end_time=end_time)
-        _validate_event_date(
+        validate_event_date(
             assignment_date=date,
             event_date=event.event_date,
             event_start_time=event.start_time,
@@ -124,7 +122,7 @@ class RegisterAssignment:
             worker_id, schedule.start_at, schedule.end_at
         )
         if overlaps:
-            raise AssignmentOverlapError(await self._conflicts(overlaps))
+            raise AssignmentOverlapError(await describe_conflicts(self._event_lookup, overlaps))
 
         assignment = Assignment.register(
             event_id=event_id,
@@ -142,46 +140,6 @@ class RegisterAssignment:
         )
         await self._assignments.save(assignment, audit)
         return assignment
-
-    async def _conflicts(
-        self, overlaps: Sequence[AssignmentOverlap]
-    ) -> tuple[AssignmentConflict, ...]:
-        conflicts: list[AssignmentConflict] = []
-        for overlap in overlaps:
-            conflict = await self._describe(overlap)
-            if conflict is not None:
-                conflicts.append(conflict)
-        return tuple(conflicts)
-
-    async def _describe(self, overlap: AssignmentOverlap) -> AssignmentConflict | None:
-        event = await self._event_lookup(overlap.event_id)
-        if event is None:
-            return None
-        return AssignmentConflict(
-            event_code=event.code,
-            event_date=event.event_date,
-            start_time=event.start_time,
-            end_time=event.end_time,
-        )
-
-
-def _validate_event_date(
-    *,
-    assignment_date: date_type,
-    event_date: date_type,
-    event_start_time: time,
-    event_end_time: time,
-) -> None:
-    """Aplica Q5 comparando solo fechas locales, nunca instantes.
-
-    La fecha debe ser la del evento o, si el evento cruza la medianoche, también la
-    del día siguiente (plan §2.2 y §10.2).
-    """
-    allowed = {event_date}
-    if event_end_time < event_start_time:
-        allowed.add(event_date + timedelta(days=1))
-    if assignment_date not in allowed:
-        raise AssignmentDateInvalidError()
 
 
 def _resolve_function(

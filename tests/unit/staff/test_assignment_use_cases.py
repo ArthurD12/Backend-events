@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import FrozenInstanceError
 from datetime import UTC, date, datetime, time
+from inspect import signature
 from uuid import UUID
 
 import pytest
@@ -43,11 +44,15 @@ from local_eventos.modules.staff.application.ports.worker_repository import (
 from local_eventos.modules.staff.application.use_cases.register_assignment import (
     RegisterAssignment,
 )
+from local_eventos.modules.staff.application.use_cases.update_assignment import (
+    UpdateAssignment,
+)
 from local_eventos.modules.staff.domain.assignment import Assignment
 from local_eventos.modules.staff.domain.assignment_audit import (
     AssignmentAction,
     AssignmentAudit,
 )
+from local_eventos.modules.staff.domain.assignment_schedule import AssignmentSchedule
 from local_eventos.modules.staff.domain.enums import (
     AssignmentStatus,
     WorkerFunction,
@@ -56,6 +61,7 @@ from local_eventos.modules.staff.domain.enums import (
 from local_eventos.modules.staff.domain.errors import (
     AssignmentDateInvalidError,
     AssignmentFunctionRequiredError,
+    AssignmentReasonRequiredError,
 )
 
 WORKER_ID = UUID("11111111-1111-1111-1111-111111111111")
@@ -731,3 +737,314 @@ async def test_orden_de_bloqueo_liberacion_solape_y_guardado() -> None:
         "list_active_overlaps",
         "save",
     ]
+
+
+# --- T-08: UpdateAssignment ---------------------------------------------------
+
+
+def _existing_assignment(
+    *,
+    assignment_id: UUID = ASSIGNMENT_ID,
+    event_id: UUID = EVENT_ID,
+    worker_id: UUID = WORKER_ID,
+    assignment_date: date = EVENT_DATE,
+    start: time = time(18, 0),
+    end: time = time(23, 0),
+    pay_cents: int = 4000,
+) -> Assignment:
+    schedule = AssignmentSchedule(date=assignment_date, start_time=start, end_time=end)
+    return Assignment.register(
+        event_id=event_id,
+        worker_id=worker_id,
+        function=WorkerFunction.WAITER,
+        start_at=schedule.start_at,
+        end_at=schedule.end_at,
+        pay=pay_cents,
+        assignment_id=assignment_id,
+    )
+
+
+def _update(
+    *,
+    repository: FakeAssignmentRepository | None = None,
+    workers: WorkerLookup | None = None,
+    events: FakeEventLookup | None = None,
+    clock: Clock | None = None,
+) -> tuple[UpdateAssignment, FakeAssignmentRepository]:
+    repo = repository if repository is not None else FakeAssignmentRepository()
+    event_lookup = events if events is not None else FakeEventLookup()
+    use_case = UpdateAssignment(
+        assignments=repo,
+        workers=workers if workers is not None else FakeWorkerLookup(),
+        event_lookup=event_lookup,
+        occupancy=AssignmentOccupancy(repo, event_lookup),
+        clock=clock if clock is not None else FakeClock(),
+    )
+    return use_case, repo
+
+
+async def _execute_update(
+    use_case: UpdateAssignment,
+    *,
+    assignment_id: UUID = ASSIGNMENT_ID,
+    function: WorkerFunction = WorkerFunction.WAITER,
+    function_description: str | None = None,
+    assignment_date: date = EVENT_DATE,
+    start_time: time = time(18, 0),
+    end_time: time = time(23, 0),
+    pay_cents: int = 4000,
+    reason: str = "Corrección del horario acordado",
+) -> Assignment:
+    return await use_case.execute(
+        assignment_id=assignment_id,
+        function=function,
+        function_description=function_description,
+        date=assignment_date,
+        start_time=start_time,
+        end_time=end_time,
+        pay_cents=pay_cents,
+        reason=reason,
+        actor_id=ACTOR_ID,
+    )
+
+
+async def test_ca17_13_edicion_valida_audita_updated_con_snapshots() -> None:
+    repository = FakeAssignmentRepository()
+    existing = _existing_assignment()
+    await repository.save(existing, _audit(existing.id))
+    use_case, _repo = _update(repository=repository)
+
+    assignment = await _execute_update(
+        use_case,
+        function=WorkerFunction.COOK,
+        start_time=time(19, 0),
+        end_time=time(22, 0),
+        pay_cents=5000,
+        reason="Cambio solicitado por el cliente",
+    )
+
+    assert assignment is existing
+    assert assignment.function is WorkerFunction.COOK
+    assert assignment.pay.cents == 5000
+    assert assignment.start_at == datetime(2026, 12, 2, 0, 0, tzinfo=UTC)
+    assert assignment.end_at == datetime(2026, 12, 2, 3, 0, tzinfo=UTC)
+
+    assert len(repository.audits) == 2
+    audit = repository.audits[-1]
+    assert audit.action is AssignmentAction.UPDATED
+    assert audit.assignment_id == ASSIGNMENT_ID
+    assert audit.actor_id == ACTOR_ID
+    assert audit.occurred_at == NOW
+    assert audit.reason == "Cambio solicitado por el cliente"
+    assert audit.previous_values is not None
+    assert audit.new_values is not None
+    assert audit.previous_values.function is WorkerFunction.WAITER
+    assert audit.previous_values.pay_cents == 4000
+    assert audit.new_values.function is WorkerFunction.COOK
+    assert audit.new_values.pay_cents == 5000
+    assert audit.new_values.start_at == assignment.start_at
+    assert audit.new_values.end_at == assignment.end_at
+
+
+async def test_ca17_13_noop_devuelve_asignacion_sin_auditoria() -> None:
+    repository = FakeAssignmentRepository()
+    existing = _existing_assignment()
+    await repository.save(existing, _audit(existing.id))
+    repository.calls.clear()
+    use_case, _repo = _update(repository=repository)
+
+    assignment = await _execute_update(use_case, pay_cents=4000)
+
+    assert assignment is existing
+    assert len(repository.audits) == 1
+    assert "save" not in repository.calls
+
+
+async def test_motivo_vacio_se_rechaza_antes_de_leer_o_bloquear() -> None:
+    use_case, repository = _update()
+
+    with pytest.raises(AssignmentReasonRequiredError) as error:
+        await _execute_update(use_case, reason="   ")
+
+    assert error.value.code == "staff.assignment_reason_required"
+    assert repository.calls == []
+
+
+async def test_editar_asignacion_inexistente_lanza_not_found() -> None:
+    use_case, repository = _update()
+
+    with pytest.raises(AssignmentNotFoundError) as error:
+        await _execute_update(use_case)
+
+    assert error.value.code == "staff.assignment_not_found"
+    assert repository.calls == []
+
+
+async def test_evento_inexistente_en_edicion_lanza_event_not_found() -> None:
+    repository = FakeAssignmentRepository()
+    existing = _existing_assignment()
+    await repository.save(existing, _audit(existing.id))
+    use_case, _repo = _update(repository=repository, events=FakeEventLookup({}))
+
+    with pytest.raises(EventNotFoundError) as error:
+        await _execute_update(use_case)
+
+    assert error.value.code == "staff.event_not_found"
+
+
+@pytest.mark.parametrize("status", [EventStatus.FINISHED, EventStatus.CANCELLED])
+async def test_ca17_24_evento_finalizado_o_cancelado_es_solo_lectura(
+    status: EventStatus,
+) -> None:
+    repository = FakeAssignmentRepository()
+    existing = _existing_assignment()
+    await repository.save(existing, _audit(existing.id))
+    use_case, _repo = _update(
+        repository=repository,
+        events=FakeEventLookup({EVENT_ID: _event(status=status)}),
+    )
+
+    with pytest.raises(EventNotAssignableError) as error:
+        await _execute_update(use_case, pay_cents=5000)
+
+    assert error.value.code == "staff.event_not_assignable"
+    assert status.value in str(error.value)
+    assert len(repository.audits) == 1
+
+
+async def test_trabajador_inactivo_con_fin_futuro_rechaza_edicion() -> None:
+    repository = FakeAssignmentRepository()
+    existing = _existing_assignment()
+    await repository.save(existing, _audit(existing.id))
+    workers = FakeWorkerLookup({WORKER_ID: _worker_ref(status=WorkerStatus.INACTIVE)})
+    use_case, _repo = _update(repository=repository, workers=workers)
+
+    with pytest.raises(WorkerInactiveError) as error:
+        await _execute_update(use_case, pay_cents=5000)
+
+    assert error.value.code == "staff.worker_inactive"
+    assert existing.pay.cents == 4000
+    assert len(repository.audits) == 1
+
+
+async def test_trabajador_inactivo_permite_corregir_asignacion_pasada() -> None:
+    repository = FakeAssignmentRepository()
+    existing = _existing_assignment()
+    await repository.save(existing, _audit(existing.id))
+    workers = FakeWorkerLookup({WORKER_ID: _worker_ref(status=WorkerStatus.INACTIVE)})
+    clock = FakeClock(datetime(2026, 12, 3, 12, 0, tzinfo=UTC))
+    use_case, _repo = _update(repository=repository, workers=workers, clock=clock)
+
+    assignment = await _execute_update(use_case, pay_cents=5000)
+
+    assert assignment.pay.cents == 5000
+    assert repository.audits[-1].action is AssignmentAction.UPDATED
+
+
+async def test_ca17_14_solape_excluye_la_propia_asignacion() -> None:
+    repository = FakeAssignmentRepository()
+    existing = _existing_assignment()
+    await repository.save(existing, _audit(existing.id))
+    use_case, _repo = _update(repository=repository)
+
+    assignment = await _execute_update(
+        use_case,
+        start_time=time(19, 0),
+        end_time=time(22, 0),
+    )
+
+    assert assignment.start_at == datetime(2026, 12, 2, 0, 0, tzinfo=UTC)
+    assert repository.audits[-1].action is AssignmentAction.UPDATED
+
+
+async def test_ca17_14_solape_con_dos_eventos_detalla_ambos_conflictos() -> None:
+    repository = FakeAssignmentRepository()
+    own = _existing_assignment()
+    await repository.save(own, _audit(own.id))
+    first = _existing_assignment(
+        assignment_id=OTHER_ASSIGNMENT_ID,
+        event_id=OTHER_EVENT_ID,
+        start=time(19, 0),
+        end=time(23, 0),
+    )
+    second = _existing_assignment(
+        assignment_id=UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+        event_id=THIRD_EVENT_ID,
+        start=time(20, 0),
+        end=time(1, 0),
+    )
+    await repository.save(first, _audit(first.id))
+    await repository.save(second, _audit(second.id))
+    events = FakeEventLookup(
+        {
+            EVENT_ID: _event(),
+            OTHER_EVENT_ID: _event(
+                event_id=OTHER_EVENT_ID,
+                code="EVT-2026-0013",
+                start_time=time(19, 0),
+                end_time=time(23, 0),
+            ),
+            THIRD_EVENT_ID: _event(
+                event_id=THIRD_EVENT_ID,
+                code="EVT-2026-0014",
+                start_time=time(20, 0),
+                end_time=time(1, 0),
+            ),
+        }
+    )
+    use_case, _repo = _update(repository=repository, events=events)
+
+    with pytest.raises(AssignmentOverlapError) as error:
+        await _execute_update(
+            use_case,
+            start_time=time(19, 0),
+            end_time=time(22, 0),
+        )
+
+    assert [conflict.event_code for conflict in error.value.conflicts] == [
+        "EVT-2026-0013",
+        "EVT-2026-0014",
+    ]
+    for conflict in error.value.conflicts:
+        assert not hasattr(conflict, "worker_name")
+        assert not hasattr(conflict, "pay_cents")
+    assert "documento" not in str(error.value).lower()
+    assert "teléfono" not in str(error.value).lower()
+    assert own.start_at == datetime(2026, 12, 1, 23, 0, tzinfo=UTC)
+    assert len(repository.audits) == 3
+
+
+async def test_r_asg_11_editar_solo_pago_no_revalida_fecha_del_evento() -> None:
+    repository = FakeAssignmentRepository()
+    existing = _existing_assignment()
+    await repository.save(existing, _audit(existing.id))
+    # El evento se movió al 5 de diciembre; la asignación conserva el 1 de diciembre.
+    events = FakeEventLookup({EVENT_ID: _event(event_date=date(2026, 12, 5))})
+    use_case, _repo = _update(repository=repository, events=events)
+
+    assignment = await _execute_update(use_case, pay_cents=5500)
+
+    assert assignment.pay.cents == 5500
+    assert assignment.start_at == existing.start_at
+    audit = repository.audits[-1]
+    assert audit.new_values is not None
+    assert audit.new_values.pay_cents == 5500
+
+
+async def test_ca17_15_worker_id_y_event_id_no_forman_parte_de_la_entrada() -> None:
+    parameters = signature(UpdateAssignment.execute).parameters
+
+    assert "worker_id" not in parameters
+    assert "event_id" not in parameters
+    assert set(parameters) == {
+        "self",
+        "assignment_id",
+        "function",
+        "function_description",
+        "date",
+        "start_time",
+        "end_time",
+        "pay_cents",
+        "reason",
+        "actor_id",
+    }
