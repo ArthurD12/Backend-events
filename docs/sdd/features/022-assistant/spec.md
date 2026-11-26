@@ -1,7 +1,7 @@
 # Spec: Asistente de consulta con IA
 
 - **ID**: 022-assistant
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 26/11/2026)
 - **Módulos afectados**: `assistant` (nuevo contenido), lectura por `public_api` de `commercial`, `ledger`, `inventory`, `purchasing`, `reporting`, `staff` (si publica consultas), `identity`
 - **Historias**: HU35–HU37 (#34), HU38–HU39 (#35), HU40 (#36)
 
@@ -23,7 +23,7 @@ Para saber "¿cuánto le falta pagar al cliente X?" o "¿qué eventos tengo esta
   1. Próximos eventos (rango de fechas).
   2. Detalle de un evento por código (estado, fecha, lugar, invitados, responsable).
   3. Cuenta de un evento o contrato: total, pagado, saldo, vencimiento.
-  4. Cobros pendientes y vencidos.
+  4. Cobros pendientes y vencidos: eventos con saldo por cobrar (código, cliente, fecha, total, pagado, saldo, vencido). Responde "¿qué eventos aún les falta completar pagos?".
   5. Stock de un producto / productos con stock bajo o por vencer.
   6. Requerimiento y faltantes de un evento.
   7. Compras abiertas.

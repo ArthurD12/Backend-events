@@ -1,7 +1,7 @@
 # Plan: Asistente de consulta con IA
 
 - **Spec**: ./spec.md
-- **Estado**: borrador
+- **Estado**: aprobado (César Suclupe, 26/11/2026)
 
 ## 1. Módulos y fronteras
 - `assistant` orquesta: recibe la pregunta, llama al modelo con **herramientas** (una por función de consulta), ejecuta las herramientas en el backend leyendo **solo `public_api`** de otros módulos, y devuelve la respuesta final. Sin acceso directo a tablas ajenas (RN29).

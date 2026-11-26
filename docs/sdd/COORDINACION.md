@@ -9,7 +9,7 @@
 | `staff` (personal, disponibilidad, asignaciones, asistencia) | **Harold** | HU15 ✓, HU16, HU17, HU18 |
 | `commercial`, `ledger`, `inventory`, `purchasing`, `reporting` | **César** | HU11, HU13, HU14, HU19–HU30, HU31–HU34 |
 | Frontend (repo `Frontend-events`), todas las pantallas | **César** | — |
-| `assistant` (IA) | sin asignar | HU35–HU40 (al final) |
+| `assistant` (IA) | **César** | HU35–HU40 |
 
 Un agente **no modifica** un módulo de otro dueño. Si necesita algo de él, lo pide aquí (sección 4) y usa su `public_api` cuando exista.
 
