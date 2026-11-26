@@ -14,6 +14,7 @@
 | `pyjwt` | Tokens de acceso |
 | `reportlab` | PDF de cotizaciones (ADR 0004). Sin librerías del sistema: funciona igual en Windows y Docker |
 | `anthropic` | SDK oficial de Claude para el asistente de consulta (ADR 0005). Opcional en ejecución: sin `ANTHROPIC_API_KEY` el asistente queda no disponible |
+| `tzdata` | Base de zonas horarias de la IANA para `zoneinfo` (`America/Lima`) en Windows, que no la trae (ADR 0007) |
 | `structlog` | Logs estructurados |
 | `sentry-sdk[fastapi]` | Errores en producción |
 | `httpx` | Cliente HTTP del conector `reporting` |

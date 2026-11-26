@@ -19,7 +19,7 @@ que usa funciones controladas de los demás módulos (ver ADR 0002).
 
 Python 3.12+ · FastAPI · Pydantic v2 · SQLAlchemy 2.0 async (asyncpg) · Alembic · PostgreSQL ·
 uv · ruff · mypy (strict) · pytest (+ Testcontainers) · import-linter · structlog + Sentry ·
-ReportLab (PDF de cotizaciones, ADR 0004) · SDK `anthropic` (asistente con IA, ADR 0005) · Docker + GitHub Actions. **Sin** Redis, Celery ni Kafka.
+ReportLab (PDF de cotizaciones, ADR 0004) · SDK `anthropic` (asistente con IA, ADR 0005) · `tzdata` (zonas horarias en Windows, ADR 0007) · Docker + GitHub Actions. **Sin** Redis, Celery ni Kafka.
 
 Las versiones concretas las fijan `pyproject.toml` y `uv.lock`; este README no fija versiones.
 
