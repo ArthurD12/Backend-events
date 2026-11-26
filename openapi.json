@@ -2403,6 +2403,53 @@
         "title": "EventPlanningOut",
         "type": "object"
       },
+      "EventRequirementOut": {
+        "properties": {
+          "calculated": {
+            "description": "Falso en eventos finalizados o cancelados: solo se ve lo que salió",
+            "title": "Calculated",
+            "type": "boolean"
+          },
+          "event_code": {
+            "title": "Event Code",
+            "type": "string"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "guests": {
+            "title": "Guests",
+            "type": "integer"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/RequirementLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "without_recipe": {
+            "description": "Servicios sin insumos definidos (CA-25.3)",
+            "items": {
+              "type": "string"
+            },
+            "title": "Without Recipe",
+            "type": "array"
+          }
+        },
+        "required": [
+          "event_id",
+          "event_code",
+          "guests",
+          "calculated",
+          "lines",
+          "without_recipe"
+        ],
+        "title": "EventRequirementOut",
+        "type": "object"
+      },
       "EventResultOut": {
         "properties": {
           "balance_cents": {
@@ -4856,6 +4903,79 @@
           "quantity"
         ],
         "title": "RequestLineIn",
+        "type": "object"
+      },
+      "RequirementLineOut": {
+        "properties": {
+          "available": {
+            "description": "Libre en almacén (stock menos reservas vigentes)",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Available",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "out": {
+            "description": "Ya salió para el evento",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Out",
+            "type": "string"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "required": {
+            "description": "Lo que piden los servicios contratados",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Required",
+            "type": "string"
+          },
+          "reserved": {
+            "description": "Apartado para el evento",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Reserved",
+            "type": "string"
+          },
+          "shortage": {
+            "description": "Falta comprar: requerido - salido - reservado - disponible (mínimo 0)",
+            "examples": [
+              "12.500"
+            ],
+            "title": "Shortage",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "product_id",
+          "code",
+          "name",
+          "unit",
+          "required",
+          "out",
+          "reserved",
+          "available",
+          "shortage"
+        ],
+        "title": "RequirementLineOut",
         "type": "object"
       },
       "Role": {
@@ -11070,6 +11190,85 @@
           }
         ],
         "summary": "Event Materials",
+        "tags": [
+          "almacén"
+        ]
+      }
+    },
+    "/v1/inventory/events/{event_id}/requirement": {
+      "get": {
+        "description": "CA-25.1 a CA-25.3: requerido, salido, reservado, disponible y faltante por producto.",
+        "operationId": "inventory_event_requirement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventRequirementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`inventory.event_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Event Requirement",
         "tags": [
           "almacén"
         ]

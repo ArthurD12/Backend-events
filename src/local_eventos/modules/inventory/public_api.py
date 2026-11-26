@@ -30,6 +30,11 @@ from local_eventos.modules.inventory.application.use_cases.movements import (
     StockEntry,
 )
 from local_eventos.modules.inventory.application.use_cases.products import ProductViews
+from local_eventos.modules.inventory.application.use_cases.requirement import (
+    EventRequirement,
+    GetEventRequirement,
+    RequirementLine,
+)
 from local_eventos.modules.inventory.domain.errors import (
     InsufficientStockError,
     InventoryRuleError,
@@ -55,6 +60,12 @@ class EventMaterialsLookup(Protocol):
     """Materiales de un evento por producto: salió, volvió, merma y falta devolver (HU14)."""
 
     async def __call__(self, event_id: UUID) -> list[EventMaterialInfo]: ...
+
+
+class EventRequirementLookup(Protocol):
+    """Requerimiento del evento por producto y su faltante (HU25). `None` si no existe."""
+
+    async def __call__(self, event_id: UUID) -> EventRequirement | None: ...
 
 
 class StockReceiver(Protocol):
@@ -98,6 +109,18 @@ def event_materials(session: AsyncSession) -> EventMaterialsLookup:
     )
 
 
+def event_requirement(session: AsyncSession) -> EventRequirementLookup:
+    """Cálculo al momento, solo lectura: `purchasing` arma la compra con los faltantes."""
+    return GetEventRequirement(
+        composition.event_details(session),
+        composition.recipe_repository(session),
+        composition.product_repository(session),
+        composition.stock_repository(session),
+        composition.movement_repository(session),
+        composition.reservation_repository(session),
+    )
+
+
 def stock_receiver(session: AsyncSession) -> StockReceiver:
     return RecordEntries(composition.record_movement(session))
 
@@ -123,6 +146,8 @@ __all__ = [
     "Category",
     "EventMaterialInfo",
     "EventMaterialsLookup",
+    "EventRequirement",
+    "EventRequirementLookup",
     "InsufficientStockError",
     "InventoryRuleError",
     "InventoryValidationError",
@@ -135,12 +160,14 @@ __all__ = [
     "ProductKind",
     "ProductLookup",
     "RecordedMovement",
+    "RequirementLine",
     "StockEntry",
     "StockItem",
     "StockReceiver",
     "StockReportLookup",
     "Unit",
     "event_materials",
+    "event_requirement",
     "low_stock_lookup",
     "movements_report",
     "product_lookup",

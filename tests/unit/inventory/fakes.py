@@ -2,16 +2,27 @@
 
 from dataclasses import replace
 from datetime import UTC, date, datetime, time
+from decimal import Decimal
 from uuid import UUID, uuid4
 
 from local_eventos.modules.catalog.public_api import ServiceSummary
-from local_eventos.modules.commercial.public_api import EventInfo, EventStatus
+from local_eventos.modules.commercial.public_api import (
+    ClientSummary,
+    EventDetail,
+    EventInfo,
+    EventServiceInfo,
+    EventStatus,
+    EventType,
+    LineKind,
+    LineUnit,
+)
 from local_eventos.modules.inventory.application.errors import CodeTakenError
 from local_eventos.modules.inventory.application.ports.product_repository import ProductFilters
 from local_eventos.modules.inventory.application.search_text import normalize
 from local_eventos.modules.inventory.domain.movement import Movement, MovementKind
 from local_eventos.modules.inventory.domain.product import Product
 from local_eventos.modules.inventory.domain.recipe import RecipeLine
+from local_eventos.modules.inventory.domain.reservation import Reservation, ReservationStatus
 from local_eventos.modules.inventory.domain.stock import StockLevel
 
 TODAY = date(2026, 11, 25)
@@ -171,3 +182,92 @@ class FakeServiceLookup:
 
     async def __call__(self, service_id: UUID) -> ServiceSummary | None:
         return self.services.get(service_id)
+
+
+class InMemoryReservationRepository:
+    def __init__(self) -> None:
+        self.reservations: list[Reservation] = []
+
+    async def active_for_event(self, event_id: UUID) -> list[Reservation]:
+        return [
+            replace(r)
+            for r in self.reservations
+            if r.event_id == event_id and r.status is ReservationStatus.ACTIVE
+        ]
+
+    async def get_active(self, event_id: UUID, product_id: UUID) -> Reservation | None:
+        return next(
+            (
+                replace(r)
+                for r in self.reservations
+                if r.event_id == event_id
+                and r.product_id == product_id
+                and r.status is ReservationStatus.ACTIVE
+            ),
+            None,
+        )
+
+    async def active_totals(self, product_ids: list[UUID]) -> dict[UUID, Decimal]:
+        totals: dict[UUID, Decimal] = {}
+        for r in self.reservations:
+            if r.status is ReservationStatus.ACTIVE and r.product_id in product_ids:
+                totals[r.product_id] = totals.get(r.product_id, Decimal(0)) + r.quantity
+        return totals
+
+    async def save(self, reservation: Reservation) -> None:
+        self.reservations = [r for r in self.reservations if r.id != reservation.id]
+        self.reservations.append(replace(reservation))
+
+    async def release_event(self, event_id: UUID, now: datetime) -> int:
+        active = [
+            r
+            for r in self.reservations
+            if r.event_id == event_id and r.status is ReservationStatus.ACTIVE
+        ]
+        for r in active:
+            r.release(now)
+        return len(active)
+
+
+class FakeEventDetailLookup:
+    """Ficha del evento con sus servicios contratados, sin base de datos."""
+
+    def __init__(self) -> None:
+        self.events: dict[UUID, EventDetail] = {}
+
+    def add(
+        self,
+        services: list[tuple[UUID | None, int]],
+        guests: int = 100,
+        status: EventStatus = EventStatus.SCHEDULED,
+    ) -> UUID:
+        event_id = uuid4()
+        self.events[event_id] = EventDetail(
+            id=event_id,
+            code=f"EVT-2026-{len(self.events) + 1:04d}",
+            status=status,
+            event_type=EventType.WEDDING,
+            event_date=date(2026, 12, 19),
+            start_time=time(20),
+            end_time=time(3),
+            ends_next_day=True,
+            venue="Quinta Los Olivos",
+            guests=guests,
+            coordinator_id=uuid4(),
+            contract_id=uuid4(),
+            client=ClientSummary(uuid4(), "Ana", "DNI", "12345678", "999999999", None, True),
+            services=tuple(
+                EventServiceInfo(
+                    kind=LineKind.SERVICE if sid else LineKind.EXTRA,
+                    service_id=sid,
+                    description=f"Servicio {i}",
+                    unit=LineUnit.PER_PERSON,
+                    quantity=qty,
+                )
+                for i, (sid, qty) in enumerate(services, start=1)
+            ),
+        )
+        return event_id
+
+    async def __call__(self, event_id: UUID) -> EventDetail | None:
+        return self.events.get(event_id)

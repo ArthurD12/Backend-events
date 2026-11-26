@@ -20,6 +20,10 @@ from local_eventos.modules.inventory.application.use_cases.products import (
     ProductView,
 )
 from local_eventos.modules.inventory.application.use_cases.recipes import RecipeView
+from local_eventos.modules.inventory.application.use_cases.requirement import (
+    EventRequirement,
+    RequirementLine,
+)
 from local_eventos.modules.inventory.domain.movement import Movement, MovementKind
 from local_eventos.modules.inventory.domain.product import Category, ProductKind, Unit
 from local_eventos.modules.inventory.domain.recipe import RecipeBasis
@@ -274,4 +278,54 @@ class RecipeOut(BaseModel):
                 )
                 for line, product in view.lines
             ],
+        )
+
+
+class RequirementLineOut(BaseModel):
+    product_id: UUID
+    code: str
+    name: str
+    unit: Unit
+    required: QuantityOut = Field(description="Lo que piden los servicios contratados")
+    out: QuantityOut = Field(description="Ya salió para el evento")
+    reserved: QuantityOut = Field(description="Apartado para el evento")
+    available: QuantityOut = Field(description="Libre en almacén (stock menos reservas vigentes)")
+    shortage: QuantityOut = Field(
+        description="Falta comprar: requerido - salido - reservado - disponible (mínimo 0)"
+    )
+
+    @classmethod
+    def from_line(cls, line: RequirementLine) -> Self:
+        return cls(
+            product_id=line.product.id,
+            code=line.product.code,
+            name=line.product.name,
+            unit=line.product.unit,
+            required=quantity_text(line.required),
+            out=quantity_text(line.out),
+            reserved=quantity_text(line.reserved),
+            available=quantity_text(line.available),
+            shortage=quantity_text(line.shortage),
+        )
+
+
+class EventRequirementOut(BaseModel):
+    event_id: UUID
+    event_code: str
+    guests: int
+    calculated: bool = Field(
+        description="Falso en eventos finalizados o cancelados: solo se ve lo que salió"
+    )
+    lines: list[RequirementLineOut]
+    without_recipe: list[str] = Field(description="Servicios sin insumos definidos (CA-25.3)")
+
+    @classmethod
+    def from_requirement(cls, requirement: EventRequirement) -> Self:
+        return cls(
+            event_id=requirement.event_id,
+            event_code=requirement.event_code,
+            guests=requirement.guests,
+            calculated=requirement.calculated,
+            lines=[RequirementLineOut.from_line(line) for line in requirement.lines],
+            without_recipe=requirement.without_recipe,
         )

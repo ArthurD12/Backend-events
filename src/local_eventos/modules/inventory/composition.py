@@ -3,13 +3,20 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from local_eventos.modules.catalog.public_api import ServiceLookup, service_lookup
-from local_eventos.modules.commercial.public_api import EventLookup
+from local_eventos.modules.commercial.public_api import (
+    EventDetailLookup,
+    EventLookup,
+    event_detail,
+)
 from local_eventos.modules.commercial.public_api import event_lookup as commercial_event_lookup
 from local_eventos.modules.inventory.application.ports.clock import Clock
 from local_eventos.modules.inventory.application.ports.product_repository import (
     ProductRepository,
 )
 from local_eventos.modules.inventory.application.ports.recipe_repository import RecipeRepository
+from local_eventos.modules.inventory.application.ports.reservation_repository import (
+    ReservationRepository,
+)
 from local_eventos.modules.inventory.application.ports.stock_repository import (
     MovementRepository,
     StockRepository,
@@ -21,6 +28,9 @@ from local_eventos.modules.inventory.infrastructure.product_repository import (
 )
 from local_eventos.modules.inventory.infrastructure.recipe_repository import (
     SqlAlchemyRecipeRepository,
+)
+from local_eventos.modules.inventory.infrastructure.reservation_repository import (
+    SqlAlchemyReservationRepository,
 )
 from local_eventos.modules.inventory.infrastructure.stock_repository import (
     SqlAlchemyMovementRepository,
@@ -42,6 +52,15 @@ def movement_repository(session: AsyncSession) -> MovementRepository:
 
 def recipe_repository(session: AsyncSession) -> RecipeRepository:
     return SqlAlchemyRecipeRepository(session)
+
+
+def reservation_repository(session: AsyncSession) -> ReservationRepository:
+    return SqlAlchemyReservationRepository(session)
+
+
+def event_details(session: AsyncSession) -> EventDetailLookup:
+    """Ficha del evento de commercial, por su `public_api`."""
+    return event_detail(session)
 
 
 def services(session: AsyncSession) -> ServiceLookup:

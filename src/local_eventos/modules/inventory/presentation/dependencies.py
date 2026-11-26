@@ -10,13 +10,16 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from local_eventos.modules.catalog.public_api import ServiceLookup
-from local_eventos.modules.commercial.public_api import EventLookup
+from local_eventos.modules.commercial.public_api import EventDetailLookup, EventLookup
 from local_eventos.modules.inventory import composition
 from local_eventos.modules.inventory.application.ports.clock import Clock
 from local_eventos.modules.inventory.application.ports.product_repository import (
     ProductRepository,
 )
 from local_eventos.modules.inventory.application.ports.recipe_repository import RecipeRepository
+from local_eventos.modules.inventory.application.ports.reservation_repository import (
+    ReservationRepository,
+)
 from local_eventos.modules.inventory.application.ports.stock_repository import (
     MovementRepository,
     StockRepository,
@@ -50,6 +53,14 @@ async def get_service_lookup(session: Session) -> ServiceLookup:
     return composition.services(session)
 
 
+async def get_reservation_repository(session: Session) -> ReservationRepository:
+    return composition.reservation_repository(session)
+
+
+async def get_event_detail_lookup(session: Session) -> EventDetailLookup:
+    return composition.event_details(session)
+
+
 def get_clock() -> Clock:
     return composition.clock()
 
@@ -61,3 +72,5 @@ Events = Annotated[EventLookup, Depends(get_event_lookup)]
 Today = Annotated[Clock, Depends(get_clock)]
 Recipes = Annotated[RecipeRepository, Depends(get_recipe_repository)]
 Services = Annotated[ServiceLookup, Depends(get_service_lookup)]
+Reservations = Annotated[ReservationRepository, Depends(get_reservation_repository)]
+EventDetails = Annotated[EventDetailLookup, Depends(get_event_detail_lookup)]
