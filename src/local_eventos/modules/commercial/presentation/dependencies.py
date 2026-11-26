@@ -16,6 +16,9 @@ from local_eventos.modules.commercial.application.clients.ports.client_repositor
 from local_eventos.modules.commercial.application.contracts.ports.contract_repository import (
     ContractRepository,
 )
+from local_eventos.modules.commercial.application.contracts.ports.document import (
+    ContractDocumentRenderer,
+)
 from local_eventos.modules.commercial.application.contracts.ports.receipt import (
     PaymentReceiptRenderer,
 )
@@ -120,6 +123,10 @@ async def get_payment_voider(
     return composition.void_payment(session)
 
 
+def get_contract_renderer() -> ContractDocumentRenderer:
+    return composition.contract_renderer()
+
+
 def get_receipt_renderer() -> PaymentReceiptRenderer:
     return composition.receipt_renderer()
 
@@ -135,6 +142,7 @@ Payments = Annotated[PaymentRecorder, Depends(get_payment_recorder)]
 PaymentHistory = Annotated[PaymentEntriesLookup, Depends(get_payments_lookup)]
 PaymentFind = Annotated[PaymentFinder, Depends(get_payment_finder)]
 PaymentVoid = Annotated[PaymentVoider, Depends(get_payment_voider)]
+ContractRenderer = Annotated[ContractDocumentRenderer, Depends(get_contract_renderer)]
 ReceiptRenderer = Annotated[PaymentReceiptRenderer, Depends(get_receipt_renderer)]
 UserNames = Annotated[UserNamesLookup, Depends(get_user_names)]
 
