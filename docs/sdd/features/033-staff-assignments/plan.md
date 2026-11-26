@@ -514,7 +514,7 @@ Los nombres son orientativos; la suite real debe cubrir cada CA.
 10. **Detalle**: `GET` devuelve también asignaciones anuladas; la lista vigente no las incluye. **Supuesto**.
 11. **Reconciliación de eventos cancelados (decisión aprobada 25/11/2026)**: no se notifica a `staff` desde `commercial`; no hay evento de dominio implementado. Se libera perezosamente al escribir.
 12. **No se toca** `reporting`, `assistant`, ledger, inventario ni el congelado de precios.
-13. **Edición de una asignación anulada**: el caso de uso actual no la bloquea (el estado no cambia), pero reescribiría su historial. Pendiente decidir si debe responder 409; recomendación: bloquearla antes de T-19.
+13. **Edición de una asignación anulada (decisión del PO, 26/11/2026)**: se permite editar una asignación `CANCELLED`; el estado no cambia, no se reactiva y el cambio queda auditado como `UPDATED`. No se añade un 409 específico.
 
 ## 11. Orden de implementación
 

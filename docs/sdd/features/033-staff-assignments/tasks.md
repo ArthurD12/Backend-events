@@ -74,4 +74,4 @@ Alcance: solo HU17 (backend). Sin frontend, sin ficha consolidada (HU14), sin hi
 - **Trigger append-only (bajo)**: no cubre `TRUNCATE` (igual que en HU15); queda documentado como pendiente menor.
 - **Alcance**: no se implementa HU14 (ficha), HU18 (historial por trabajador), ledger, notificaciones ni frontend. `reporting` y `assistant` no se tocan.
 - **OpenAPI**: regenerar `openapi.json`; sin cambios incompatibles dentro de `/v1`. Los `operationId` son estables.
-- **Edición de asignación anulada**: decidir si se bloquea con 409 (recomendado) antes de T-19; hoy el caso de uso la permitiría sin reactivarla.
+- **Edición de asignación anulada**: decisión del 26/11/2026: se permite, sin reactivarla ni cambiar su estado; el cambio se audita como `UPDATED`.

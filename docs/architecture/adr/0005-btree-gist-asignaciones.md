@@ -1,6 +1,6 @@
 # ADR 0005 — `btree_gist` y restricción de exclusión para asignaciones de personal
 
-- **Estado:** propuesto, pendiente de aprobación humana (25/11/2026)
+- **Estado:** aprobado (26/11/2026)
 - **Contexto:** RN12 exige que un trabajador **no tenga dos asignaciones vigentes con horarios superpuestos** y que la garantía sea de PostgreSQL, no solo del código (R-ASG-3, HU17). La solución prevista en el plan de `033-staff-assignments` es una restricción de exclusión:
 
 ```sql
