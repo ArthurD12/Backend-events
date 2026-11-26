@@ -2,9 +2,15 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from local_eventos.modules.assistant.application.ports.language_model import LanguageModel
+from local_eventos.modules.assistant.application.ports.query_log import Clock, QueryLog
 from local_eventos.modules.assistant.application.tool_catalog import Lookups, build_tools
 from local_eventos.modules.assistant.application.tools import ToolRegistry
+from local_eventos.modules.assistant.infrastructure.anthropic_language_model import (
+    AnthropicLanguageModel,
+)
 from local_eventos.modules.assistant.infrastructure.clock import SystemClock
+from local_eventos.modules.assistant.infrastructure.query_log import SqlAlchemyQueryLog
 from local_eventos.modules.commercial.public_api import (
     clients_search,
     event_account,
@@ -17,6 +23,21 @@ from local_eventos.modules.identity.public_api import user_names
 from local_eventos.modules.inventory.public_api import event_requirement, stock_report
 from local_eventos.modules.ledger.public_api import cash_totals
 from local_eventos.modules.purchasing.public_api import purchases_report
+from local_eventos.shared.infrastructure.config import AssistantSettings
+
+
+def language_model() -> LanguageModel | None:
+    """El proveedor real si hay `ANTHROPIC_API_KEY`; sin clave, `None` (asistente no disponible)."""
+    key = AssistantSettings().anthropic_api_key.strip()
+    return AnthropicLanguageModel.from_api_key(key) if key else None
+
+
+def query_log(session: AsyncSession) -> QueryLog:
+    return SqlAlchemyQueryLog(session)
+
+
+def clock() -> Clock:
+    return SystemClock()
 
 
 def tools(session: AsyncSession) -> ToolRegistry:
