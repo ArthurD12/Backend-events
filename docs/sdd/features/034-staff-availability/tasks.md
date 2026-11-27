@@ -3,7 +3,7 @@
 - **Spec**: `docs/sdd/features/034-staff-availability/spec.md`
 - **Plan**: `docs/sdd/features/034-staff-availability/plan.md`
 - **HU**: HU16 (#17) · **Feature**: 034-staff-availability
-- **Estado**: plan aprobado (27/11/2026); implementada salvo T-19 (bloqueada por Docker apagado)
+- **Estado**: plan aprobado (27/11/2026); implementada y verificada (T-19 con PostgreSQL 16 real, 27/11/2026)
 
 Formato: `- [ ] T-NN [capa] descripción — archivos — hecho cuando …`
 Una tarea = un subagente = un commit. `[P]` solo si no comparte archivos con otra tarea abierta.
@@ -58,7 +58,33 @@ Una tarea = un subagente = un commit. `[P]` solo si no comparte archivos con otr
 
 - [x] **T-18** `[docs]` Documentación de la feature: `DOMAIN.md` §5 con R-DIS-1..10, §11 con las decisiones del 27/11/2026 (Q1–Q10); `ARCHITECTURE.md` con la tabla de indisponibilidad y `staff_unavailabilities_audit` en append-only; docstrings de `composition.py`, router, casos de uso, repositorio y VO. — `docs/DOMAIN.md`, `docs/architecture/ARCHITECTURE.md`, `src/local_eventos/modules/staff/composition.py`, `src/local_eventos/modules/staff/presentation/availability_router.py` — `just docs` y `uv run ruff check` verdes; sin contradicciones con spec/plan. `[P]` con T-17. No toca §9 de la matriz de permisos (lo cierra T-20).
 
-- [ ] **T-19** `[verify]` Verificación intermedia: `just check` completo (ruff + mypy + lint-imports + suite), integración real de disponibilidad (repo, constraints, auditoría, solo lectura, equivalencia), `uv run alembic heads` con un único head y `openapi.json` regenerado. — todo el repo — `just check` en verde y checklist CA-16.1..16.21 con al menos un test por CA (informe breve). Depende de T-10..T-18.
+- [x] **T-19** `[verify]` Verificación intermedia: `just check` completo (ruff + mypy + lint-imports + suite), integración real de disponibilidad (repo, constraints, auditoría, solo lectura, equivalencia), `uv run alembic heads` con un único head y `openapi.json` regenerado. — todo el repo — `just check` en verde y checklist CA-16.1..16.21 con al menos un test por CA (informe breve). Depende de T-10..T-18.
+
+  **Verificación T-19 (PostgreSQL 16.16 en Docker, 27/11/2026)**: `upgrade head` → `downgrade 8df99a56ff18` (0 tablas y 0 triggers `staff_unavailabilities*`) → `upgrade head` (2 tablas + 3 triggers), `alembic heads` = `b959d55b8430`. Integración: bloque disponibilidad 26 passed; equivalencia 1 passed; `tests/integration/staff` completo 82 passed. `just check`: 1319 passed, 206 deselected. `openapi.json` sin cambios. Corregido un test que construía `AvailabilityQuery` con `to_date` por defecto anterior a `from_date`.
+
+  | CA | Test ejecutado | Resultado |
+  |---|---|---|
+  | CA-16.1 | `unit/staff/test_unavailability.py::test_ca16_1_*`, `unit/staff/test_unavailability_use_cases.py::test_ca16_1_alta_auditada` + round-trip en `integration/staff/test_unavailability_repository.py` | Pasa |
+  | CA-16.2 | `unit/staff/test_unavailability_use_cases.py::test_ca16_2_*` (5 casos) | Pasa |
+  | CA-16.3 | `integration/staff/test_availability_read_only.py::test_ca16_3_estado_en_tiempo_real_por_ventana` + `unit/.../test_availability_use_case.py::test_ca16_3_and_16_12` | Pasa |
+  | CA-16.4 | `unit/staff/test_availability_use_case.py::test_ca16_4_function_filter_is_forwarded_and_applied` | Pasa |
+  | CA-16.5 | `integration/staff/test_availability_read_only.py::test_ca16_5_ca16_6_inactivo_excluido_y_reactivacion_conserva_historial` | Pasa |
+  | CA-16.6 | mismo test que CA-16.5 | Pasa |
+  | CA-16.7 | `unit/.../test_availability_use_case.py::test_ca16_7_assignment_overlap_marks_busy_via_hu17_port` + `integration/staff/test_unavailability_repository.py` (solape semiabierto) | Pasa |
+  | CA-16.8 | `unit/.../test_availability_use_case.py::test_ca16_8_conflict_detail_without_sensitive_data` | Pasa |
+  | CA-16.9 | `unit/.../test_availability_use_case.py::test_ca16_9_unavailability_marks_unavailable_with_detail` | Pasa |
+  | CA-16.10 | `unit/.../test_availability_use_case.py::test_ca16_10_unavailable_prevails_and_both_details_are_shown` | Pasa |
+  | CA-16.11 | `unit/.../test_availability_use_case.py::test_ca16_11_state_and_function_filters_combine_and_can_be_empty` | Pasa |
+  | CA-16.12 | `unit/.../test_availability_use_case.py::test_ca16_3_and_16_12_states_in_the_queried_interval` | Pasa |
+  | CA-16.13 | `unit/staff/test_unavailability.py::test_ca16_13_solo_solapa_dentro_del_intervalo` + `integration/staff/test_unavailability_repository.py` (listado por ventana) | Pasa |
+  | CA-16.14 | `unit/staff/test_availability_query.py::test_ca16_14_*`, `unit/staff/test_unavailability.py::test_ca16_14_*`, `unit/staff/test_unavailability_use_cases.py::test_ca16_14_cruce_medianoche` + cruce de medianoche en `test_unavailability_repository.py` | Pasa |
+  | CA-16.15 | `integration/staff/test_availability_read_only.py::test_ca16_15_cancelado_no_liberado_no_ocupa_y_finalizado_si` | Pasa |
+  | CA-16.16 | `integration/staff/test_availability_read_only.py::test_ca16_16_consulta_repetida_identica_sin_escribir` | Pasa |
+  | CA-16.17 | `unit/identity/test_user.py::test_ca16_17_disponibilidad_de_personal_solo_para_administrador` + `unit/staff/test_availability_api_roles.py` (403 por ruta) | Pasa |
+  | CA-16.18 | `unit/staff/test_unavailability_use_cases.py::test_ca16_18_*` + `integration/staff/test_unavailability_audit_append_only.py::test_ca16_18_anulacion_sin_borrado_fisico` | Pasa |
+  | CA-16.19 | `integration/staff/test_availability_read_only.py::test_ca16_19_refleja_altas_ediciones_y_anulaciones` | Pasa |
+  | CA-16.20 | `unit/staff/test_availability_query.py::test_ca16_20_31_dias_corridos_inclusive_es_valido` y `test_ca16_20_32_dias_corridos_es_demasiado_largo` | Pasa |
+  | CA-16.21 | `integration/staff/test_availability_equivalence.py::test_ca16_21_equivalencia_hu16_hu17` | Pasa |
 
 - [x] **T-20** `[identity/cierre]` **Cierre de permisos (ÚLTIMA tarea; NO añade la constante).** Verificar y fijar la matriz: `ADMIN` sí; `EVENTS_MANAGER` y `PURCHASING_MANAGER` **no**; `staff:manage`, `staff:roster:read` y `staff:assign` no abren disponibilidad. Test de matriz en `tests/unit/identity/test_user.py` y 403 por ruta en `tests/unit/staff/test_availability_api_roles.py` (quitar cualquier excepción temporal). Actualizar `DOMAIN.md` §9 con la fila `staff:availability` y la aclaración. — `tests/unit/identity/test_user.py`, `tests/unit/staff/test_availability_api_roles.py`, `docs/DOMAIN.md` — `uv run pytest tests/unit/identity/test_user.py tests/unit/staff/test_availability_api_roles.py -q` verde y `just check` verde; cubre CA-16.17. Depende de T-19.
 
@@ -108,9 +134,9 @@ Una tarea = un subagente = un commit. `[P]` solo si no comparte archivos con otr
 
 ## Registro de ejecución
 
-- Rama `developer-a`; commits T-00..T-20 (T-19 pendiente). Sin push.
+- Rama `developer-a`; commits T-00..T-20. Sin push.
 - `acfdd55` T-00; `b959d55b8430` es la revisión de Alembic (head único) con `down_revision = 8df99a56ff18`.
 - T-09: migración creada tras gate correcto (un solo head, merge limpio). CHECK del motivo corregido a `UPDATED/CANCELLED` obligatorio (CA-16.18).
-- T-12/T-13: tests escritos y solo verificados por colección/ruff/mypy; **no ejecutados** contra PostgreSQL.
+- T-12/T-13: tests escritos y solo verificados por colección/ruff/mypy; **no ejecutados** contra PostgreSQL hasta T-19 (desde entonces, verdes).
 - Desviaciones aceptadas: `AssignmentConflictLookup` propio (no se tocó `AssignmentOverlap`); warning con `logging` estándar (no `structlog`); `mkdir`/`mkdocs` no disponible, `just docs` no ejecutable.
-- Pendiente: T-19 con PostgreSQL real (CA-16.21, triggers, upgrade/downgrade).
+- T-19 ejecutado con PostgreSQL 16.16 (contenedor temporal): integración de staff 82 passed; `just check` verde; upgrade/downgrade/upgrade sin residuos. Corregido `_query` en `test_availability_read_only.py` (pasaba `to_date` anterior a `from_date`).
