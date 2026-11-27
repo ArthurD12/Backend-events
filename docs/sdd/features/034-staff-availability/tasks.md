@@ -60,7 +60,7 @@ Una tarea = un subagente = un commit. `[P]` solo si no comparte archivos con otr
 
 - [x] **T-19** `[verify]` Verificación intermedia: `just check` completo (ruff + mypy + lint-imports + suite), integración real de disponibilidad (repo, constraints, auditoría, solo lectura, equivalencia), `uv run alembic heads` con un único head y `openapi.json` regenerado. — todo el repo — `just check` en verde y checklist CA-16.1..16.21 con al menos un test por CA (informe breve). Depende de T-10..T-18.
 
-  **Verificación T-19 (PostgreSQL 16.16 en Docker, 27/11/2026)**: `upgrade head` → `downgrade 8df99a56ff18` (0 tablas y 0 triggers `staff_unavailabilities*`) → `upgrade head` (2 tablas + 3 triggers), `alembic heads` = `b959d55b8430`. Integración: bloque disponibilidad 26 passed; equivalencia 1 passed; `tests/integration/staff` completo 82 passed. `just check`: 1319 passed, 206 deselected. `openapi.json` sin cambios. Corregido un test que construía `AvailabilityQuery` con `to_date` por defecto anterior a `from_date`.
+  **Verificación T-19 (PostgreSQL 16.16 en Docker, 27/11/2026)**: `upgrade head` → `downgrade 8df99a56ff18` (0 tablas y 0 triggers `staff_unavailabilities*`) → `upgrade head` (2 tablas + 3 triggers), `alembic heads` = `b959d55b8430`. Integración: bloque disponibilidad 26 passed; equivalencia 1 passed; `tests/integration/staff` completo 83 tests en verde (incluye CA-16.21 y el caso de evento huérfano de T-22). `just check`: 1319 passed, 206 deselected. `openapi.json` sin cambios. Corregido un test que construía `AvailabilityQuery` con `to_date` por defecto anterior a `from_date`.
 
   | CA | Test ejecutado | Resultado |
   |---|---|---|
@@ -87,6 +87,10 @@ Una tarea = un subagente = un commit. `[P]` solo si no comparte archivos con otr
   | CA-16.21 | `integration/staff/test_availability_equivalence.py::test_ca16_21_equivalencia_hu16_hu17` | Pasa |
 
 - [x] **T-20** `[identity/cierre]` **Cierre de permisos (ÚLTIMA tarea; NO añade la constante).** Verificar y fijar la matriz: `ADMIN` sí; `EVENTS_MANAGER` y `PURCHASING_MANAGER` **no**; `staff:manage`, `staff:roster:read` y `staff:assign` no abren disponibilidad. Test de matriz en `tests/unit/identity/test_user.py` y 403 por ruta en `tests/unit/staff/test_availability_api_roles.py` (quitar cualquier excepción temporal). Actualizar `DOMAIN.md` §9 con la fila `staff:availability` y la aclaración. — `tests/unit/identity/test_user.py`, `tests/unit/staff/test_availability_api_roles.py`, `docs/DOMAIN.md` — `uv run pytest tests/unit/identity/test_user.py tests/unit/staff/test_availability_api_roles.py -q` verde y `just check` verde; cubre CA-16.17. Depende de T-19.
+
+- [x] **T-21** `[fix/review]` No publicar `created_at`/`updated_at` no persistidos en `UnavailabilityOut` (la auditoría es la fuente de quién/cuándo). — `src/local_eventos/modules/staff/presentation/availability_schemas.py`, `openapi.json`, `tests/unit/staff/test_availability_schemas.py` — `UnavailabilityOut` sin esos campos; tests y `openapi.json` coherentes. Commit `b46b7d5`.
+
+- [x] **T-22** `[fix/review]` Evento huérfano cuenta como ocupado (CA-16.21): el trabajador se marca `BUSY` con warning y el conflicto se publica sin `event_code`/`event_date` (solo horas/función de la asignación). — `src/local_eventos/modules/staff/application/use_cases/get_staff_availability.py`, `tests/unit/staff/test_availability_use_case.py` — test del huérfano en verde y equivalencia CA-16.21 sin regresión. Commit `207410a`.
 
 ## Mapeo CA → tareas
 
@@ -139,4 +143,5 @@ Una tarea = un subagente = un commit. `[P]` solo si no comparte archivos con otr
 - T-09: migración creada tras gate correcto (un solo head, merge limpio). CHECK del motivo corregido a `UPDATED/CANCELLED` obligatorio (CA-16.18).
 - T-12/T-13: tests escritos y solo verificados por colección/ruff/mypy; **no ejecutados** contra PostgreSQL hasta T-19 (desde entonces, verdes).
 - Desviaciones aceptadas: `AssignmentConflictLookup` propio (no se tocó `AssignmentOverlap`); warning con `logging` estándar (no `structlog`); `mkdir`/`mkdocs` no disponible, `just docs` no ejecutable.
-- T-19 ejecutado con PostgreSQL 16.16 (contenedor temporal): integración de staff 82 passed; `just check` verde; upgrade/downgrade/upgrade sin residuos. Corregido `_query` en `test_availability_read_only.py` (pasaba `to_date` anterior a `from_date`).
+- T-19 **verde** (27/11/2026): Docker 29.1.3 + PostgreSQL 16.16; `upgrade head` → `downgrade` → `upgrade head` sin residuos; **83 tests** de integración de staff en verde, CA-16.21 incluido.
+- Correcciones de revisión: **T-21** (`b46b7d5`) sin `created_at`/`updated_at` en `UnavailabilityOut`; **T-22** (`207410a`) evento huérfano = `BUSY` con conflicto sin `event_code`/`event_date` (CA-16.21).

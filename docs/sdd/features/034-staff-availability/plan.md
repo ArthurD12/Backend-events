@@ -161,7 +161,9 @@ En `staff/domain/enums.py`:
 
 Detalle del conflicto de asignación: `event_code`, `event_date`, `start_time`/`end_time` **de la asignación** (convertidos a Lima) y la función de la asignación vía **lectura aparte de HU16**. `list_active_overlaps` devuelve los `assignment_id`; después `AssignmentConflictLookup.by_ids(assignment_ids)` — puerto nuevo `application/ports/assignment_conflict_lookup.py` y adaptador nuevo `infrastructure/assignment_conflict_lookup.py` — lee `worker_function` y `function_description` de `staff_assignments` en **una sola consulta** (`WHERE id IN (...)`), importando el ORM existente `StaffAssignmentRow` **solo para lectura** (sin modificarlo). **No** se amplía `AssignmentOverlap`, **no** se toca ningún tipo/contrato/código de HU17 y **no** se duplica el predicado de solape: los ids provienen siempre del puerto de HU17. Si un id no aparece en la lectura (inconsistencia), la función se devuelve `None` y la consulta no falla.
 
-Si `event_lookup` no encuentra el evento de un solape (dato huérfano), se omite ese conflicto y se registra un warning; la consulta no falla.
+Si `event_lookup` no encuentra el evento de un solape (dato huérfano), el trabajador **se marca BUSY con warning** y el conflicto se publica sin `event_code`/`event_date` (solo las horas de la asignación y la función), para mantener la equivalencia CA-16.21; la consulta no falla.
+
+> **Corregido tras revisión (27/11/2026)**: antes se omitía el conflicto; omitirlo rompía la equivalencia con HU17 (el alta equivalente respondería `409` mientras la consulta diría `FREE`).
 
 ### 3.2 `RegisterUnavailability`
 
@@ -266,11 +268,12 @@ Tests de humo de OpenAPI: para cada ruta, el `openapi.json` contiene el path y e
 ```
 
 - **Nunca** incluye pago, tarifa, documento ni teléfono (R-DIS-9). Se verifica con un test que recorre las claves de la respuesta.
+- **`AvailabilityConflict`**: `event_code` y `event_date` son **opcionales** (`null` cuando el evento del solape no se pudo resolver); `start_time`, `end_time`, `function` y `function_description` se mantienen.
 
 **`UnavailabilityCreate`**: `worker_id`, `date`, `start_time`, `end_time`, `kind`, `description?`.
 **`UnavailabilityUpdate`**: `kind`, `description`, `date`, `start_time`, `end_time`, `reason` (obligatorio).
 **`UnavailabilityCancel`**: `reason` (obligatorio).
-**`UnavailabilityOut`**: `id`, `worker_id`, `kind`, `description`, `date`, `start_time`, `end_time`, `start_at`, `end_at`, `status`, `created_at`, `updated_at`.
+**`UnavailabilityOut`**: `id`, `worker_id`, `kind`, `description`, `date`, `start_time`, `end_time`, `start_at`, `end_at`, `status` (sin `created_at`/`updated_at`: no se publican; la auditoría es la fuente de quién/cuándo).
 **`UnavailabilityListOut`**: `{ "items": [UnavailabilityOut, ...] }`.
 
 ### 4.4 Errores (Problem Details)
@@ -457,7 +460,7 @@ Si un test nuevo trunca solo sus tablas, incluir también `staff_workers` y las 
 - **Colisión de router (alto)**: `/v1/staff/availability` y `/v1/staff/unavailability` caen en `/v1/staff/{worker_id}` si se registran después. Mitigación: orden en `main.py`, regla permanente y test por ruta + OpenAPI.
 - **Reutilización del criterio de HU17 (alto valor)**: se usa `list_active_overlaps`; el filtro de `CANCELLED` es de solo lectura y no llama a `release_cancelled`. Riesgo de divergencia si HU17 cambia el criterio: la prueba CA-16.21 lo detecta. No se duplica SQL.
 - **N+1 en la consulta (medio)**: `list_active_overlaps` por trabajador. Volumen de decenas a pocos cientos y ventana ≤ 31 días; índice `(worker_id, start_at)`. Si el rendimiento no basta, evolucionar a una variante *bulk* en el mismo repositorio reutilizando el predicado (fuera de esta entrega).
-- **Filtro de eventos cancelados no liberados (medio)**: se resuelve con `event_lookup` por solape y cache; no se escribe. Si el evento no existe, se omite el conflicto con warning.
+- **Filtro de eventos cancelados no liberados (medio)**: se resuelve con `event_lookup` por solape y cache; no se escribe. Si el evento no existe, el trabajador se marca `BUSY` con warning y el conflicto se publica sin `event_code`/`event_date` (CA-16.21).
 - **Zona horaria y día completo (medio)**: VO con offset fijo `-05:00`, ventana semiabierta y máximo 31 días; tests de borde.
 - **Privacidad (alto)**: la respuesta se construye con DTOs propios; test que prohíbe `pay`, `tariff`, `document`, `phone`. La consulta no reutiliza `AssignmentView` (que incluye pago).
 - **Migración (alto)**: gate humano; `uv run alembic heads` con un solo head; no editar migraciones aplicadas; actualizar listas de `TRUNCATE`.
@@ -509,7 +512,7 @@ Paralelizable: T-01..T-03 entre sí; T-04..T-08 tras el dominio; T-19 con T-20. 
 8. **Tipo de indisponibilidad**: `VACATION`, `LEAVE`, `REST`, `OTHER`; etiquetas en español en la UI.
 9. **Motivo**: máximo 500 caracteres; descripción `OTHER`: máximo 120.
 10. **Función en el conflicto**: **Decidido (humano, 27/11/2026)**: la función del conflicto se obtiene con una lectura aparte de HU16 por `assignment_id` (`AssignmentConflictLookup`, archivos nuevos, solo lectura del ORM `StaffAssignmentRow`); `AssignmentOverlap` y el código de HU17 no se modifican.
-11. **Evento huérfano**: si `event_lookup` no lo encuentra, se omite el conflicto con warning; no se falla la consulta.
+11. **Evento huérfano**: si `event_lookup` no lo encuentra, **se marca `BUSY` con warning** y el conflicto se publica sin `event_code`/`event_date` (solo las horas de la asignación), para mantener la equivalencia CA-16.21; la consulta no falla. *(Corregido tras revisión, 27/11/2026: antes se omitía el conflicto.)*
 12. **Estados internos** `FREE/BUSY/UNAVAILABLE`; la UI los traduce.
 
 ## 12. Pendientes de confirmación humana
