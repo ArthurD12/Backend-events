@@ -136,9 +136,7 @@ def _cancelled(unavailability: Unavailability) -> UnavailabilityAudit:
     )
 
 
-async def _count(
-    sessions: async_sessionmaker[AsyncSession], model: type[Any]
-) -> int:
+async def _count(sessions: async_sessionmaker[AsyncSession], model: type[Any]) -> int:
     async with sessions() as session:
         total = await session.scalar(select(func.count()).select_from(model))
     return int(total or 0)
@@ -159,9 +157,7 @@ async def test_round_trip_y_auditoria_en_la_misma_transaccion(
         repository = SqlAlchemyUnavailabilityRepository(session)
         await repository.save(unavailability, _created(unavailability))
         # Ambas filas están visibles en la misma transacción, sin commit intermedio.
-        inside = await session.scalar(
-            select(func.count()).select_from(StaffUnavailabilityAuditRow)
-        )
+        inside = await session.scalar(select(func.count()).select_from(StaffUnavailabilityAuditRow))
         pending = await repository.get(unavailability.id)
         assert inside == 1
         assert pending is not None
@@ -209,9 +205,7 @@ async def test_get_for_update_lee_la_fila(
         )
 
     async with sessions.begin() as session:
-        locked = await SqlAlchemyUnavailabilityRepository(session).get_for_update(
-            unavailability.id
-        )
+        locked = await SqlAlchemyUnavailabilityRepository(session).get_for_update(unavailability.id)
 
     assert locked is not None and locked.id == unavailability.id
 

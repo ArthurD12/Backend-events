@@ -134,9 +134,7 @@ async def _save(
         await SqlAlchemyUnavailabilityRepository(session).save(unavailability, saved_audit)
 
 
-async def _count(
-    sessions: async_sessionmaker[AsyncSession], model: type[Any]
-) -> int:
+async def _count(sessions: async_sessionmaker[AsyncSession], model: type[Any]) -> int:
     async with sessions() as session:
         total = await session.scalar(select(func.count()).select_from(model))
     return int(total or 0)
@@ -196,9 +194,7 @@ async def test_ca16_18_anulacion_sin_borrado_fisico(
         audits = (
             await session.scalars(
                 select(StaffUnavailabilityAuditRow)
-                .where(
-                    StaffUnavailabilityAuditRow.unavailability_id == unavailability.id
-                )
+                .where(StaffUnavailabilityAuditRow.unavailability_id == unavailability.id)
                 .order_by(StaffUnavailabilityAuditRow.id)
             )
         ).all()

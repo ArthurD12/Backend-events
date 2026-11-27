@@ -154,9 +154,7 @@ def _event(
 def _events() -> dict[UUID, EventInfo]:
     return {
         _EVENT_ID: _event(_EVENT_ID, EventStatus.SCHEDULED, code="EVT-2026-0101"),
-        _FINISHED_EVENT_ID: _event(
-            _FINISHED_EVENT_ID, EventStatus.FINISHED, code="EVT-2026-0102"
-        ),
+        _FINISHED_EVENT_ID: _event(_FINISHED_EVENT_ID, EventStatus.FINISHED, code="EVT-2026-0102"),
         _CANCELLED_EVENT_ID: _event(
             _CANCELLED_EVENT_ID, EventStatus.CANCELLED, code="EVT-2026-0103"
         ),
@@ -243,17 +241,11 @@ def _created_account(unavailability: Unavailability) -> UnavailabilityAudit:
     )
 
 
-async def _save_assignment(
-    session: AsyncSession, assignment: Assignment
-) -> None:
-    await SqlAlchemyAssignmentRepository(session).save(
-        assignment, _assignment_created(assignment)
-    )
+async def _save_assignment(session: AsyncSession, assignment: Assignment) -> None:
+    await SqlAlchemyAssignmentRepository(session).save(assignment, _assignment_created(assignment))
 
 
-async def _save_unavailability(
-    session: AsyncSession, unavailability: Unavailability
-) -> None:
+async def _save_unavailability(session: AsyncSession, unavailability: Unavailability) -> None:
     await SqlAlchemyUnavailabilityRepository(session).save(
         unavailability, _created_account(unavailability)
     )
