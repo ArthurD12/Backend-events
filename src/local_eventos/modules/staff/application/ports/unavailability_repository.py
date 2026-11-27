@@ -65,3 +65,17 @@ class UnavailabilityRepository(Protocol):
         con esa ventana; sin ellos devuelve todo el historial del trabajador.
         """
         ...
+
+    async def list(
+        self,
+        *,
+        start_at: datetime | None = None,
+        end_at: datetime | None = None,
+    ) -> list[Unavailability]:
+        """Indisponibilidades de todos los trabajadores, incluidas las `CANCELLED`.
+
+        Listado de solo lectura para el administrador (HU16 §3.5). Con
+        `start_at`/`end_at` opcionales limita el resultado a las que se cruzan con
+        esa ventana; sin ellos devuelve todo el historial.
+        """
+        ...
