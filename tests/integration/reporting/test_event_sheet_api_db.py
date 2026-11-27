@@ -119,6 +119,7 @@ def test_hu14_ficha_con_pago_salida_de_material_y_actividad(api: TestClient) -> 
     sheet = api.get(f"/v1/reports/events/{event_id}/sheet")
     without_account = api.get(f"/v1/reports/events/{event_id}/sheet", headers=purchasing)
     as_sales = api.get(f"/v1/reports/events/{event_id}/sheet", headers=sales)
+    admin_list = api.get("/v1/staff/assignments", params={"event_id": event_id})
     sales_staff_routes = [
         api.get("/v1/staff", headers=sales),
         api.get("/v1/staff/assignments", params={"event_id": event_id}, headers=sales),
@@ -147,7 +148,13 @@ def test_hu14_ficha_con_pago_salida_de_material_y_actividad(api: TestClient) -> 
         assert leaked not in str(body["staff"])
     assert as_sales.status_code == 200, as_sales.text
     assert as_sales.json()["staff"] == body["staff"]
+    # El listado de asignaciones (con pago) lo lee el administrador; ventas recibe 403.
+    assert admin_list.status_code == 200, admin_list.text
+    assert [(i["worker_name"], i["pay_cents"]) for i in admin_list.json()["items"]] == [
+        ("Rosa Quispe", 8000)
+    ]
     assert [r.status_code for r in sales_staff_routes] == [403, 403]
+    assert sales_staff_routes[1].json()["code"] == "auth.forbidden"
     assert without_account.json()["staff"] is None
     assert [(m["code"], m["out"], m["pending_return"]) for m in body["materials"]] == [
         ("PLA-01", "120.000", "120.000")
