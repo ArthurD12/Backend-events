@@ -4065,6 +4065,7 @@
           "staff:manage",
           "staff:assign",
           "staff_roster:read",
+          "staff:availability",
           "assistant_log:read"
         ],
         "title": "Permission",
