@@ -190,6 +190,8 @@ class UnavailabilityCancel(_Schema):
 class UnavailabilityOut(_Schema):
     """Indisponibilidad devuelta por la API: fecha/horas locales e instantes UTC."""
 
+    # Sin created_at/updated_at: el agregado de dominio no los tiene y la fuente
+    # real de "quién y cuándo" es la auditoría del módulo.
     id: UUID
     worker_id: UUID
     kind: UnavailabilityKind
@@ -200,23 +202,10 @@ class UnavailabilityOut(_Schema):
     start_at: UtcDateTime
     end_at: UtcDateTime
     status: UnavailabilityStatus
-    created_at: UtcDateTime
-    updated_at: UtcDateTime
 
     @classmethod
-    def from_unavailability(
-        cls,
-        item: Unavailability,
-        *,
-        created_at: datetime,
-        updated_at: datetime,
-    ) -> Self:
-        """Mapea el agregado a la respuesta, con fecha y horas en Lima.
-
-        Los metadatos técnicos `created_at`/`updated_at` no forman parte del
-        agregado de dominio; el adaptador de presentación los aporta desde la
-        fila persistida.
-        """
+    def from_unavailability(cls, item: Unavailability) -> Self:
+        """Mapea el agregado a la respuesta, con fecha y horas en Lima."""
         start_local = utc_to_local(item.start_at)
         end_local = utc_to_local(item.end_at)
         return cls(
@@ -230,8 +219,6 @@ class UnavailabilityOut(_Schema):
             start_at=item.start_at,
             end_at=item.end_at,
             status=item.status,
-            created_at=created_at,
-            updated_at=updated_at,
         )
 
 

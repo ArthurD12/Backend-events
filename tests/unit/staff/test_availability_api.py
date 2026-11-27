@@ -329,7 +329,8 @@ def test_get_unavailability_200(api: Api) -> None:
     data = response.json()
     assert len(data["items"]) == 1
     assert data["items"][0]["id"] == str(UNAVAILABILITY_ID)
-    assert data["items"][0]["created_at"] == "2026-11-27T15:45:00Z"
+    assert "created_at" not in data["items"][0]
+    assert "updated_at" not in data["items"][0]
     _assert_no_sensitive(data)
 
 
@@ -547,7 +548,7 @@ def test_horario_local_se_convierte_a_utc(api: Api) -> None:
     data = response.json()
     assert data["start_at"] == "2026-12-01T23:00:00Z"
     assert data["end_at"] == "2026-12-02T04:00:00Z"
-    assert data["updated_at"] == "2026-11-27T15:45:00Z"
+    assert "updated_at" not in data
 
 
 def test_hora_sin_zona_valida(api: Api) -> None:

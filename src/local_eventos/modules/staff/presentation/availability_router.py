@@ -12,15 +12,15 @@ rutas y devuelve 422 (plan §4.1).
 
 El router no aplica reglas de negocio: convierte fecha/hora locales de Lima al
 VO `AvailabilityQuery`, delega en los casos de uso y mapea los agregados a los
-esquemas. La consulta y el listado son de solo lectura. Los metadatos técnicos
-`created_at`/`updated_at` los aporta el reloj de la petición, porque no forman
-parte del agregado de dominio.
+esquemas. La consulta y el listado son de solo lectura. No se publican metadatos
+técnicos `created_at`/`updated_at`: el agregado no los tiene y la auditoría es la
+fuente real de quién y cuándo.
 """
 
 from __future__ import annotations
 
 from datetime import date as date_type
-from datetime import datetime, time
+from datetime import time
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -45,7 +45,6 @@ from local_eventos.modules.staff.presentation.dependencies import (
     AvailabilityLister,
     AvailabilityRegistrar,
     AvailabilityUpdater,
-    Now,
     StaffAvailability,
     UnavailabilityCanceller,
     require_staff_availability,
@@ -90,13 +89,9 @@ _INVALID: _Responses = {
 }
 
 
-def _to_out(item: Unavailability, now: datetime) -> UnavailabilityOut:
-    """Mapea el agregado a la respuesta con los metadatos técnicos de la petición."""
-    return UnavailabilityOut.from_unavailability(
-        item,
-        created_at=now,
-        updated_at=now,
-    )
+def _to_out(item: Unavailability) -> UnavailabilityOut:
+    """Mapea el agregado a la respuesta sin metadatos técnicos."""
+    return UnavailabilityOut.from_unavailability(item)
 
 
 @router.get(
@@ -137,7 +132,6 @@ async def get_staff_availability(
 async def list_unavailability(
     lister: AvailabilityLister,
     _user: StaffAvailability,
-    clock: Now,
     worker_id: Annotated[UUID | None, Query(description="Filtro por trabajador")] = None,
     from_date: Annotated[date_type | None, Query(description="Primer día local")] = None,
     to_date: Annotated[date_type | None, Query(description="Último día local")] = None,
@@ -148,8 +142,7 @@ async def list_unavailability(
         from_date=from_date,
         to_date=to_date,
     )
-    now = clock.now()
-    return UnavailabilityListOut(items=[_to_out(item, now) for item in items])
+    return UnavailabilityListOut(items=[_to_out(item) for item in items])
 
 
 @router.post(
@@ -163,7 +156,6 @@ async def register_unavailability(
     body: UnavailabilityCreate,
     registrar: AvailabilityRegistrar,
     _user: StaffAvailability,
-    clock: Now,
 ) -> UnavailabilityOut:
     """Registra una indisponibilidad activa y audita el alta con el usuario."""
     item = await registrar.execute(
@@ -175,7 +167,7 @@ async def register_unavailability(
         description=body.description,
         actor_id=_user.id,
     )
-    return _to_out(item, clock.now())
+    return _to_out(item)
 
 
 @router.put(
@@ -189,7 +181,6 @@ async def update_unavailability(
     body: UnavailabilityUpdate,
     updater: AvailabilityUpdater,
     _user: StaffAvailability,
-    clock: Now,
 ) -> UnavailabilityOut:
     """Reemplazo completo de los campos editables; el motivo es obligatorio."""
     item = await updater.execute(
@@ -202,7 +193,7 @@ async def update_unavailability(
         reason=body.reason,
         actor_id=_user.id,
     )
-    return _to_out(item, clock.now())
+    return _to_out(item)
 
 
 @router.post(
@@ -216,7 +207,6 @@ async def cancel_unavailability(
     body: UnavailabilityCancel,
     canceller: UnavailabilityCanceller,
     _user: StaffAvailability,
-    clock: Now,
 ) -> UnavailabilityOut:
     """Anulación lógica con motivo; repetir la operación es idempotente."""
     item = await canceller.execute(
@@ -224,7 +214,7 @@ async def cancel_unavailability(
         reason=body.reason,
         actor_id=_user.id,
     )
-    return _to_out(item, clock.now())
+    return _to_out(item)
 
 
 __all__ = ["router"]

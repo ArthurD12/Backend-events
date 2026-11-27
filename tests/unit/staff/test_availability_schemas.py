@@ -269,12 +269,7 @@ def test_unavailability_cancel_exige_motivo() -> None:
 
 
 def test_unavailability_out_mapea_fecha_local_y_utc() -> None:
-    created = datetime(2026, 11, 27, 15, 0, tzinfo=UTC)
-    updated = created + timedelta(hours=1)
-
-    schema = UnavailabilityOut.from_unavailability(
-        _unavailability(), created_at=created, updated_at=updated
-    )
+    schema = UnavailabilityOut.from_unavailability(_unavailability())
     data = schema.model_dump(mode="json")
 
     assert schema.date == date(2026, 12, 1)
@@ -283,30 +278,21 @@ def test_unavailability_out_mapea_fecha_local_y_utc() -> None:
     assert schema.start_at == datetime(2026, 12, 1, 13, 0, tzinfo=UTC)
     assert schema.end_at == datetime(2026, 12, 1, 22, 0, tzinfo=UTC)
     assert data["start_at"] == "2026-12-01T13:00:00Z"
-    assert data["created_at"] == "2026-11-27T15:00:00Z"
     assert data["status"] == "ACTIVE"
     assert data["kind"] == "OTHER"
     assert data["description"] == "Trámite personal"
 
 
-def test_unavailability_out_normaliza_metadatos_a_utc() -> None:
-    lima = timezone(timedelta(hours=-5))
-    schema = UnavailabilityOut.from_unavailability(
-        _unavailability(),
-        created_at=datetime(2026, 11, 27, 10, 0, tzinfo=lima),
-        updated_at=datetime(2026, 11, 27, 11, 0, tzinfo=lima),
-    )
+def test_unavailability_out_no_expone_metadatos_no_persistidos() -> None:
+    """Sin fuente persistida en el contrato, no se publican fechas técnicas."""
+    data = UnavailabilityOut.from_unavailability(_unavailability()).model_dump(mode="json")
 
-    assert schema.created_at == datetime(2026, 11, 27, 15, 0, tzinfo=UTC)
-    assert schema.updated_at == datetime(2026, 11, 27, 16, 0, tzinfo=UTC)
+    assert "created_at" not in data
+    assert "updated_at" not in data
 
 
 def test_unavailability_list_out_serializa_items() -> None:
-    out = UnavailabilityOut.from_unavailability(
-        _unavailability(),
-        created_at=datetime(2026, 11, 27, 15, 0, tzinfo=UTC),
-        updated_at=datetime(2026, 11, 27, 15, 0, tzinfo=UTC),
-    )
+    out = UnavailabilityOut.from_unavailability(_unavailability())
 
     data = UnavailabilityListOut(items=[out]).model_dump(mode="json")
 

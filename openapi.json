@@ -7092,11 +7092,6 @@
         "additionalProperties": false,
         "description": "Indisponibilidad devuelta por la API: fecha/horas locales e instantes UTC.",
         "properties": {
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
           "date": {
             "format": "date",
             "title": "Date",
@@ -7144,11 +7139,6 @@
           "status": {
             "$ref": "#/components/schemas/UnavailabilityStatus"
           },
-          "updated_at": {
-            "format": "date-time",
-            "title": "Updated At",
-            "type": "string"
-          },
           "worker_id": {
             "format": "uuid",
             "title": "Worker Id",
@@ -7165,9 +7155,7 @@
           "end_time",
           "start_at",
           "end_at",
-          "status",
-          "created_at",
-          "updated_at"
+          "status"
         ],
         "title": "UnavailabilityOut",
         "type": "object"
