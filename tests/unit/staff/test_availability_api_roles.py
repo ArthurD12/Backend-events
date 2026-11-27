@@ -1,9 +1,9 @@
-"""Matriz de autenticación y roles de la API de disponibilidad (HU16, T-16).
+"""Matriz definitiva de autenticación y roles de la API de disponibilidad (HU16, T-20).
 
-Todas las rutas exigen el permiso `staff:availability`; el cierre formal de la
-matriz es T-20, aquí se deja la evidencia provisional de CA-16.17. Se usa la
-aplicación real de `main.create_app()` para que la comprobación cubra también el
-orden de los routers: un `422` de path param no debe confundirse con un `403`.
+Todas las rutas exigen el permiso `staff:availability`, que solo tiene el
+administrador (CA-16.17, R-DIS-8). Se usa la aplicación real de
+`main.create_app()` para que la comprobación cubra también el orden de los
+routers: un `422` de path param no debe confundirse con un `403`.
 
 Casos cubiertos en las cinco rutas:
 

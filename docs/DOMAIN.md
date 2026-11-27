@@ -153,7 +153,7 @@ Una **indisponibilidad** es una marca de planificación sobre un trabajador y un
 
 | Asignaciones (personal del evento, con pago acordado) | ✔ | – | – |
 | Personal (trabajadores, tarifas y reporte de personal) | ✔ | – | – |
-| Disponibilidad de personal | ✔ | – | – |
+| Disponibilidad de personal (`staff:availability`) | ✔ | – | – |
 | Personal designado en un evento (nombre y función; `staff_roster:read`) | ✔ | ✔ | – |
 
 | Observaciones del evento (bitácora) | ✔ | ✔ | ✔ (R-ACT-5) |
@@ -169,6 +169,8 @@ Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. e
 La gestión del **personal (trabajadores)** exige el permiso `staff:manage`, que **solo tiene el administrador**: el encargado de eventos y el de compras y almacén no lo tienen, ni siquiera de lectura (decisión del 27/11/2026, §5 R-STF-5/R-STF-16). En el negocio, **"vendedor"** designa al encargado de eventos: es el mismo rol, no uno nuevo.
 
 Sobre las **asignaciones** (§5.2, R-ASG-14): crear, editar, anular y leer (con el pago acordado) son solo del administrador (`staff:assign` y `staff:manage`). El **encargado de eventos no ve datos de trabajadores ni pagos**: solo quién está designado en un evento y con qué función, con `staff_roster:read`, que tienen administrador y encargado de eventos y **no** compras. La ficha consolidada del evento (HU14) muestra ese bloque de personal solo con `staff_roster:read` (compras la ve sin él) y nunca incluye pago.
+
+Sobre la **disponibilidad** (§5 R-DIS-8, HU16): consultar, registrar, editar y anular exigen el permiso `staff:availability`, que **solo tiene el administrador**. `staff:manage`, `staff:roster:read` y `staff:assign` **no abren** ninguna operación de disponibilidad, ni de lectura (R-STF-5/R-STF-16, R-ASG-14): el encargado de eventos y el de compras y almacén reciben 403 en todas las rutas.
 
 ## 10. Preguntas abiertas para el negocio
 1. ~~Política de cancelación y devolución del adelanto.~~ Resuelta: sin reglas automáticas (§11).
