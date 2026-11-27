@@ -95,9 +95,7 @@ class WorkerRepository(Protocol):
         """Versión de solo lectura y sin datos sensibles para `staff.public_api`."""
         ...
 
-    async def list_active(
-        self, function: WorkerFunction | None = None
-    ) -> list[WorkerRef]:
+    async def list_active(self, function: WorkerFunction | None = None) -> list[WorkerRef]:
         """Trabajadores `ACTIVE`, opcionalmente filtrados por función (HU16, R-DIS-2).
 
         Es una sola consulta de solo lectura y devuelve `WorkerRef` sin documento,

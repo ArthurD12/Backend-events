@@ -22,9 +22,7 @@ from local_eventos.modules.staff.domain.unavailability_audit import Unavailabili
 class UnavailabilityRepository(Protocol):
     """Operaciones que necesitan los casos de uso de indisponibilidades."""
 
-    async def save(
-        self, unavailability: Unavailability, audit: UnavailabilityAudit
-    ) -> None:
+    async def save(self, unavailability: Unavailability, audit: UnavailabilityAudit) -> None:
         """Inserta o actualiza la indisponibilidad junto a su auditoría, en una transacción."""
         ...
 

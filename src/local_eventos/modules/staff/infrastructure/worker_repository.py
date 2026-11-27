@@ -138,9 +138,7 @@ class SqlAlchemyWorkerRepository:
             status=WorkerStatus(row.status),
         )
 
-    async def list_active(
-        self, function: WorkerFunction | None = None
-    ) -> list[WorkerRef]:
+    async def list_active(self, function: WorkerFunction | None = None) -> list[WorkerRef]:
         query = select(
             StaffWorkerRow.id,
             StaffWorkerRow.name,
@@ -159,9 +157,7 @@ class SqlAlchemyWorkerRepository:
                 id=row.id,
                 name=row.name,
                 function=(
-                    None
-                    if row.worker_function is None
-                    else WorkerFunction(row.worker_function)
+                    None if row.worker_function is None else WorkerFunction(row.worker_function)
                 ),
                 function_description=row.function_description,
                 status=WorkerStatus(row.status),

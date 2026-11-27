@@ -38,9 +38,7 @@ class AssignmentFunction:
 class AssignmentConflictLookup(Protocol):
     """Lectura de solo lectura de la función de asignaciones por id (HU16)."""
 
-    async def by_ids(
-        self, assignment_ids: Sequence[UUID]
-    ) -> dict[UUID, AssignmentFunction | None]:
+    async def by_ids(self, assignment_ids: Sequence[UUID]) -> dict[UUID, AssignmentFunction | None]:
         """Devuelve la función por id; los ids ausentes se mapean a `None`.
 
         Es una única consulta `WHERE id IN (...)`, sin predicados de solape y sin

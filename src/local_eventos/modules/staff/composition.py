@@ -10,6 +10,9 @@ casos de uso: personal (`RegisterWorker`, `UpdateWorker`, `GetWorker`,
 aquí. El evento se obtiene por `commercial.public_api.event_lookup` y la ocupación
 (`AssignmentOccupancy`) libera los eventos cancelados de forma perezosa.
 
+HU16 añade los repositorios de indisponibilidades y la lectura de la función de las
+asignaciones en conflicto, ambos de solo lectura salvo `save` de indisponibilidad.
+
 `worker_lookup` y `event_assignments` son las fábricas de los puertos públicos que
 usarán otros módulos: la primera expone estado y función del trabajador; la segunda,
 las asignaciones de un evento **sin pago** para la ficha consolidada (HU14).
@@ -23,11 +26,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from local_eventos.modules.commercial.public_api import event_lookup
 from local_eventos.modules.staff.application.assignment_occupancy import AssignmentOccupancy
+from local_eventos.modules.staff.application.ports.assignment_conflict_lookup import (
+    AssignmentConflictLookup,
+)
 from local_eventos.modules.staff.application.ports.assignment_repository import (
     EventAssignment,
     EventAssignmentLookup,
 )
 from local_eventos.modules.staff.application.ports.clock import Clock
+from local_eventos.modules.staff.application.ports.unavailability_repository import (
+    UnavailabilityRepository,
+)
 from local_eventos.modules.staff.application.ports.worker_repository import (
     WorkerLookup,
     WorkerRef,
@@ -64,10 +73,16 @@ from local_eventos.modules.staff.application.use_cases.update_assignment import 
 from local_eventos.modules.staff.application.use_cases.update_worker import (
     UpdateWorker,
 )
+from local_eventos.modules.staff.infrastructure.assignment_conflict_lookup import (
+    SqlAlchemyAssignmentConflictLookup,
+)
 from local_eventos.modules.staff.infrastructure.assignment_repository import (
     SqlAlchemyAssignmentRepository,
 )
 from local_eventos.modules.staff.infrastructure.clock import SystemClock
+from local_eventos.modules.staff.infrastructure.unavailability_repository import (
+    SqlAlchemyUnavailabilityRepository,
+)
 from local_eventos.modules.staff.infrastructure.worker_repository import (
     SqlAlchemyWorkerRepository,
 )
@@ -86,6 +101,16 @@ def assignment_repository(session: AsyncSession) -> SqlAlchemyAssignmentReposito
 def assignment_occupancy(session: AsyncSession) -> AssignmentOccupancy:
     """Ocupación del trabajador: libera eventos cancelados y detecta futuras."""
     return AssignmentOccupancy(assignment_repository(session), event_lookup(session))
+
+
+def unavailabilities(session: AsyncSession) -> UnavailabilityRepository:
+    """Repositorio de indisponibilidades sobre la sesión de la petición (HU16)."""
+    return SqlAlchemyUnavailabilityRepository(session)
+
+
+def assignment_conflicts(session: AsyncSession) -> AssignmentConflictLookup:
+    """Lectura de la función de asignaciones por id, sin pago ni solape (HU16)."""
+    return SqlAlchemyAssignmentConflictLookup(session)
 
 
 def clock() -> Clock:
@@ -195,6 +220,7 @@ class _EventAssignments:
 __all__ = [
     "WorkerLookup",
     "activate_worker",
+    "assignment_conflicts",
     "assignment_occupancy",
     "assignment_repository",
     "cancel_assignment",
@@ -207,6 +233,7 @@ __all__ = [
     "register_assignment",
     "register_worker",
     "search_workers",
+    "unavailabilities",
     "update_assignment",
     "update_worker",
     "worker_lookup",

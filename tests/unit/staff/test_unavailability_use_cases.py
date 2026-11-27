@@ -85,9 +85,7 @@ class FakeUnavailabilityRepository:
         self.audits: list[UnavailabilityAudit] = []
         self.saves = 0
 
-    async def save(
-        self, unavailability: Unavailability, audit: UnavailabilityAudit
-    ) -> None:
+    async def save(self, unavailability: Unavailability, audit: UnavailabilityAudit) -> None:
         self.saves += 1
         self.unavailabilities[unavailability.id] = unavailability
         self.audits.append(audit)
@@ -125,9 +123,7 @@ class FakeUnavailabilityRepository:
             if worker_id is None or item.worker_id == worker_id
         ]
         if start_at is not None and end_at is not None:
-            items = [
-                item for item in items if item.start_at < end_at and item.end_at > start_at
-            ]
+            items = [item for item in items if item.start_at < end_at and item.end_at > start_at]
         return sorted(items, key=lambda item: item.start_at)
 
     async def list_by_worker(
@@ -221,9 +217,7 @@ async def test_ca16_1_alta_auditada() -> None:
 async def test_ca16_14_cruce_medianoche() -> None:
     use_case, _ = _register_use_case()
 
-    unavailability = await _execute(
-        use_case, start_time=time(22, 0), end_time=time(2, 0)
-    )
+    unavailability = await _execute(use_case, start_time=time(22, 0), end_time=time(2, 0))
 
     assert unavailability.start_at == datetime(2026, 12, 2, 3, 0, tzinfo=UTC)
     assert unavailability.end_at == datetime(2026, 12, 2, 7, 0, tzinfo=UTC)
@@ -243,9 +237,7 @@ async def test_ca16_2_trabajador_inexistente() -> None:
 
 
 async def test_ca16_2_trabajador_inactivo() -> None:
-    use_case, repository = _register_use_case(
-        worker=_worker_ref(status=WorkerStatus.INACTIVE)
-    )
+    use_case, repository = _register_use_case(worker=_worker_ref(status=WorkerStatus.INACTIVE))
 
     with pytest.raises(WorkerInactiveError) as exc_info:
         await _execute(use_case)
@@ -323,9 +315,7 @@ def _item(
     end_at: datetime,
     kind: UnavailabilityKind = UnavailabilityKind.REST,
 ) -> Unavailability:
-    return Unavailability.register(
-        worker_id=worker_id, kind=kind, start_at=start_at, end_at=end_at
-    )
+    return Unavailability.register(worker_id=worker_id, kind=kind, start_at=start_at, end_at=end_at)
 
 
 async def test_listado_incluye_canceladas_y_filtra_por_trabajador() -> None:
@@ -351,9 +341,7 @@ async def test_listado_incluye_canceladas_y_filtra_por_trabajador() -> None:
     result = await use_case.execute(worker_id=WORKER_ID)
 
     assert result == [active, cancelled]
-    assert any(
-        item.status is UnavailabilityStatus.CANCELLED for item in result
-    )
+    assert any(item.status is UnavailabilityStatus.CANCELLED for item in result)
     assert repository.saves == 0
     assert repository.audits == []
 
@@ -381,9 +369,7 @@ async def test_listado_rango_demasiado_amplio() -> None:
     use_case = ListUnavailability(unavailabilities=FakeUnavailabilityRepository())
 
     with pytest.raises(AvailabilityRangeTooLargeError) as exc_info:
-        await use_case.execute(
-            from_date=date(2026, 12, 1), to_date=date(2027, 1, 1)
-        )
+        await use_case.execute(from_date=date(2026, 12, 1), to_date=date(2027, 1, 1))
 
     assert exc_info.value.code == "staff.availability_range_too_large"
 
