@@ -18,7 +18,7 @@ tablas de `commercial`.
 eventos de `commercial.public_api` (T-11). Necesita Docker/PostgreSQL.
 """
 
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Iterable, Iterator
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
 from pathlib import Path
@@ -356,10 +356,11 @@ async def _blocked_workers(
     sessions: async_sessionmaker[AsyncSession],
     events: FakeEventLookup,
     window: _Window,
+    worker_ids: Iterable[UUID] | None = None,
 ) -> set[UUID]:
     """Trabajadores a los que HU17 responde 409 de solape para el candidato de la ventana."""
     blocked: set[UUID] = set()
-    for worker_id in _WORKER_IDS.values():
+    for worker_id in _WORKER_IDS.values() if worker_ids is None else worker_ids:
         async with sessions() as session:
             use_case = _build_register(session, events)
             try:
@@ -407,3 +408,56 @@ async def test_ca16_21_equivalencia_hu16_hu17(
 
     # Los intentos sonda se revierten; el estado persistido sigue intacto.
     assert await _snapshot(sessions) == before
+
+
+_ORPHAN_WORKER_ID = UUID("22222222-2222-2222-2222-222222222206")
+_ORPHAN_EVENT_ID = UUID("44444444-4444-4444-4444-444444444406")
+
+
+@pytest.mark.integration
+async def test_ca16_21_orphan_event_is_busy_in_hu16_and_409_in_hu17(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    """Un evento inexistente no libera: HU16 marca BUSY y HU17 responde 409.
+
+    `event_lookup` no conoce `_ORPHAN_EVENT_ID`; la asignación sigue ocupando en
+    ambos caminos (HU17 no libera lo que no puede confirmar como cancelado).
+    """
+    async with sessions.begin() as session:
+        worker = Worker.register(
+            name="Trabajador Huérfano",
+            document_type=WorkerDocumentType.DNI,
+            document_number="44125899",
+            phone=None,
+            function=WorkerFunction.WAITER,
+            rate=None,
+            worker_id=_ORPHAN_WORKER_ID,
+        )
+        session.add(worker_to_row(worker))
+        await session.flush()
+        assignment = Assignment.register(
+            event_id=_ORPHAN_EVENT_ID,
+            worker_id=_ORPHAN_WORKER_ID,
+            function=WorkerFunction.WAITER,
+            start_at=_START,
+            end_at=_END,
+            pay=4500,
+        )
+        await SqlAlchemyAssignmentRepository(session).save(assignment, _created(assignment))
+
+    events = FakeEventLookup(_events())
+    window = _WINDOWS[0]
+
+    async with sessions() as session:
+        availability = _build_availability(session, events)
+        report = await availability.execute(_query(window))
+
+    assert _busy_workers(report) == {_ORPHAN_WORKER_ID}
+    conflict = report.items[0].conflicts[0]
+    assert conflict.event_code is None
+    assert conflict.event_date is None
+    assert conflict.start_time == time(18, 0)
+    assert conflict.end_time == time(23, 0)
+    assert await _blocked_workers(sessions, events, window, worker_ids=[_ORPHAN_WORKER_ID]) == {
+        _ORPHAN_WORKER_ID
+    }

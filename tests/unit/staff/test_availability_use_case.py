@@ -9,7 +9,8 @@ finalizado sí y no se libera) y CA-16.16 (consulta repetible y de solo lectura)
 
 Además verifica que se llama al puerto de solapes de HU17, que `release` nunca se
 invoca, que el evento se cachea por petición, que la función se lee con una sola
-llamada `by_ids` y que un evento huérfano se omite con warning.
+llamada `by_ids` y que un evento huérfano cuenta como ocupado sin datos de evento
+(CA-16.21).
 """
 
 from __future__ import annotations
@@ -502,7 +503,9 @@ async def test_ca16_16_repeated_query_is_identical_and_read_only() -> None:
     assert len(conflicts.calls) == 2
 
 
-async def test_orphan_event_is_omitted_with_warning(caplog: pytest.LogCaptureFixture) -> None:
+async def test_orphan_event_marks_busy_without_event_data(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     use_case, _, _, assignments, _, _ = _build(
         workers=[_worker(WORKER_BUSY, "Beto Ocupado")],
         overlaps={WORKER_BUSY: [_overlap(ASSIGNMENT_A, EVENT_ORPHAN)]},
@@ -513,9 +516,20 @@ async def test_orphan_event_is_omitted_with_warning(caplog: pytest.LogCaptureFix
     with caplog.at_level("WARNING"):
         report = await use_case.execute(_query())
 
-    assert report.items[0].state is AvailabilityState.FREE
-    assert report.items[0].conflicts == ()
+    item = report.items[0]
+    assert item.state is AvailabilityState.BUSY
+    assert item.conflicts == (
+        AvailabilityConflict(
+            event_code=None,
+            event_date=None,
+            start_time=time(18, 0),
+            end_time=time(23, 0),
+            function=WorkerFunction.WAITER,
+            function_description=None,
+        ),
+    )
     assert assignments.release_calls == 0
+    assert assignments.save_calls == 0
     assert any(
         "no encontrado" in record.message and record.event_id == str(EVENT_ORPHAN)
         for record in caplog.records

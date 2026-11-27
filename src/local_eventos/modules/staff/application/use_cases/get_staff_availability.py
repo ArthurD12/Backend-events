@@ -10,8 +10,10 @@ estado en la ventana pedida reutilizando el criterio de HU17:
    mismo puerto que usa HU17; **no** se reimplementa el predicado de solape.
 4. Los eventos se resuelven con `commercial.public_api.event_lookup`, cacheando
    por `event_id` dentro de la petición. Un evento `CANCELLED` se descarta sin
-   llamar a `release_cancelled`; uno inexistente omite el conflicto con un
-   warning de `logging` estándar (no structlog). La consulta nunca escribe.
+   llamar a `release_cancelled`; uno inexistente **sí ocupa** (igual que HU17)
+   y se registra un warning de `logging` estándar (no structlog): el conflicto
+   queda con `event_code`/`event_date` nulos y las horas de la asignación. La
+   consulta nunca escribe.
 5. La función de cada asignación en conflicto se lee con **una sola** llamada a
    `AssignmentConflictLookup.by_ids(...)`, nunca desde `AssignmentView`.
 6. Precedencia: `UNAVAILABLE` > `BUSY` > `FREE`; se aplican los filtros `state`
@@ -71,10 +73,14 @@ class AvailabilityConflict:
     Lleva solo los datos que el administrador necesita para entender el cruce:
     código y fecha del evento, horario local de la asignación y su función. Nunca
     pago, tarifa, documento ni teléfono (CA-16.8, R-DIS-9).
+
+    Si el evento de la asignación no existe, la ocupación sigue contando (igual
+    que en HU17) y ambos campos del evento quedan en `None`; las horas se toman
+    de la propia asignación.
     """
 
-    event_code: str
-    event_date: date
+    event_code: str | None
+    event_date: date | None
     start_time: time
     end_time: time
     function: WorkerFunction | None
@@ -121,11 +127,11 @@ class AvailabilityReport:
 
 @dataclass(frozen=True)
 class _Overlap:
-    """Solape ya descartado de eventos cancelados o inexistentes, con su evento."""
+    """Solape que ocupa, con su evento si se pudo resolver (`None` si es huérfano)."""
 
     worker_id: UUID
     assignment_id: UUID
-    event: EventInfo
+    event: EventInfo | None
     start_at: datetime
     end_at: datetime
 
@@ -174,9 +180,13 @@ class GetStaffAvailability:
             for overlap in worker_overlaps:
                 event = await self._resolve_event(overlap.event_id, event_cache)
                 if event is None:
+                    # Igual que HU17: un evento inexistente no libera la asignación,
+                    # así que sigue ocupando. El conflicto se muestra sin datos de
+                    # evento y con las horas conocidas de la asignación (CA-16.21).
                     _logger.warning(
                         "Evento %s no encontrado para la asignación %s del trabajador %s; "
-                        "se omite el conflicto de disponibilidad.",
+                        "la asignación sigue ocupando y se muestra el conflicto sin datos "
+                        "del evento.",
                         overlap.event_id,
                         overlap.id,
                         worker.id,
@@ -186,8 +196,7 @@ class GetStaffAvailability:
                             "worker_id": str(worker.id),
                         },
                     )
-                    continue
-                if event.status is EventStatus.CANCELLED:
+                elif event.status is EventStatus.CANCELLED:
                     # Mismo criterio efectivo que HU17, pero sin liberar ni escribir.
                     continue
                 overlaps.append(
@@ -277,8 +286,8 @@ def _group_conflicts(
         function = functions.get(overlap.assignment_id)
         grouped.setdefault(overlap.worker_id, []).append(
             AvailabilityConflict(
-                event_code=overlap.event.code,
-                event_date=overlap.event.event_date,
+                event_code=None if overlap.event is None else overlap.event.code,
+                event_date=None if overlap.event is None else overlap.event.event_date,
                 start_time=utc_to_local(overlap.start_at).time(),
                 end_time=utc_to_local(overlap.end_at).time(),
                 function=None if function is None else function.worker_function,
@@ -289,9 +298,10 @@ def _group_conflicts(
     for worker_id, conflicts in grouped.items():
         conflicts.sort(
             key=lambda conflict: (
-                conflict.event_date,
+                conflict.event_date is None,
+                conflict.event_date or date.min,
                 conflict.start_time,
-                conflict.event_code,
+                conflict.event_code or "",
             )
         )
         result[worker_id] = tuple(conflicts)

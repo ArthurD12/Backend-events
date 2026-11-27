@@ -69,11 +69,13 @@ class AvailabilityConflict(_Schema):
     """Asignación que ocupa parte de la ventana, sin datos sensibles (R-DIS-9).
 
     Solo código y fecha del evento, horario local de la asignación y su función.
-    Nunca pago, tarifa, documento ni teléfono (CA-16.8).
+    Nunca pago, tarifa, documento ni teléfono (CA-16.8). `event_code` y
+    `event_date` son `None` cuando la asignación ocupa pero su evento no existe;
+    las horas siempre están presentes porque salen de la asignación.
     """
 
-    event_code: str
-    event_date: date_type
+    event_code: str | None
+    event_date: date_type | None
     start_time: LocalTime
     end_time: LocalTime
     function: WorkerFunction | None

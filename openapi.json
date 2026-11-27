@@ -839,7 +839,7 @@
       },
       "AvailabilityConflict": {
         "additionalProperties": false,
-        "description": "Asignación que ocupa parte de la ventana, sin datos sensibles (R-DIS-9).\n\nSolo código y fecha del evento, horario local de la asignación y su función.\nNunca pago, tarifa, documento ni teléfono (CA-16.8).",
+        "description": "Asignación que ocupa parte de la ventana, sin datos sensibles (R-DIS-9).\n\nSolo código y fecha del evento, horario local de la asignación y su función.\nNunca pago, tarifa, documento ni teléfono (CA-16.8). `event_code` y\n`event_date` son `None` cuando la asignación ocupa pero su evento no existe;\nlas horas siempre están presentes porque salen de la asignación.",
         "properties": {
           "end_time": {
             "format": "time",
@@ -847,13 +847,27 @@
             "type": "string"
           },
           "event_code": {
-            "title": "Event Code",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Code"
           },
           "event_date": {
-            "format": "date",
-            "title": "Event Date",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Date"
           },
           "function": {
             "anyOf": [
