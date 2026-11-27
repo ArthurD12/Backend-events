@@ -132,8 +132,9 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     app.include_router(requirement_router.router)
     app.include_router(supplier_router.router)
     app.include_router(purchase_router.router)
-    app.include_router(worker_router.router)
+    # Primero las asignaciones: `/v1/staff/assignments` no debe caer en `/v1/staff/{worker_id}`.
     app.include_router(assignment_router.router)
+    app.include_router(worker_router.router)
     app.include_router(assistant_router.router)
     register_identity_errors(app)
     register_commercial_errors(app)

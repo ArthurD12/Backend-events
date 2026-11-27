@@ -114,8 +114,10 @@ async def get_event_account(
     return event_account(session)
 
 
-async def get_event_staff() -> EventStaffLookup:
-    return composition.event_staff()
+async def get_event_staff(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> EventStaffLookup:
+    return composition.event_staff(session)
 
 
 async def get_user_names(

@@ -12,7 +12,7 @@ from local_eventos.modules.identity.public_api import get_current_user
 from local_eventos.modules.reporting.presentation import dependencies as deps
 from tests.unit.current_user import signed_in_as
 
-from .sheet_fakes import EVENT_ID, SheetFakes
+from .sheet_fakes import EVENT_ID, STAFF, SheetFakes
 
 URL = f"/v1/reports/events/{EVENT_ID}/sheet"
 
@@ -23,7 +23,7 @@ async def _no_database() -> None:
 
 @pytest.fixture
 def api_as() -> Iterator[Callable[[Role], TestClient]]:
-    fakes = SheetFakes()
+    fakes = SheetFakes(staff=STAFF)
     app = create_app(readiness_check=_no_database)
     app.dependency_overrides.update(
         {
@@ -64,7 +64,12 @@ def test_ca14_ficha_por_bloques(api_as: Callable[[Role], TestClient]) -> None:
         {"kind": "SERVICE", "service_id": body["services"][0]["service_id"],
          "description": "Buffet criollo", "unit": "PER_PERSON", "quantity": 120}
     ]  # fmt: skip
-    assert body["staff"] is None
+    assert [(s["name"], s["role"], s["function"]) for s in body["staff"]] == [
+        ("Pedro Quispe", "Mozo", "WAITER")
+    ]
+    assert set(body["staff"][0]) == {
+        "worker_id", "name", "role", "function", "function_description", "starts_at", "ends_at",
+    }  # fmt: skip  # CA-25.3: nunca pago, documento, teléfono ni tarifa
     assert [(m["code"], m["out"], m["pending_return"]) for m in body["materials"]] == [
         ("PLA-01", "50.000", "4.000")
     ]
@@ -84,6 +89,34 @@ def test_ca14_5_compras_ve_la_ficha_sin_pagos(api_as: Callable[[Role], TestClien
     assert response.status_code == 200
     assert response.json()["account"] is None
     assert response.json()["materials"] != []
+
+
+def test_ca25_3_compras_ve_la_ficha_sin_personal_y_no_consulta_a_staff() -> None:
+    fakes = SheetFakes(staff=STAFF)
+    app = create_app(readiness_check=_no_database)
+    app.dependency_overrides.update(
+        {
+            deps.get_event_detail: lambda: fakes.details,
+            deps.get_event_follow_up: lambda: fakes.follow_up,
+            deps.get_event_materials: lambda: fakes.materials,
+            deps.get_event_account: lambda: fakes.accounts,
+            deps.get_event_staff: lambda: fakes.event_staff,
+            deps.get_user_names: lambda: fakes.user_names,
+            get_current_user: signed_in_as(Role.PURCHASING_MANAGER),
+        }
+    )
+    with TestClient(app) as client:
+        response = client.get(URL)
+
+    assert response.status_code == 200
+    assert response.json()["staff"] is None
+    assert fakes.calls.staff == []
+
+
+def test_ca25_3_administrador_ve_el_personal_designado(
+    api_as: Callable[[Role], TestClient],
+) -> None:
+    assert len(api_as(Role.ADMIN).get(URL).json()["staff"]) == 1
 
 
 def test_evento_inexistente_404(api_as: Callable[[Role], TestClient]) -> None:

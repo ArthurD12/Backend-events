@@ -5,6 +5,9 @@
 - **Módulos afectados**: `staff` (asignaciones), `identity` (permiso `staff:assign`), `commercial` (consulta del evento por `public_api`), `reporting` (ficha consolidada, consumo de `staff.public_api`)
 - **Historia**: HU17 (#18)
 
+
+> **Actualización del 27/11/2026 (feature 025, aprobada por el Product Owner a partir de la aclaración del cliente):** el encargado de eventos es de ventas y **ya no tiene `staff:manage`**: no ve datos de trabajadores, asignaciones ni pagos, y recibe 403 en estas rutas. Solo ve el personal designado de un evento (nombre y función) con `staff_roster:read`. Donde este documento diga que el encargado de eventos accede, prevalece `docs/sdd/features/025-sales-staff-permissions/spec.md` y DOMAIN.md §9 y §11.
+
 ## 1. Problema y objetivo
 Hoy Darze decide quién trabaja en cada evento de forma verbal o en hojas de Excel. No queda un registro confiable de **quién trabajó, con qué función, en qué horario y por cuánto se acordó pagarle**, y es fácil asignar a la misma persona a dos eventos que se cruzan. La ficha consolidada del evento (HU14) tampoco puede mostrar al personal porque esa información no existe.
 

@@ -197,7 +197,7 @@ def test_admin_obtiene_2xx_en_las_cinco_rutas(api: Api) -> None:
     assert api.counters.snapshot() == (1, 1, 1)
 
 
-def test_encargado_de_eventos_lee_pero_no_escribe(api: Api) -> None:
+def test_encargado_de_eventos_403_en_las_cinco_rutas_incluida_lectura(api: Api) -> None:
     created = _register(api)
     assignment_id = created["id"]
     api.as_role(Role.EVENTS_MANAGER)
@@ -209,10 +209,11 @@ def test_encargado_de_eventos_lee_pero_no_escribe(api: Api) -> None:
     update = _put(api, assignment_id)
     cancel = _cancel(api, assignment_id)
 
-    assert listed.status_code == 200
-    assert fetched.status_code == 200
-    for response in (register, update, cancel):
+    # 025: la lectura incluye el pago acordado; el encargado de eventos solo ve el personal
+    # designado por la ficha del evento (`staff_roster:read`), no estas rutas.
+    for response in (listed, fetched, register, update, cancel):
         assert response.status_code == 403
+        assert response.json()["code"] == "auth.forbidden"
         assert response.json()["code"] == "auth.forbidden"
     assert api.counters.snapshot() == before
 
@@ -302,8 +303,7 @@ def test_409_de_solape_no_escribe_ni_cuenta_el_alta(api: Api) -> None:
     assert len(api.repository.assignments) == 1
 
 
-def test_404_de_asignacion_inexistente_no_depende_del_rol(api: Api) -> None:
-    api.as_role(Role.EVENTS_MANAGER)
+def test_404_de_asignacion_inexistente(api: Api) -> None:
     assignment_id = uuid4()
 
     fetched = _get(api, str(assignment_id))
@@ -312,7 +312,6 @@ def test_404_de_asignacion_inexistente_no_depende_del_rol(api: Api) -> None:
         f"{ASSIGNMENTS}/{assignment_id}/cancel", json={"reason": "Anulación"}
     )
 
-    # El encargado de eventos no escribe: 403 antes de resolver la asignación.
-    assert fetched.status_code == 404
-    for response in (updated, cancelled):
-        assert response.status_code == 403
+    for response in (fetched, updated, cancelled):
+        assert response.status_code == 404
+        assert response.json()["code"] == "staff.assignment_not_found"

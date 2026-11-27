@@ -90,7 +90,7 @@ def test_r_id_3_permisos_segun_la_tabla_del_dominio() -> None:
         Permission.EVENTS_READ,
         Permission.EVENT_NOTES_WRITE,
         Permission.INVENTORY_READ,
-        Permission.STAFF_MANAGE,
+        Permission.STAFF_ROSTER_READ,  # 025: solo ve quién está designado
     }
     assert compras.permissions == {
         Permission.CATALOG_READ,
@@ -100,11 +100,16 @@ def test_r_id_3_permisos_segun_la_tabla_del_dominio() -> None:
         Permission.INVENTORY_MANAGE,
         Permission.PURCHASING_MANAGE,
     }
-    # HU17 (R-ASG-14): solo el administrador escribe asignaciones; eventos conserva
-    # staff:manage para lectura y compras no tiene acceso al personal.
-    assert Permission.STAFF_ASSIGN in admin.permissions
-    assert Permission.STAFF_ASSIGN not in eventos.permissions
-    assert Permission.STAFF_ASSIGN not in compras.permissions
+    # 025 (R-ASG-14): personal y pagos solo del administrador; el encargado de eventos
+    # solo lee el personal designado y compras no tiene ningún permiso de personal.
+    staff_permissions = {
+        Permission.STAFF_MANAGE,
+        Permission.STAFF_ASSIGN,
+        Permission.STAFF_ROSTER_READ,
+    }
+    assert staff_permissions <= admin.permissions
+    assert eventos.permissions & staff_permissions == {Permission.STAFF_ROSTER_READ}
+    assert not compras.permissions & staff_permissions
     assert admin.is_active_admin and not eventos.is_active_admin
 
 

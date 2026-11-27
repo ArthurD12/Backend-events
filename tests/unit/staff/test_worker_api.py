@@ -147,7 +147,7 @@ def api() -> Iterator[TestClient]:
     app.dependency_overrides[get_worker_repository] = in_memory
     app.dependency_overrides[get_clock] = FixedClock
     app.dependency_overrides[get_assignment_occupancy] = EmptyOccupancy
-    app.dependency_overrides[get_current_user] = signed_in_as(Role.EVENTS_MANAGER)
+    app.dependency_overrides[get_current_user] = signed_in_as(Role.ADMIN)
     with TestClient(app) as client:
         yield client
 

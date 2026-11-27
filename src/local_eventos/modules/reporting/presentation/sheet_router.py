@@ -48,9 +48,12 @@ async def event_sheet(
     """Evento, cliente, servicios, personal, materiales, pagos y seguimiento en una petición.
 
     Se arma en el momento con lo que cada módulo sabe (CA-14.7). `account` va vacío sin
-    `payments:record` (CA-14.5); `staff`, vacío mientras no haya información de personal.
+    `payments:record` (CA-14.5); `staff` (personal designado, sin pago) va vacío sin
+    `staff_roster:read` (025).
     """
     sheet = await GetEventSheet(details, follow_up, materials, accounts, staff, names)(
-        event_id, include_account=Permission.PAYMENTS_RECORD in viewer.permissions
+        event_id,
+        include_account=Permission.PAYMENTS_RECORD in viewer.permissions,
+        include_staff=Permission.STAFF_ROSTER_READ in viewer.permissions,
     )
     return EventSheetOut.from_sheet(sheet)
