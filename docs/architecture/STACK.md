@@ -39,7 +39,7 @@
 ## Infraestructura
 Docker multi-stage (usuario no root, healthcheck) · docker-compose (API + PostgreSQL en local) · GitHub Actions (CI, CD, docs) · GHCR para imágenes · PostgreSQL con backups automáticos.
 
-**Extensión PostgreSQL `btree_gist` (contrib):** el esquema de asignaciones de personal (HU17) la requiere para la restricción de exclusión `staff_assignments_no_overlap`, que garantiza el no solape de horarios (ADR 0005). La migración la crea con `CREATE EXTENSION IF NOT EXISTS btree_gist` y su `downgrade` **no** la elimina (puede usarla otro esquema). No añade una dependencia de Python ni un servicio: es una extensión del motor. `postgres:17-alpine` (local y CI) la incluye; en un PostgreSQL gestionado el administrador puede tener que habilitarla antes del despliegue.
+**Extensión PostgreSQL `btree_gist` (contrib):** el esquema de asignaciones de personal (HU17) la requiere para la restricción de exclusión `staff_assignments_no_overlap`, que garantiza el no solape de horarios (ADR 0006). La migración la crea con `CREATE EXTENSION IF NOT EXISTS btree_gist` y su `downgrade` **no** la elimina (puede usarla otro esquema). No añade una dependencia de Python ni un servicio: es una extensión del motor. `postgres:17-alpine` (local y CI) la incluye; en un PostgreSQL gestionado el administrador puede tener que habilitarla antes del despliegue.
 
 ## Por qué se eligió cada tecnología
 
@@ -50,7 +50,7 @@ Docker multi-stage (usuario no root, healthcheck) · docker-compose (API + Postg
 | Pydantic v2 (+ pydantic-settings) | Esquemas de borde y configuración validada: una sola fuente de verdad para requests y entorno. |
 | SQLAlchemy 2.0 async + asyncpg | ORM async sobre PostgreSQL: permite la restricción de exclusión anti-solape de reservas y los bloqueos de fila que exige el dominio. |
 | Alembic | Migraciones: el esquema solo cambia vía migraciones versionadas, nunca editando migraciones aplicadas. |
-| PostgreSQL | Persistencia relacional; su restricción de exclusión (`EXCLUDE USING gist` + `btree_gist`) garantiza que un trabajador no tenga dos asignaciones con horarios solapados (RN12, ADR 0005). |
+| PostgreSQL | Persistencia relacional; su restricción de exclusión (`EXCLUDE USING gist` + `btree_gist`) garantiza que un trabajador no tenga dos asignaciones con horarios solapados (RN12, ADR 0006). |
 | uv | Entorno, dependencias y `uv.lock`: un solo comando reproducible, mínimo mantenimiento. |
 | ruff | Lint y formato en un solo binario: rápido y sin piezas extra. |
 | mypy (strict) | Tipos estrictos en todo `src/`: detecta errores sin ejecutar el código. |

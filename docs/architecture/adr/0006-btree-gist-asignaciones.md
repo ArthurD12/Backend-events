@@ -1,7 +1,7 @@
-# ADR 0005 — `btree_gist` y restricción de exclusión para asignaciones de personal
+# ADR 0006 — `btree_gist` y restricción de exclusión para asignaciones de personal
 
-- **Estado:** aprobado (26/11/2026)
-- **Contexto:** RN12 exige que un trabajador **no tenga dos asignaciones vigentes con horarios superpuestos** y que la garantía sea de PostgreSQL, no solo del código (R-ASG-3, HU17). La solución prevista en el plan de `033-staff-assignments` es una restricción de exclusión:
+- **Estado:** aceptada por el equipo (26/11/2026)
+- **Contexto:** RN12 y la **regla 7 de AGENTS.md** exigen que un trabajador **no tenga dos asignaciones vigentes con horarios superpuestos** y que la garantía sea de PostgreSQL, no solo del código (R-ASG-3, HU17). La solución prevista en el plan de `033-staff-assignments` es una restricción de exclusión:
 
 ```sql
 EXCLUDE USING gist (
@@ -19,7 +19,7 @@ No consta verificado que la extensión esté habilitada en el PostgreSQL de prod
 | Tema | Decisión | Motivo |
 |---|---|---|
 | Extensión | Usar `btree_gist` y crearla en la migración con `CREATE EXTENSION IF NOT EXISTS btree_gist` | Es la única forma de combinar igualdad por `uuid` y solape de rangos en una restricción de exclusión |
-| Garantía | La restricción `staff_assignments_no_overlap` es la fuente de verdad del no-solape | Cumple RN12/R-ASG-3 también ante concurrencia real |
+| Garantía | La restricción `staff_assignments_no_overlap` es la fuente de verdad del no-solape | Cumple RN12/R-ASG-3 y la regla 7 también ante concurrencia real |
 | Validación en aplicación | Se mantiene solo para dar un 409 accionable con el código, la fecha y el horario del evento en conflicto | Mejora la experiencia sin sustituir la garantía de la base |
 | Predicado | La restricción es parcial: `WHERE (occupies)` | Permite conservar asignaciones de eventos cancelados sin que ocupen al trabajador (R-ASG-12) |
 | Ubicación | La extensión y la restricción las crea la **única migración** de HU17 | El esquema solo cambia por Alembic; no se editan migraciones aplicadas |

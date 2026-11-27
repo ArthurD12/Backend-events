@@ -100,7 +100,7 @@ def test_migracion_upgrade_downgrade_y_vuelta_a_head(
     assert _TABLES.isdisjoint(reverted["tables"])
     assert reverted["triggers"] == set()
     assert reverted["constraints"] == set()
-    # El `downgrade` no elimina la extensión: puede usarla otro esquema (ADR 0005).
+    # El `downgrade` no elimina la extensión: puede usarla otro esquema (ADR 0006).
     assert "btree_gist" in reverted["extensions"]
 
     command.upgrade(config, "head")

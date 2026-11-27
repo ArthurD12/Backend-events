@@ -70,7 +70,7 @@ infrastructure ─► application ─► domain     (implementa los puertos)
 3. **Prohibido:** importar capas internas de otro módulo, joins SQL entre tablas de módulos distintos, FKs entre módulos.
 4. **Datos:** prefijo de tablas por módulo (`commercial_*`, `inventory_*`, `ledger_*`).
 5. **Excepción controlada:** el esquema `reporting` expone **vistas estables** de solo lectura para el dashboard y los reportes; es el único lugar donde se cruzan datos de varios módulos.
-6. **`staff` y `commercial`:** `staff` consulta el evento **solo** por `commercial.public_api.event_lookup` (código, estado, fecha y horario) y guarda `event_id` **sin clave foránea**; `commercial` no conoce ni importa `staff`. Las asignaciones viven en `staff` (ADR 0005, HU17).
+6. **`staff` y `commercial`:** `staff` consulta el evento **solo** por `commercial.public_api.event_lookup` (código, estado, fecha y horario) y guarda `event_id` **sin clave foránea**; `commercial` no conoce ni importa `staff`. Las asignaciones viven en `staff` (ADR 0006, HU17).
 
 ## 5. Reglas verificables (automatizadas con import-linter)
 ```ini
@@ -112,7 +112,7 @@ modules =
 ## 6. Transversales
 - **Errores:** excepciones de dominio tipadas → manejador global → Problem Details (RFC 9457) con `code` de negocio estable.
 - **Transacciones:** `UnitOfWork` abierto en el caso de uso, nunca en el router.
-- **Concurrencia:** restricción de exclusión para asignaciones de personal (sin cruces de horario) y bloqueo de filas (`FOR UPDATE`) al descontar lotes de inventario. En `staff`, la restricción `staff_assignments_no_overlap` usa `EXCLUDE USING gist (worker_id WITH =, tstzrange(start_at, end_at, '[)') WITH &&) WHERE (occupies)` y requiere la extensión `btree_gist` (ADR 0005); la aplicación valida el solape solo para devolver un 409 con el evento en conflicto.
+- **Concurrencia:** restricción de exclusión para asignaciones de personal (sin cruces de horario) y bloqueo de filas (`FOR UPDATE`) al descontar lotes de inventario. En `staff`, la restricción `staff_assignments_no_overlap` usa `EXCLUDE USING gist (worker_id WITH =, tstzrange(start_at, end_at, '[)') WITH &&) WHERE (occupies)` y requiere la extensión `btree_gist` (ADR 0006); la aplicación valida el solape solo para devolver un 409 con el evento en conflicto.
 - **Idempotencia:** `Idempotency-Key` al registrar pagos y movimientos, y al convertir un contrato en evento.
 - **Auditoría:** cada cambio sensible guarda quién, cuándo, qué y el motivo (ledger, contratos, anulaciones, ajustes de inventario, consultas al agente).
 - **Tablas append-only:** los historiales que no se corrigen se escriben en tablas de solo inserción protegidas con trigger `BEFORE UPDATE OR DELETE` en PostgreSQL. Ejemplos: `identity_access_log`, `ledger_payments`, `staff_worker_audit` (alta, edición, activación y desactivación de un trabajador con actor y fecha-hora; plan §4 de `032-staff`) y `staff_assignment_audit` (alta, edición y anulación de una asignación con actor, fecha-hora, motivo y, en la edición, valores anteriores y nuevos; HU17).

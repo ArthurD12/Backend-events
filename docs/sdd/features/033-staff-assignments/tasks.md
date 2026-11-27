@@ -33,7 +33,7 @@ Alcance: solo HU17 (backend). Sin frontend, sin ficha consolidada (HU14), sin hi
 
 - [ ] T-12 [infra] Modelos ORM `staff_assignments` y `staff_assignment_audit`, mapeo explícito dominio ⇄ ORM y serialización del snapshot a JSONB — `src/local_eventos/modules/staff/infrastructure/orm_models.py`, `src/local_eventos/modules/staff/infrastructure/mappers.py`, `tests/unit/staff/test_orm_mapping.py` — `pytest tests/unit/staff/test_orm_mapping.py` verde sin base de datos
 
-- [ ] T-13 [adr] Redactar el ADR 0005 sobre `btree_gist` y la restricción de exclusión (alternativas, consecuencias, privilegios en PostgreSQL gestionado, `downgrade` que no elimina la extensión) y confirmar con el humano que se acepta la dependencia de infraestructura (regla 11) — `docs/architecture/adr/0005-btree-gist-asignaciones.md` — ADR revisado y decisión registrada; **prerrequisito de T-14**; si el equipo lo rechaza, detener y volver a planificar [P]
+- [ ] T-13 [adr] Redactar el ADR 0006 sobre `btree_gist` y la restricción de exclusión (alternativas, consecuencias, privilegios en PostgreSQL gestionado, `downgrade` que no elimina la extensión) y confirmar con el humano que se acepta la dependencia de infraestructura (regla 11) - `docs/architecture/adr/0006-btree-gist-asignaciones.md` - ADR revisado y decisión registrada; **prerrequisito de T-14**; si el equipo lo rechaza, detener y volver a planificar [P]
 
 - [ ] T-14 [infra] Migración Alembic única con `btree_gist`, `staff_assignments`, `staff_assignment_audit`, CHECKs, restricción `staff_assignments_no_overlap` (`EXCLUDE ... WHERE occupies`), índices y triggers (`append_only`, `no_delete`, `immutable_keys`) — `migrations/versions/*_crear_tablas_de_asignaciones.py` — **no crearla hasta avisar al humano y obtener confirmación; antes ejecutar `uv run alembic heads` y confirmar un único head**; `down_revision` sobre el head vigente; hecho cuando `uv run alembic upgrade head` cree el esquema y `downgrade` lo revierta (no `[P]`)
 
@@ -66,7 +66,7 @@ Alcance: solo HU17 (backend). Sin frontend, sin ficha consolidada (HU14), sin hi
 ## Riesgos y pendientes
 
 - **Migración (alto)**: antes de T-14 ejecutar `uv run alembic heads`, avisar al humano y esperar confirmación. No editar migraciones aplicadas ni crear dos heads. T-14 no va en paralelo.
-- **`btree_gist` (alto)**: extensión de PostgreSQL contrib; `CREATE EXTENSION` requiere privilegios. El ADR 0005 debe aprobarse antes de T-14. En un PostgreSQL gestionado puede necesitar habilitación previa del administrador.
+- **`btree_gist` (alto)**: extensión de PostgreSQL contrib; `CREATE EXTENSION` requiere privilegios. El ADR 0006 debe aprobarse antes de T-14. En un PostgreSQL gestionado puede necesitar habilitación previa del administrador.
 - **Eventos cancelados (medio)**: la liberación es perezosa (al escribir); hasta la siguiente escritura una asignación de evento cancelado puede seguir ocupando. Si el PO quiere una notificación explícita `commercial → staff`, exige un evento en proceso y otro ADR.
 - **Fecha del evento (medio)**: si el evento cambia de fecha y el administrador edita solo el pago, Q5 puede exigir corregir también la fecha de la asignación (`staff.assignment_date_invalid`). Confirmar con el PO si se permite editar sin corregir la fecha.
 - **Función al crear (bajo)**: se acepta una función distinta a la de la ficha si el cuerpo la envía; el spec no lo prohíbe. Confirmar si debe rechazarse para “copiar” estrictamente.

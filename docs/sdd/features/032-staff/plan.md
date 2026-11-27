@@ -333,7 +333,7 @@ Los nombres de test son orientativos; la suite real cubre los CA.
 - **Volumen y búsqueda**: sin `pg_trgm`; el filtro por nombre con `contains` puede escanear. Aceptable para decenas/cientos; si crece, evaluar extensión con ADR.
 - **Identidad**: actualizar el test de permisos de `EVENTS_MANAGER`; compras debe seguir sin `staff:manage`.
 - **Sin asignaciones ni cruces**: HU15 no crea `staff_assignments` ni la restricción de exclusión; eso queda para HU17. No hay impacto en el congelado de precios ni en estados comerciales.
-- **Sin dependencias nuevas**: no se requiere ADR por la regla 11. Si la tabla de auditoría se adopta como patrón transversal, proponer ADR 0005 en la fase de docs.
+- **Sin dependencias nuevas**: no se requiere ADR por la regla 11. Si la tabla de auditoría se adopta como patrón transversal, proponer un ADR en la fase de docs.
 
 ## 10. Impacto en `reporting` y documentación
 

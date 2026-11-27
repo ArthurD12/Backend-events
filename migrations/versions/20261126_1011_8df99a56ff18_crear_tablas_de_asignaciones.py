@@ -3,7 +3,7 @@
 Tablas de la HU17 (asignaciones de personal). La anulación es lógica (`status`),
 nunca borrado físico; la auditoría es append-only. El no-solape se garantiza con
 una restricción de exclusión de PostgreSQL sobre `(worker_id, tstzrange(...))`,
-que requiere la extensión `btree_gist` (ADR 0005). El `downgrade` no elimina la
+que requiere la extensión `btree_gist` (ADR 0006). El `downgrade` no elimina la
 extensión porque puede usarla otro esquema o una migración posterior.
 
 Revision ID: 8df99a56ff18
@@ -36,7 +36,7 @@ _AUDIT_SNAPSHOTS_VALID = (
 
 
 def upgrade() -> None:
-    # ADR 0005: el operador de igualdad para `uuid` en GiST lo aporta btree_gist.
+    # ADR 0006: el operador de igualdad para `uuid` en GiST lo aporta btree_gist.
     op.execute("CREATE EXTENSION IF NOT EXISTS btree_gist")
 
     op.create_table(
@@ -228,7 +228,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # No se elimina btree_gist: puede usarla otro esquema (ADR 0005).
+    # No se elimina btree_gist: puede usarla otro esquema (ADR 0006).
     op.execute("DROP TRIGGER staff_assignments_immutable_keys ON staff_assignments")
     op.execute("DROP TRIGGER staff_assignments_no_delete ON staff_assignments")
     op.execute("DROP FUNCTION staff_assignments_immutable_keys()")

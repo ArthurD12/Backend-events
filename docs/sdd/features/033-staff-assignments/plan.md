@@ -467,7 +467,7 @@ Los nombres son orientativos; la suite real debe cubrir cada CA.
 
 ## 8. Riesgos y ADRs
 
-- **`btree_gist` (alto)**: es una extensión de PostgreSQL contrib. En la imagen `postgres:17-alpine` está disponible, pero `CREATE EXTENSION` requiere privilegios; en un PostgreSQL gestionado puede necesitar habilitación previa. Se propone **ADR 0005** (regla 11) antes de la migración; si el equipo lo rechaza, no se cumple R-ASG-3 con garantía de base.
+- **`btree_gist` (alto)**: es una extensión de PostgreSQL contrib. En la imagen `postgres:17-alpine` está disponible, pero `CREATE EXTENSION` requiere privilegios; en un PostgreSQL gestionado puede necesitar habilitación previa. Se propone **ADR 0006** (regla 11) antes de la migración; si el equipo lo rechaza, no se cumple R-ASG-3 con garantía de base.
 - **Liberación de eventos cancelados (medio, decisión aprobada 25/11/2026)**: no hay eventos de dominio entre módulos implementados; se resuelve con reconciliación perezosa al escribir. Si el PO prefiere una comunicación explícita `commercial → staff`, exige un evento en proceso y un ADR adicional. Mientras no se escriba, una asignación de evento cancelado puede seguir ocupando; la siguiente escritura la libera.
 - **Cambio de fecha del evento (medio)**: R-ASG-11 deja la asignación con su horario. Si el administrador edita solo el pago, la regla Q5 puede exigir corregir también la fecha. Se documenta y se valida con `staff.assignment_date_invalid`; si negocio prefiere permitir la edición sin corregir la fecha, es un cambio localizado.
 - **Concurrencia y deadlocks (medio)**: orden fijo de bloqueo (trabajador → asignación). La prueba de dos transacciones y la restricción son obligatorias.
@@ -498,7 +498,7 @@ Los nombres son orientativos; la suite real debe cubrir cada CA.
 - **Docstrings**: `staff/composition.py`, `staff/public_api.py`, `assignment_router.py`, casos de uso y repositorio.
 - **`README.md` / `STACK.md` / `INSTALACION.md`**: documentar que el esquema usa la extensión `btree_gist` (PostgreSQL contrib), que la migración la crea y qué hacer si el usuario de la base no tiene privilegios.
 - **`openapi.json`**: regenerar con `just openapi`.
-- **ADR 0005**: `docs/architecture/adr/0005-btree-gist-asignaciones.md`.
+- **ADR 0006**: `docs/architecture/adr/0006-btree-gist-asignaciones.md`.
 
 ## 10. Decisiones del plan y supuestos
 
@@ -520,7 +520,7 @@ Los nombres son orientativos; la suite real debe cubrir cada CA.
 
 1. **Dominio** (T-02..T-04): horario, agregado y auditoría, con tests puros.
 2. **Aplicación** (T-05..T-11): puertos, ocupación, casos de uso y baja de trabajador, con fakes.
-3. **Infraestructura y ADR** (T-12..T-17): ORM/mappers, ADR 0005, migración, repositorio, constraints/concurrencia, triggers/migración. La migración es un gate humano.
+3. **Infraestructura y ADR** (T-12..T-17): ORM/mappers, ADR 0006, migración, repositorio, constraints/concurrencia, triggers/migración. La migración es un gate humano.
 4. **Presentación** (T-18..T-20): esquemas, router, errores y matriz de roles.
 5. **Composición, OpenAPI y arquitectura** (T-21..T-23).
 6. **Documentación y verificación** (T-24..T-27): `DOMAIN.md`, `ARCHITECTURE.md`, `STACK.md`, docstrings, `just check` e integración real.
