@@ -63,7 +63,9 @@ _UNAVAILABILITY_DESCRIPTION_VALID = (
     " OR (kind IS DISTINCT FROM 'OTHER' AND description IS NULL)"
 )
 _UNAVAILABILITY_AUDIT_REASON_VALID = (
-    "reason IS NULL OR (action IN ('UPDATED', 'CANCELLED') AND btrim(reason) <> '')"
+    "(action = 'CREATED' AND reason IS NULL)"
+    " OR (action IN ('UPDATED', 'CANCELLED')"
+    " AND reason IS NOT NULL AND btrim(reason) <> '')"
 )
 _UNAVAILABILITY_AUDIT_SNAPSHOTS_VALID = (
     "(action = 'UPDATED') = (previous_values IS NOT NULL AND new_values IS NOT NULL)"
