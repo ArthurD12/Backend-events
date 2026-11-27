@@ -36,9 +36,7 @@ def test_unavailability_kind_values_are_stable(kind: UnavailabilityKind, value: 
         (UnavailabilityStatus.CANCELLED, "CANCELLED"),
     ],
 )
-def test_unavailability_status_values_are_stable(
-    status: UnavailabilityStatus, value: str
-) -> None:
+def test_unavailability_status_values_are_stable(status: UnavailabilityStatus, value: str) -> None:
     assert isinstance(status, StrEnum)
     assert status.value == value
     assert str(status) == value

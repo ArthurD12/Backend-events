@@ -12,6 +12,9 @@ ASSIGNMENT_FUNCTION_REQUIRED = "staff.assignment_function_required"
 ASSIGNMENT_PAY_INVALID = "staff.assignment_pay_invalid"
 ASSIGNMENT_REASON_REQUIRED = "staff.assignment_reason_required"
 
+AVAILABILITY_WINDOW_INVALID = "staff.availability_window_invalid"
+AVAILABILITY_RANGE_TOO_LARGE = "staff.availability_range_too_large"
+
 UNAVAILABILITY_SCHEDULE_INVALID = "staff.unavailability_schedule_invalid"
 UNAVAILABILITY_KIND_REQUIRED = "staff.unavailability_kind_required"
 UNAVAILABILITY_WORKER_INVALID = "staff.unavailability_worker_invalid"
@@ -77,21 +80,37 @@ class AssignmentReasonRequiredError(StaffValidationError):
         super().__init__(ASSIGNMENT_REASON_REQUIRED, message)
 
 
+class AvailabilityWindowInvalidError(StaffValidationError):
+    """Ventana de consulta inválida (HU16): horas incompletas o fin ≤ inicio (R-DIS-7)."""
+
+    def __init__(
+        self,
+        message: str = "La ventana de consulta debe tener un inicio y un fin válidos.",
+    ) -> None:
+        super().__init__(AVAILABILITY_WINDOW_INVALID, message)
+
+
+class AvailabilityRangeTooLargeError(StaffValidationError):
+    """La consulta de disponibilidad supera los 31 días corridos (HU16, CA-16.20)."""
+
+    def __init__(
+        self,
+        message: str = "La ventana de consulta no puede superar los 31 días corridos.",
+    ) -> None:
+        super().__init__(AVAILABILITY_RANGE_TOO_LARGE, message)
+
+
 class UnavailabilityScheduleInvalidError(StaffValidationError):
     """Ventana de la indisponibilidad inválida (HU16): debe ser UTC y `end_at > start_at`."""
 
-    def __init__(
-        self, message: str = "La hora de fin debe ser posterior a la de inicio."
-    ) -> None:
+    def __init__(self, message: str = "La hora de fin debe ser posterior a la de inicio.") -> None:
         super().__init__(UNAVAILABILITY_SCHEDULE_INVALID, message)
 
 
 class UnavailabilityKindRequiredError(StaffValidationError):
     """La indisponibilidad no tiene un tipo válido (HU16, R-DIS-1)."""
 
-    def __init__(
-        self, message: str = "Debe indicar el tipo de indisponibilidad."
-    ) -> None:
+    def __init__(self, message: str = "Debe indicar el tipo de indisponibilidad.") -> None:
         super().__init__(UNAVAILABILITY_KIND_REQUIRED, message)
 
 

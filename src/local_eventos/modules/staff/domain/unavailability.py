@@ -152,9 +152,7 @@ def _require_kind(kind: UnavailabilityKind | None) -> UnavailabilityKind:
     return kind
 
 
-def _clean_description(
-    kind: UnavailabilityKind, description: str | None
-) -> str | None:
+def _clean_description(kind: UnavailabilityKind, description: str | None) -> str | None:
     if description is not None and not isinstance(description, str):
         raise StaffValidationError(
             UNAVAILABILITY_DESCRIPTION_REQUIRED,

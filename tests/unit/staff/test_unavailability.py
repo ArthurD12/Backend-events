@@ -153,9 +153,7 @@ def test_ventana_invalida_por_orden(start_at: datetime, end_at: datetime) -> Non
         _register(start_at=start_at, end_at=end_at)
 
 
-@pytest.mark.parametrize(
-    "naive", [datetime(2026, 12, 1, 14, 0), datetime(2026, 12, 1, 22, 0)]
-)
+@pytest.mark.parametrize("naive", [datetime(2026, 12, 1, 14, 0), datetime(2026, 12, 1, 22, 0)])
 def test_fechas_deben_incluir_zona(naive: datetime) -> None:
     with pytest.raises(UnavailabilityScheduleInvalidError):
         _register(start_at=naive, end_at=END_AT)
@@ -332,9 +330,7 @@ def test_updated_con_motivo_y_snapshots() -> None:
     assert audit.action is UnavailabilityAction.UPDATED
     assert audit.reason == "Corrección de horario"
     assert audit.previous_values == _snapshot()
-    assert audit.new_values == _snapshot(
-        kind=UnavailabilityKind.OTHER, description="Trámite"
-    )
+    assert audit.new_values == _snapshot(kind=UnavailabilityKind.OTHER, description="Trámite")
 
 
 @pytest.mark.parametrize("reason", [None, "", "   "])

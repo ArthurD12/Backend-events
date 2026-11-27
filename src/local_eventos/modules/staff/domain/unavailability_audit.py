@@ -50,9 +50,7 @@ class UnavailabilitySnapshot:
 
     def __post_init__(self) -> None:
         if not isinstance(self.kind, UnavailabilityKind):
-            raise StaffValidationError(
-                "staff.audit_invalid", "El tipo del snapshot no es válido."
-            )
+            raise StaffValidationError("staff.audit_invalid", "El tipo del snapshot no es válido.")
         if self.description is not None and not isinstance(self.description, str):
             raise StaffValidationError(
                 "staff.audit_invalid", "La descripción del snapshot debe ser texto."
@@ -168,9 +166,7 @@ class UnavailabilityAudit:
             )
 
     def _validate_new(self) -> None:
-        if self.new_values is not None and not isinstance(
-            self.new_values, UnavailabilitySnapshot
-        ):
+        if self.new_values is not None and not isinstance(self.new_values, UnavailabilitySnapshot):
             raise StaffValidationError(
                 "staff.audit_invalid", "Los valores nuevos deben ser un snapshot."
             )
