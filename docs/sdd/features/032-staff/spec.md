@@ -5,6 +5,9 @@
 - **Módulos afectados**: `staff` (nuevo), `identity` (permiso nuevo)
 - **Historia**: HU15 (#16)
 
+
+> **Actualización del 27/11/2026 (feature 025, aprobada por el Product Owner a partir de la aclaración del cliente):** el encargado de eventos es de ventas y **ya no tiene `staff:manage`**: no ve datos de trabajadores, asignaciones ni pagos, y recibe 403 en estas rutas. Solo ve el personal designado de un evento (nombre y función) con `staff_roster:read`. Donde este documento diga que el encargado de eventos accede, prevalece `docs/sdd/features/025-sales-staff-permissions/spec.md` y DOMAIN.md §9 y §11.
+
 ## 1. Problema y objetivo
 Hoy Darze lleva a su personal (cocineros, mozos, bartenders, ayudantes, coordinadores) en hojas de Excel: no hay una lista confiable de quién trabaja con la empresa, el mismo documento se registra escrito de varias formas y, cuando alguien deja de trabajar, sus datos se borran y con ellos el registro de los eventos en los que participó.
 

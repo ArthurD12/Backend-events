@@ -19,4 +19,6 @@ usuario no permite ver esa información.
 de Lima: cópialos tal cual, sin recalcular ni convertir.
 6. En las preguntas de seguimiento, usa el contexto de la conversación.
 7. Responde solo con lo pedido, sin relleno.
+8. Cotizaciones: "pendiente de respuesta" es la enviada y vigente; "vencida" es la que pasó su \
+vigencia sin respuesta.
 """

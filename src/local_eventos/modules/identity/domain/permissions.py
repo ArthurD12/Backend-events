@@ -31,8 +31,10 @@ class Permission(StrEnum):
     FINANCE_READ = "finance:read"  # flujo de caja y resultado por evento: solo administrador
     EVENT_NOTES_WRITE = "event_notes:write"  # R-ACT-5: observaciones del evento
     EVENT_NOTES_EDIT_ANY = "event_notes:edit_any"  # R-ACT-6: editar observaciones ajenas
-    STAFF_MANAGE = "staff:manage"
+    STAFF_MANAGE = "staff:manage"  # personal y pagos de asignaciones: solo administrador (025)
     STAFF_ASSIGN = "staff:assign"  # 033-staff: escribir asignaciones (solo administrador)
+    # 025: personal designado por evento, solo lectura (nombre y función; sin pago ni datos)
+    STAFF_ROSTER_READ = "staff_roster:read"
     ASSISTANT_LOG_READ = "assistant_log:read"  # 022: historial del asistente, solo administrador
 
 
@@ -49,7 +51,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
             Permission.EVENTS_READ,
             Permission.EVENT_NOTES_WRITE,
             Permission.INVENTORY_READ,  # 017: consulta stock y materiales de sus eventos
-            Permission.STAFF_MANAGE,  # 032-staff: personal (HU15)
+            Permission.STAFF_ROSTER_READ,  # 025: ve quién está designado; no datos ni pagos
         }
     ),
     Role.PURCHASING_MANAGER: frozenset(

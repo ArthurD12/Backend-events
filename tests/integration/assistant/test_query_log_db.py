@@ -17,7 +17,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker
 from testcontainers.community.postgres import PostgresContainer
 
 from local_eventos.modules.assistant.application.ports.query_log import QueryFilter
+from local_eventos.modules.assistant.domain.feedback import Feedback, FeedbackValue
 from local_eventos.modules.assistant.domain.query_record import QueryRecord, QueryStatus, ToolUse
+from local_eventos.modules.assistant.infrastructure.feedback_log import SqlAlchemyFeedbackLog
 from local_eventos.modules.assistant.infrastructure.query_log import SqlAlchemyQueryLog
 from local_eventos.shared.infrastructure.db import create_engine
 
@@ -77,5 +79,45 @@ async def test_table_is_append_only(engine: AsyncEngine) -> None:
         await SqlAlchemyQueryLog(session).add(record(user, NOW))
     for sql in ("UPDATE assistant_queries SET answer = 'x'", "DELETE FROM assistant_queries"):
         with pytest.raises(DBAPIError, match="no se puede modificar"):
+            async with engine.begin() as conn:
+                await conn.execute(text(sql))
+
+
+async def test_get_returns_the_query_or_none(engine: AsyncEngine) -> None:
+    user = uuid4()
+    saved = record(user, NOW)
+    async with async_sessionmaker(engine, expire_on_commit=False).begin() as session:
+        await SqlAlchemyQueryLog(session).add(saved)
+    async with async_sessionmaker(engine)() as session:
+        log = SqlAlchemyQueryLog(session)
+        found = await log.get(saved.id)
+        assert found is not None and found.user_id == user and found.question == "¿saldo?"
+        assert await log.get(uuid4()) is None
+
+
+async def test_feedback_latest_wins_and_table_is_append_only(engine: AsyncEngine) -> None:
+    user, other = uuid4(), uuid4()
+    graded, plain, regraded = record(user, NOW), record(user, NOW), record(other, NOW)
+    sessions = async_sessionmaker(engine, expire_on_commit=False)
+    async with sessions.begin() as session:
+        queries, feedback = SqlAlchemyQueryLog(session), SqlAlchemyFeedbackLog(session)
+        for query in (graded, plain, regraded):
+            await queries.add(query)
+        # mismo instante: la última se decide por el orden de inserción, no por la fecha
+        await feedback.add(Feedback(graded.id, user, FeedbackValue.INCORRECT, "mal", NOW))
+        await feedback.add(Feedback(graded.id, user, FeedbackValue.CORRECT, None, NOW))
+        await feedback.add(Feedback(regraded.id, other, FeedbackValue.INCORRECT, None, NOW))
+    async with sessions() as session:
+        latest = await SqlAlchemyFeedbackLog(session).latest([graded.id, plain.id, regraded.id])
+        assert set(latest) == {graded.id, regraded.id}
+        assert (
+            latest[graded.id].value is FeedbackValue.CORRECT and latest[graded.id].comment is None
+        )
+        assert await SqlAlchemyFeedbackLog(session).latest([]) == {}
+    for sql in (
+        "UPDATE assistant_feedback SET value = 'correct'",
+        "DELETE FROM assistant_feedback",
+    ):
+        with pytest.raises(DBAPIError, match="no se pueden modificar"):
             async with engine.begin() as conn:
                 await conn.execute(text(sql))

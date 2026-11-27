@@ -8,6 +8,7 @@ copie tal cual y no calcule ni convierta (CA-39.2).
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import date, timedelta
+from enum import StrEnum
 from typing import Any
 from uuid import UUID
 
@@ -16,11 +17,16 @@ from local_eventos.modules.commercial.public_api import (
     ClientSearchLookup,
     EventAccountLookup,
     EventDetailLookup,
+    EventFindLookup,
     EventReportFilters,
     EventReportItem,
     EventReportLookup,
     EventSearchLookup,
     EventStatus,
+    EventType,
+    QuoteFilters,
+    QuoteSearchLookup,
+    QuoteStatus,
     UpcomingEventsLookup,
 )
 from local_eventos.modules.identity.public_api import Permission, UserNamesLookup
@@ -44,6 +50,8 @@ class Lookups:
     upcoming_events: UpcomingEventsLookup
     events_report: EventReportLookup
     events_search: EventSearchLookup
+    events_find: EventFindLookup
+    quotes_search: QuoteSearchLookup
     event_detail: EventDetailLookup
     event_account: EventAccountLookup
     stock_report: StockReportLookup
@@ -89,6 +97,34 @@ def _int(data: dict[str, Any], key: str, default: int, low: int, high: int) -> i
     return value
 
 
+def _choice[E: StrEnum](data: dict[str, Any], key: str, kind: type[E]) -> E | None:
+    value = _text(data, key, required=False)
+    if not value:
+        return None
+    try:
+        return kind(value)
+    except ValueError:
+        allowed = ", ".join(m.value for m in kind)
+        raise ToolInputError(f"«{key}» debe ser uno de: {allowed}.") from None
+
+
+def _date(data: dict[str, Any], key: str) -> date | None:
+    value = _text(data, key, required=False)
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        raise ToolInputError(f"«{key}» debe tener el formato AAAA-MM-DD.") from None
+
+
+def _date_range(data: dict[str, Any]) -> tuple[date | None, date | None]:
+    date_from, date_to = _date(data, "date_from"), _date(data, "date_to")
+    if date_from and date_to and date_from > date_to:
+        raise ToolInputError("«date_from» no puede ser posterior a «date_to».")
+    return date_from, date_to
+
+
 def build_tools(lookups: Lookups) -> ToolRegistry:
     """Las herramientas del asistente. El orden y los textos son estables (caché del prompt)."""
     return ToolRegistry(
@@ -104,6 +140,8 @@ def build_tools(lookups: Lookups) -> ToolRegistry:
             _cash_flow(lookups),
             _search_clients(lookups),
             _client_history(lookups),
+            _search_events(lookups),
+            _search_quotes(lookups),
         ]
     )
 
@@ -510,5 +548,122 @@ def _client_history(lk: Lookups) -> Tool:
             ["client_id"],
         ),  # fmt: skip
         Permission.PAYMENTS_RECORD,
+        run,
+    )
+
+
+# 12. Eventos por fecha, cliente, tipo o estado (HU36) -----------------------------------------
+_DATE_FROM = {"type": "string", "description": "Desde (inclusive), formato AAAA-MM-DD"}
+_DATE_TO = {"type": "string", "description": "Hasta (inclusive), formato AAAA-MM-DD"}
+
+
+def _search_events(lk: Lookups) -> Tool:
+    async def run(data: dict[str, Any]) -> Any:
+        date_from, date_to = _date_range(data)
+        client = _text(data, "client", required=False)
+        event_type = _choice(data, "event_type", EventType)
+        status = _choice(data, "status", EventStatus)
+        if not (date_from or date_to or client or event_type or status):
+            date_from = lk.today()  # sin filtros: lo que viene, no todo el historial
+        found = await lk.events_find(
+            text=client,
+            status=status,
+            event_type=event_type,
+            date_from=date_from,
+            date_to=date_to,
+            limit=MAX_ROWS,
+        )
+        return {
+            "eventos": [
+                {
+                    "codigo": e.code,
+                    "fecha": day(e.event_date),
+                    "cliente": e.client_name,
+                    "tipo": e.event_type.value,
+                    "invitados": e.guests,
+                    "estado": e.status.value,
+                }
+                for e in found.items
+            ],
+            "total": found.total,
+        }
+
+    return _tool(
+        "search_events",
+        "Busca eventos por rango de fechas del evento, cliente (texto), tipo y/o estado; todos "
+        "los filtros son opcionales y se combinan. Sin filtros, los eventos desde hoy. Úsala "
+        "para '¿qué bodas hay en diciembre?' o '¿qué eventos de Ana están confirmados?'.",
+        _schema(
+            {
+                "date_from": _DATE_FROM,
+                "date_to": _DATE_TO,
+                "client": {
+                    "type": "string",
+                    "description": "Nombre o parte del nombre del cliente",
+                },
+                "event_type": {"type": "string", "enum": [t.value for t in EventType]},
+                "status": {"type": "string", "enum": [s.value for s in EventStatus]},
+            },
+            [],
+        ),
+        Permission.EVENTS_READ,
+        run,
+    )
+
+
+# 13. Cotizaciones por estado, cliente o fecha del evento (HU36) --------------------------------
+_QUOTE_STATUS_LABEL = {
+    QuoteStatus.DRAFT: "borrador",
+    QuoteStatus.SENT: "enviada",
+    QuoteStatus.ACCEPTED: "aceptada",
+    QuoteStatus.REJECTED: "rechazada",
+    QuoteStatus.EXPIRED: "vencida",
+}
+
+
+def _search_quotes(lk: Lookups) -> Tool:
+    async def run(data: dict[str, Any]) -> Any:
+        date_from, date_to = _date_range(data)
+        found = await lk.quotes_search(
+            QuoteFilters(
+                text=_text(data, "client", required=False),
+                status=_choice(data, "status", QuoteStatus),
+                event_date_from=date_from,
+                event_date_to=date_to,
+            ),
+            page=1,
+            page_size=MAX_ROWS,
+        )
+        return {
+            "cotizaciones": [
+                {
+                    "codigo": q.code,
+                    "cliente": q.client_name,
+                    "fecha_evento": day(q.event_date),
+                    "total": soles(q.total_cents),
+                    "estado": _QUOTE_STATUS_LABEL[q.status],
+                    "vigente_hasta": day(q.valid_until),
+                }
+                for q in found.items
+            ],
+            "total": found.total,
+        }
+
+    return _tool(
+        "search_quotes",
+        "Busca cotizaciones por estado (DRAFT borrador, SENT enviada, ACCEPTED aceptada, "
+        "REJECTED rechazada, EXPIRED vencida), cliente (texto) y rango de fechas del evento; "
+        "todos opcionales. 'Pendientes de respuesta' son las SENT; DRAFT y SENT solo cuentan si "
+        "siguen vigentes, y las que pasaron su vigencia sin respuesta son EXPIRED.",
+        _schema(
+            {
+                "status": {"type": "string", "enum": [s.value for s in QuoteStatus]},
+                "client": {"type": "string", "description": "Nombre del cliente o código"},
+                "date_from": _DATE_FROM,
+                "date_to": _DATE_TO,
+            },
+            [],
+        ),
+        Permission.QUOTES_MANAGE,
         run,
     )

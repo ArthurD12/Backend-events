@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from local_eventos.modules.assistant.application.ports.query_log import QueryFilter
+from local_eventos.modules.assistant.domain.feedback import Feedback
 from local_eventos.modules.assistant.domain.query_record import QueryRecord
 
 
@@ -13,6 +14,9 @@ class InMemoryQueryLog:
 
     async def add(self, record: QueryRecord) -> None:
         self.records.append(record)
+
+    async def get(self, query_id: UUID) -> QueryRecord | None:
+        return next((r for r in self.records if r.id == query_id), None)
 
     async def count_since(self, user_id: UUID, since: datetime) -> int:
         return sum(1 for r in self.records if r.user_id == user_id and r.created_at >= since)
@@ -28,6 +32,17 @@ class InMemoryQueryLog:
             and (filters.until is None or r.created_at <= filters.until)
         ]
         return found[offset : offset + limit], len(found)
+
+
+class InMemoryFeedbackLog:
+    def __init__(self) -> None:
+        self.rows: list[Feedback] = []
+
+    async def add(self, feedback: Feedback) -> None:
+        self.rows.append(feedback)
+
+    async def latest(self, query_ids: list[UUID]) -> dict[UUID, Feedback]:
+        return {f.query_id: f for f in self.rows if f.query_id in query_ids}  # la última pisa
 
 
 class FixedClock:

@@ -15,11 +15,16 @@ from local_eventos.modules.commercial.public_api import (
     ContractStatus,
     EventAccount,
     EventDetail,
+    EventFindResult,
     EventReportFilters,
     EventReportItem,
     EventStatus,
     EventSummary,
     EventType,
+    QuoteFilters,
+    QuotePage,
+    QuoteStatus,
+    QuoteSummary,
 )
 from local_eventos.modules.identity.domain.permissions import Role, permissions_of
 from local_eventos.modules.inventory.public_api import (
@@ -53,9 +58,16 @@ STOCK = StockItem(PRODUCT, Category.SUPPLIES, Decimal(10), Decimal(4), 500, 2_00
                   date(2026, 12, 1), True)  # fmt: skip
 
 
+QUOTE = QuoteSummary(
+    uuid4(), "COT-2026-0007", CLIENT_ID, "José Ramírez", EventType.WEDDING, date(2026, 12, 19),
+    120, 1_250_000, QuoteStatus.EXPIRED, date(2026, 11, 20),
+)  # fmt: skip
+
+
 class Calls:
     def __init__(self) -> None:
         self.names: list[str] = []
+        self.found: dict[str, Any] = {}
 
 
 def _lookups(calls: Calls) -> Lookups:
@@ -110,20 +122,33 @@ def _lookups(calls: Calls) -> Lookups:
         two = ClientSummary(uuid4(), "José Ramírez", "DNI", "40000002", "988", None, True)
         return [one, two] if text == "José" else []
 
+    async def find(**kwargs: Any) -> EventFindResult:
+        calls.found["events"] = kwargs
+        return EventFindResult([SUMMARY], 1)
+
+    async def quotes(filters: QuoteFilters, *, page: int = 1, page_size: int = 20) -> QuotePage:
+        calls.found["quotes"] = filters
+        return QuotePage([QUOTE], 1, page, page_size)
+
     async def names(ids: Any) -> dict[Any, str]:
         return {COORD_ID: "María Pérez"}
 
     return Lookups(
         today=lambda: date(2026, 11, 26), upcoming_events=upcoming, events_report=report,
-        events_search=search, event_detail=detail, event_account=account, stock_report=stock,
+        events_search=search, events_find=find, quotes_search=quotes, event_detail=detail,
+        event_account=account, stock_report=stock,
         event_requirement=requirement, purchases_report=purchases, cash_totals=cash,
         clients_search=clients, user_names=names,
     )  # fmt: skip
 
 
+CALLS = Calls()
+
+
 @pytest.fixture
 def tools() -> ToolRegistry:
-    return build_tools(_lookups(Calls()))
+    CALLS.found.clear()
+    return build_tools(_lookups(CALLS))
 
 
 ADMIN = frozenset(p.value for p in permissions_of(Role.ADMIN))
@@ -137,7 +162,7 @@ async def run(tools: ToolRegistry, name: str, data: dict[str, Any], perms: froze
 
 def test_specs_are_strict_and_stable(tools: ToolRegistry) -> None:
     specs = tools.specs()
-    assert len(specs) == 11 and len({s.name for s in specs}) == 11
+    assert len(specs) == 13 and len({s.name for s in specs}) == 13
     for spec in specs:
         assert spec.input_schema["additionalProperties"] is False
         assert spec.input_schema["type"] == "object"
@@ -249,3 +274,77 @@ async def test_events_manager_cannot_read_cash_but_can_read_collections(
     _, denied = await run(tools, "cash_flow", {}, manager)
     _, allowed = await run(tools, "pending_collections", {}, manager)
     assert denied and not allowed
+
+
+async def test_search_events_passes_filters_and_formats(tools: ToolRegistry) -> None:
+    data, err = await run(
+        tools,
+        "search_events",
+        {
+            "date_from": "2026-12-01",
+            "client": "José",
+            "event_type": "WEDDING",
+            "status": "CONFIRMED",
+        },
+    )
+    assert not err and data["total"] == 1
+    assert data["eventos"][0] == {
+        "codigo": "EV-2026-0001", "fecha": "19/12/2026", "cliente": "José Ramírez",
+        "tipo": "WEDDING", "invitados": 120, "estado": "CONFIRMED",
+    }  # fmt: skip
+    sent = CALLS.found["events"]
+    assert sent["text"] == "José" and sent["event_type"] is EventType.WEDDING
+    assert sent["status"] is EventStatus.CONFIRMED and sent["date_from"] == date(2026, 12, 1)
+
+
+async def test_search_events_without_filters_starts_today(tools: ToolRegistry) -> None:
+    await run(tools, "search_events", {})
+    assert CALLS.found["events"]["date_from"] == date(2026, 11, 26)
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"date_from": "19/12/2026"},
+        {"date_from": "2026-12-20", "date_to": "2026-12-01"},
+        {"event_type": "PARTY"},
+        {"status": "LOST"},
+    ],
+)
+async def test_search_events_rejects_bad_params(tools: ToolRegistry, bad: dict[str, Any]) -> None:
+    data, err = await run(tools, "search_events", bad)
+    assert err and data["error"] == "parametros_invalidos"
+
+
+async def test_search_events_needs_events_read(tools: ToolRegistry) -> None:
+    data, err = await run(tools, "search_events", {}, frozenset({"inventory:read"}))
+    assert err and data["error"] == "sin_permiso"
+    assert (await run(tools, "search_events", {}, PURCHASER))[1] is False
+
+
+async def test_search_quotes_formats_and_maps_status(tools: ToolRegistry) -> None:
+    data, err = await run(
+        tools,
+        "search_quotes",
+        {"status": "EXPIRED", "client": "José", "date_from": "2026-12-01", "date_to": "2026-12-31"},
+    )
+    assert not err and data["total"] == 1
+    assert data["cotizaciones"][0] == {
+        "codigo": "COT-2026-0007", "cliente": "José Ramírez", "fecha_evento": "19/12/2026",
+        "total": "S/ 12,500.00", "estado": "vencida", "vigente_hasta": "20/11/2026",
+    }  # fmt: skip
+    sent = CALLS.found["quotes"]
+    assert sent.status is QuoteStatus.EXPIRED and sent.text == "José"
+    assert sent.event_date_from == date(2026, 12, 1) and sent.event_date_to == date(2026, 12, 31)
+
+
+async def test_search_quotes_needs_quotes_manage(tools: ToolRegistry) -> None:
+    data, err = await run(tools, "search_quotes", {}, PURCHASER)
+    assert err and data["error"] == "sin_permiso"
+    manager = frozenset(p.value for p in permissions_of(Role.EVENTS_MANAGER))
+    assert (await run(tools, "search_quotes", {}, manager))[1] is False
+
+
+async def test_search_quotes_rejects_unknown_status(tools: ToolRegistry) -> None:
+    data, err = await run(tools, "search_quotes", {"status": "LOST"})
+    assert err and data["error"] == "parametros_invalidos"

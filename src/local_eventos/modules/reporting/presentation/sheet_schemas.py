@@ -21,6 +21,7 @@ from local_eventos.modules.commercial.public_api import (
 from local_eventos.modules.inventory.public_api import EventMaterialInfo, ProductKind, Unit
 from local_eventos.modules.ledger.public_api import PaymentKind, PaymentMethod
 from local_eventos.modules.reporting.application.use_cases.event_sheet import EventSheet
+from local_eventos.modules.staff.public_api import WorkerFunction
 
 QuantityOut = str  # decimal con 3 decimales, como en inventory
 
@@ -67,7 +68,9 @@ class SheetServiceOut(BaseModel):
 class SheetStaffOut(BaseModel):
     worker_id: UUID
     name: str
-    role: str = Field(description="Función en el evento")
+    role: str = Field(description="Función en el evento, legible")
+    function: WorkerFunction
+    function_description: str | None = Field(description="Solo con la función `OTHER`")
     starts_at: datetime
     ends_at: datetime
 
@@ -205,7 +208,7 @@ class EventSheetOut(BaseModel):
     client: SheetClientOut
     services: list[SheetServiceOut]
     staff: list[SheetStaffOut] | None = Field(
-        description="Vacío (`null`): sin información de personal (CA-14.3)"
+        description="Personal designado (sin pago). `null` sin el permiso `staff_roster:read`"
     )
     materials: list[SheetMaterialOut] = Field(description="Por producto, ordenado por nombre")
     account: SheetAccountOut | None = Field(description="Vacío sin el permiso `payments:record`")
@@ -256,6 +259,8 @@ class EventSheetOut(BaseModel):
                     worker_id=s.worker_id,
                     name=s.worker_name,
                     role=s.role,
+                    function=s.function,
+                    function_description=s.function_description,
                     starts_at=s.starts_at,
                     ends_at=s.ends_at,
                 )  # fmt: skip
