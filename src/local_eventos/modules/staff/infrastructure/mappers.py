@@ -1,4 +1,4 @@
-"""Mapeo explícito entre el dominio de `staff` y sus filas ORM (HU15).
+"""Mapeo explícito entre el dominio de `staff` y sus filas ORM (HU15, HU16, HU17).
 
 El dominio no conoce SQLAlchemy (AGENTS.md, regla 2): estas funciones son el único
 punto que traduce `Worker`/`WorkerAudit` a filas y viceversa. Los nulos y los enums
@@ -19,15 +19,25 @@ from local_eventos.modules.staff.domain.audit import AuditAction, WorkerAudit
 from local_eventos.modules.staff.domain.document import Document, WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import (
     AssignmentStatus,
+    UnavailabilityKind,
+    UnavailabilityStatus,
     WorkerFunction,
     WorkerStatus,
     WorkerType,
 )
 from local_eventos.modules.staff.domain.money import Money
+from local_eventos.modules.staff.domain.unavailability import Unavailability
+from local_eventos.modules.staff.domain.unavailability_audit import (
+    UnavailabilityAction,
+    UnavailabilityAudit,
+    UnavailabilitySnapshot,
+)
 from local_eventos.modules.staff.domain.worker import Worker
 from local_eventos.modules.staff.infrastructure.orm_models import (
     StaffAssignmentAuditRow,
     StaffAssignmentRow,
+    StaffUnavailabilityAuditRow,
+    StaffUnavailabilityRow,
     StaffWorkerAuditRow,
     StaffWorkerRow,
 )
@@ -157,6 +167,66 @@ def row_to_assignment_audit(row: StaffAssignmentAuditRow) -> AssignmentAudit:
         ),
         new_values=(
             None if row.new_values is None else AssignmentSnapshot.from_mapping(row.new_values)
+        ),
+    )
+
+
+def unavailability_to_row(unavailability: Unavailability) -> StaffUnavailabilityRow:
+    """Crea la fila de una indisponibilidad nueva; `created_at`/`updated_at` son técnicos."""
+    return StaffUnavailabilityRow(
+        id=unavailability.id,
+        worker_id=unavailability.worker_id,
+        kind=unavailability.kind.value,
+        description=unavailability.description,
+        start_at=unavailability.start_at,
+        end_at=unavailability.end_at,
+        status=unavailability.status.value,
+    )
+
+
+def row_to_unavailability(row: StaffUnavailabilityRow) -> Unavailability:
+    """Reconstruye la indisponibilidad desde la fila, con instantes normalizados a UTC."""
+    return Unavailability(
+        id=row.id,
+        worker_id=row.worker_id,
+        kind=UnavailabilityKind(row.kind),
+        description=row.description,
+        start_at=_as_utc(row.start_at),
+        end_at=_as_utc(row.end_at),
+        status=UnavailabilityStatus(row.status),
+    )
+
+
+def unavailability_audit_to_row(audit: UnavailabilityAudit) -> StaffUnavailabilityAuditRow:
+    """Crea la fila de auditoría; los snapshots se serializan a JSON-compatible."""
+    return StaffUnavailabilityAuditRow(
+        unavailability_id=audit.unavailability_id,
+        action=audit.action.value,
+        reason=audit.reason,
+        actor_id=audit.actor_id,
+        occurred_at=audit.occurred_at,
+        previous_values=(
+            None if audit.previous_values is None else audit.previous_values.to_dict()
+        ),
+        new_values=None if audit.new_values is None else audit.new_values.to_dict(),
+    )
+
+
+def row_to_unavailability_audit(row: StaffUnavailabilityAuditRow) -> UnavailabilityAudit:
+    """Reconstruye la auditoría desde la fila, incluidos los snapshots JSONB."""
+    return UnavailabilityAudit(
+        unavailability_id=row.unavailability_id,
+        action=UnavailabilityAction(row.action),
+        reason=row.reason,
+        actor_id=row.actor_id,
+        occurred_at=_as_utc(row.occurred_at),
+        previous_values=(
+            None
+            if row.previous_values is None
+            else UnavailabilitySnapshot.from_mapping(row.previous_values)
+        ),
+        new_values=(
+            None if row.new_values is None else UnavailabilitySnapshot.from_mapping(row.new_values)
         ),
     )
 
