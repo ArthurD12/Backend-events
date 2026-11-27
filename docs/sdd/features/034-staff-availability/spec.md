@@ -1,7 +1,7 @@
 # Spec: Consultar la disponibilidad del personal
 
 - **ID**: 034-staff-availability
-- **Estado**: **borrador — Q1–Q10 cerradas (PO, 27/11/2026); pendiente de revisión final del PO antes de plan**
+- **Estado**: **aprobada** por el PO (27/11/2026); en fase de plan. Permisos verificados contra DOMAIN.md.
 - **Módulos afectados**: `staff` (disponibilidad y consulta de agenda), `identity` (permiso `staff:availability`), `commercial` (solo lectura de datos del evento en conflicto, si aplica)
 - **Historia**: HU16 (#17)
 
@@ -67,7 +67,7 @@ El objetivo es **consultar la disponibilidad del personal por fecha, horario y f
 - **R-DIS-5**: una **indisponibilidad** es una marca de planificación sobre un trabajador y un intervalo (fecha y horario), con un motivo o tipo. No es una asignación, no genera pago, no modifica la ficha del trabajador y **no anula ni mueve** asignaciones ya existentes; solo se refleja en la consulta. **Q3 cerrada**: en esta entrega es **solo informativa** y **no bloquea** la asignación en HU17; el bloqueo queda como evolución explícita en un PR aparte, junto con R-STF-4.
 - **R-DIS-6**: la disponibilidad registrada es **planificación**, no **asistencia**. Si el trabajador se presentó o faltó a un evento es HU18 y queda fuera de esta feature.
 - **R-DIS-7** *(R-COT-1)*: las fechas y horas se interpretan en **`America/Lima`** y se guardan en UTC; la presentación vuelve a `America/Lima`. El intervalo es semiabierto `[inicio, fin)`.
-- **R-DIS-8** *(R-STF-5/R-STF-16, R-ASG-14; Q1/Q8 cerradas)*: la autorización es por **permiso**. **Consultar, registrar, editar y anular** disponibilidad exigen el permiso `staff:availability`, que **solo tiene el administrador**. `staff:manage` **no da acceso** a disponibilidad: lo tienen administrador y encargado de eventos, y el encargado de eventos queda **fuera** de toda operación de disponibilidad, incluida la lectura. En el negocio, el encargado de eventos es de ventas y no debe ver datos de trabajadores ni pagos; solo verá **quién está designado en un evento** mediante otro permiso/PR de solo lectura.
+- **R-DIS-8** *(R-STF-5/R-STF-16, R-ASG-14; Q1/Q8 cerradas)*: la autorización es por **permiso**. **Consultar, registrar, editar y anular** disponibilidad exigen el permiso `staff:availability`, que **solo tiene el administrador**. `staff:manage` **no da acceso** a disponibilidad y hoy **solo lo tiene el administrador** (R-STF-5/R-STF-16, decisión 27/11/2026); el encargado de eventos quedó sin él y conserva únicamente `staff_roster:read`, que no abre ninguna operación de disponibilidad, incluida la lectura. En el negocio, el encargado de eventos es de ventas y no debe ver datos de trabajadores ni pagos; solo verá **quién está designado en un evento** mediante otro permiso/PR de solo lectura.
 - **R-DIS-9** *(Q9 cerrada)*: el resultado **nunca** expone pago acordado, tarifa, documento ni teléfono; como máximo, nombre, función y estado y, si está ocupado, el código, fecha, horario y función del evento en conflicto.
 - **R-DIS-10**: una indisponibilidad **pasada** no desaparece por el paso del tiempo ni por desactivar al trabajador; se conserva para la consulta y el historial (Q10 cerrada).
 
@@ -107,7 +107,7 @@ El objetivo es **consultar la disponibilidad del personal por fecha, horario y f
 - **HU15 (032-staff) implementada**: ficha del trabajador, estado activo/inactivo y función (opcional, lista fija + "otro"). La consulta obtiene estado y función por la superficie pública de `staff`. `staff:manage` sigue rigiendo la gestión de trabajadores, pero **no da acceso a disponibilidad**.
 - **`commercial.public_api`**: solo si el resultado muestra el **código, fecha y horario del evento en conflicto** (Q9); se obtiene por su superficie pública, nunca por sus tablas. La consulta de disponibilidad **no** necesita datos de contrato, cotización ni pagos.
 - **`identity`**: declara el permiso `staff:availability`, usado tanto para **consultar** como para **escribir**; **solo el administrador** lo recibe por defecto.
-- **PR aparte (fuera de HU16)**: el cambio de permisos del encargado de eventos en HU15 y HU17 (quitarle lectura de personal/pagos) y el nuevo permiso de **solo lectura del personal designado por evento** se tratan en un **PR independiente**. Esta feature (HU16) **no modifica** HU15, HU17, su código ni sus spec/plan.
+- **PR 025 ya implementado (PR #78 en esta rama)**: el encargado de eventos perdió `staff:manage` y la lectura de asignaciones/pagos, y conserva solo `staff_roster:read` (personal designado por evento). HU16 **no modifica** HU15, HU17 ni su código; solo declara `staff:availability` para el administrador.
 - **Un solo evento por asignación**, **una sola organización**; sin multi-tenant.
 
 ## 9. Supuestos
@@ -122,7 +122,7 @@ El objetivo es **consultar la disponibilidad del personal por fecha, horario y f
 ## 10. Preguntas abiertas
 
 > **Cerradas por el PO el 27/11/2026:** Q1 a Q10, incluida Q6 (opción (a): "ocupado" cuenta los eventos finalizados y excluye los cancelados, con el mismo criterio de HU17).
-> **Estado:** borrador, pendiente de revisión final del PO antes de pasar a plan.
+> **Estado:** aprobada por el PO (27/11/2026); Q1–Q10 cerradas, en fase de plan.
 
 ### Cerradas
 
