@@ -30,6 +30,7 @@ from local_eventos.modules.inventory.public_api import (
 )
 from local_eventos.modules.ledger.public_api import PaymentKind, PaymentMethod
 from local_eventos.modules.reporting.application.ports.event_staff import StaffAssignment
+from local_eventos.modules.staff.public_api import WorkerFunction
 
 EVENT_ID = uuid4()
 COORDINATOR = uuid4()
@@ -72,17 +73,18 @@ ACCOUNT = EventAccount(
                                  PaymentMethod.CASH, date(2026, 11, 22), False)],
 )  # fmt: skip
 
-STAFF = [StaffAssignment(uuid4(), "Pedro Quispe", "Mozo", NOW, NOW)]
+STAFF = [StaffAssignment(uuid4(), "Pedro Quispe", "Mozo", WorkerFunction.WAITER, None, NOW, NOW)]
 
 
 @dataclass
 class Calls:
     accounts: list[UUID] = field(default_factory=list)
+    staff: list[UUID] = field(default_factory=list)
 
 
 @dataclass
 class SheetFakes:
-    staff: list[StaffAssignment] | None = None
+    staff: list[StaffAssignment] = field(default_factory=list)
     calls: Calls = field(default_factory=Calls)
 
     async def details(self, event_id: UUID) -> EventDetail | None:
@@ -98,7 +100,8 @@ class SheetFakes:
         self.calls.accounts.append(event_id)
         return ACCOUNT
 
-    async def event_staff(self, event_id: UUID) -> list[StaffAssignment] | None:
+    async def event_staff(self, event_id: UUID) -> list[StaffAssignment]:
+        self.calls.staff.append(event_id)
         return self.staff
 
     async def user_names(self, user_ids: Iterable[UUID]) -> dict[UUID, str]:

@@ -30,7 +30,7 @@ def _sheet(fakes: SheetFakes) -> GetEventSheet:
 async def test_ca14_ficha_completa_por_bloques() -> None:
     fakes = SheetFakes(staff=STAFF)
 
-    sheet = await _sheet(fakes)(EVENT_ID, include_account=True)
+    sheet = await _sheet(fakes)(EVENT_ID, include_account=True, include_staff=True)
 
     assert sheet.event == DETAIL
     assert sheet.staff == STAFF
@@ -43,18 +43,27 @@ async def test_ca14_ficha_completa_por_bloques() -> None:
 async def test_ca14_5_sin_permiso_de_pagos_no_consulta_la_cuenta() -> None:
     fakes = SheetFakes()
 
-    sheet = await _sheet(fakes)(EVENT_ID, include_account=False)
+    sheet = await _sheet(fakes)(EVENT_ID, include_account=False, include_staff=True)
 
     assert sheet.account is None
     assert fakes.calls.accounts == []
 
 
-async def test_ca14_3_sin_modulo_de_personal_el_bloque_es_none() -> None:
-    sheet = await _sheet(SheetFakes(staff=None))(EVENT_ID, include_account=True)
+async def test_ca25_3_sin_permiso_de_personal_no_consulta_a_staff() -> None:
+    fakes = SheetFakes(staff=STAFF)
+
+    sheet = await _sheet(fakes)(EVENT_ID, include_account=True, include_staff=False)
 
     assert sheet.staff is None
+    assert fakes.calls.staff == []
+
+
+async def test_ca25_4_evento_sin_asignaciones_con_permiso_es_lista_vacia() -> None:
+    sheet = await _sheet(SheetFakes())(EVENT_ID, include_account=True, include_staff=True)
+
+    assert sheet.staff == []
 
 
 async def test_evento_inexistente() -> None:
     with pytest.raises(ReportEventNotFoundError):
-        await _sheet(SheetFakes())(uuid4(), include_account=True)
+        await _sheet(SheetFakes())(uuid4(), include_account=True, include_staff=True)

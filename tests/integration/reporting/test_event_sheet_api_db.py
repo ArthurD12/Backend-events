@@ -98,9 +98,31 @@ def test_hu14_ficha_con_pago_salida_de_material_y_actividad(api: TestClient) -> 
               "role": "PURCHASING_MANAGER"},
     )  # fmt: skip
     purchasing = auth_headers(api, "compras@darze.pe", "compras-clave-1")
+    api.post(
+        "/v1/users",
+        json={"name": "Ventas Darze", "email": "ventas@darze.pe", "password": "ventas-clave-1",
+              "role": "EVENTS_MANAGER"},
+    )  # fmt: skip
+    sales = auth_headers(api, "ventas@darze.pe", "ventas-clave-1")
+    worker = api.post(
+        "/v1/staff",
+        json={"name": "Rosa Quispe", "document_type": "DNI", "document_number": "12345678",
+              "phone": "987654321", "function": "WAITER", "rate_cents": 4500},
+    )  # fmt: skip
+    assigned = api.post(
+        "/v1/staff/assignments",
+        json={"event_id": event_id, "worker_id": worker.json()["id"],
+              "date": (TODAY + timedelta(days=40)).isoformat(), "start_time": "19:00:00",
+              "end_time": "23:00:00", "pay_cents": 8000},
+    )  # fmt: skip
 
     sheet = api.get(f"/v1/reports/events/{event_id}/sheet")
     without_account = api.get(f"/v1/reports/events/{event_id}/sheet", headers=purchasing)
+    as_sales = api.get(f"/v1/reports/events/{event_id}/sheet", headers=sales)
+    sales_staff_routes = [
+        api.get("/v1/staff", headers=sales),
+        api.get("/v1/staff/assignments", params={"event_id": event_id}, headers=sales),
+    ]
 
     assert paid.status_code == 201, paid.text
     assert exit_.status_code == 201, exit_.text
@@ -115,7 +137,18 @@ def test_hu14_ficha_con_pago_salida_de_material_y_actividad(api: TestClient) -> 
         "40000001",
     )
     assert [(s["description"], s["quantity"]) for s in body["services"]] == [("Paquete boda", 1)]
-    assert body["staff"] is None
+    assert worker.status_code == 201, worker.text
+    assert assigned.status_code == 201, assigned.text
+    # 025: personal designado visible, nunca el pago, documento, teléfono ni tarifa.
+    assert [(w["name"], w["role"], w["function"]) for w in body["staff"]] == [
+        ("Rosa Quispe", "Mozo", "WAITER")
+    ]
+    for leaked in ("pay_cents", "document_number", "phone", "rate_cents", "8000", "12345678"):
+        assert leaked not in str(body["staff"])
+    assert as_sales.status_code == 200, as_sales.text
+    assert as_sales.json()["staff"] == body["staff"]
+    assert [r.status_code for r in sales_staff_routes] == [403, 403]
+    assert without_account.json()["staff"] is None
     assert [(m["code"], m["out"], m["pending_return"]) for m in body["materials"]] == [
         ("PLA-01", "120.000", "120.000")
     ]

@@ -343,33 +343,25 @@ def test_admin_tiene_2xx(api: Api) -> None:
     assert api.client.get(f"{ASSIGNMENTS}/{created['id']}").status_code == 200
 
 
-def test_encargado_de_eventos_lee_pero_no_escribe(api: Api) -> None:
+def test_encargado_de_eventos_no_accede_ni_a_lectura_ni_a_escritura(api: Api) -> None:
     created = _register(api)
     api.as_role(Role.EVENTS_MANAGER)
+    update_body = {
+        "function": "WAITER",
+        "date": "2026-12-01",
+        "start_time": "18:00:00",
+        "end_time": "23:00:00",
+        "pay_cents": 4500,
+        "reason": "Corrección",
+    }
 
-    assert api.client.get(ASSIGNMENTS, params={"event_id": str(EVENT_ID)}).status_code == 200
-    assert api.client.get(f"{ASSIGNMENTS}/{created['id']}").status_code == 200
+    # 025: la lectura trae el pago acordado; el encargado de eventos (ventas) no la ve.
+    assert api.client.get(ASSIGNMENTS, params={"event_id": str(EVENT_ID)}).status_code == 403
+    assert api.client.get(f"{ASSIGNMENTS}/{created['id']}").status_code == 403
     assert api.client.post(ASSIGNMENTS, json=BODY).status_code == 403
-    assert (
-        api.client.put(
-            f"{ASSIGNMENTS}/{created['id']}",
-            json={
-                "function": "WAITER",
-                "date": "2026-12-01",
-                "start_time": "18:00:00",
-                "end_time": "23:00:00",
-                "pay_cents": 4500,
-                "reason": "Corrección",
-            },
-        ).status_code
-        == 403
-    )
-    assert (
-        api.client.post(
-            f"{ASSIGNMENTS}/{created['id']}/cancel", json={"reason": "Anulación"}
-        ).status_code
-        == 403
-    )
+    assert api.client.put(f"{ASSIGNMENTS}/{created['id']}", json=update_body).status_code == 403
+    cancel = api.client.post(f"{ASSIGNMENTS}/{created['id']}/cancel", json={"reason": "Anulación"})
+    assert cancel.status_code == 403
 
 
 def test_compras_no_accede_ni_a_lectura(api: Api) -> None:

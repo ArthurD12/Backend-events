@@ -3070,7 +3070,7 @@
                 "type": "null"
               }
             ],
-            "description": "Vacío (`null`): sin información de personal (CA-14.3)",
+            "description": "Personal designado (sin pago). `null` sin el permiso `staff_roster:read`",
             "title": "Staff"
           }
         },
@@ -4064,6 +4064,7 @@
           "event_notes:edit_any",
           "staff:manage",
           "staff:assign",
+          "staff_roster:read",
           "assistant_log:read"
         ],
         "title": "Permission",
@@ -6440,12 +6441,27 @@
             "title": "Ends At",
             "type": "string"
           },
+          "function": {
+            "$ref": "#/components/schemas/WorkerFunction"
+          },
+          "function_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo con la función `OTHER`",
+            "title": "Function Description"
+          },
           "name": {
             "title": "Name",
             "type": "string"
           },
           "role": {
-            "description": "Función en el evento",
+            "description": "Función en el evento, legible",
             "title": "Role",
             "type": "string"
           },
@@ -6464,6 +6480,8 @@
           "worker_id",
           "name",
           "role",
+          "function",
+          "function_description",
           "starts_at",
           "ends_at"
         ],
@@ -17114,7 +17132,7 @@
     },
     "/v1/reports/events/{event_id}/sheet": {
       "get": {
-        "description": "Evento, cliente, servicios, personal, materiales, pagos y seguimiento en una petición.\n\nSe arma en el momento con lo que cada módulo sabe (CA-14.7). `account` va vacío sin\n`payments:record` (CA-14.5); `staff`, vacío mientras no haya información de personal.",
+        "description": "Evento, cliente, servicios, personal, materiales, pagos y seguimiento en una petición.\n\nSe arma en el momento con lo que cada módulo sabe (CA-14.7). `account` va vacío sin\n`payments:record` (CA-14.5); `staff` (personal designado, sin pago) va vacío sin\n`staff_roster:read` (025).",
         "operationId": "reports_event_sheet",
         "parameters": [
           {
