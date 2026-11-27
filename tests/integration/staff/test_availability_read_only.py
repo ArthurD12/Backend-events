@@ -487,7 +487,9 @@ async def test_ca16_3_estado_en_tiempo_real_por_ventana(
     async with sessions() as session:
         use_case = _build(session, events)
         busy = await use_case.execute(_query())
-        free = await use_case.execute(_query(from_date=date(2026, 12, 20)))
+        free = await use_case.execute(
+            _query(from_date=date(2026, 12, 20), to_date=date(2026, 12, 20))
+        )
 
     assert _by_worker(busy)[_WORKER_ID].state is AvailabilityState.BUSY
     # La asignación termina a las 04:00Z del día 20; el día 20 está libre.
