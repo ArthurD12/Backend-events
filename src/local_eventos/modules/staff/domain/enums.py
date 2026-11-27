@@ -38,3 +38,30 @@ class AssignmentStatus(StrEnum):
 
     ACTIVE = "ACTIVE"
     CANCELLED = "CANCELLED"
+
+
+class UnavailabilityKind(StrEnum):
+    """Motivo de la indisponibilidad: `OTHER` exige descripción (HU16, R-DIS-1)."""
+
+    VACATION = "VACATION"
+    LEAVE = "LEAVE"
+    REST = "REST"
+    OTHER = "OTHER"
+
+
+class UnavailabilityStatus(StrEnum):
+    """Estado de la indisponibilidad: se anula lógicamente, nunca se borra ni reactiva (HU16)."""
+
+    ACTIVE = "ACTIVE"
+    CANCELLED = "CANCELLED"
+
+
+class AvailabilityState(StrEnum):
+    """Disponibilidad de un trabajador en una ventana, por precedencia UNAVAILABLE > BUSY > FREE.
+
+    HU16: `UNAVAILABLE` (indisponibilidad registrada) prevalece sobre `BUSY` (asignación).
+    """
+
+    FREE = "FREE"
+    BUSY = "BUSY"
+    UNAVAILABLE = "UNAVAILABLE"

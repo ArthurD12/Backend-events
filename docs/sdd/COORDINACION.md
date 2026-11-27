@@ -17,13 +17,15 @@ Un agente **no modifica** un módulo de otro dueño. Si necesita algo de él, lo
 | Trabajo | Dueño | Rama | Estado |
 |---|---|---|---|
 | HU17 (asignaciones) | Harold | `feat/hu17-asignaciones` (desde `developer-b`) | T-01..T-27 completadas; pendiente PR/merge y confirmar `btree_gist` en staging/producción |
-| HU16 (disponibilidad) | Harold | `feat/hu16-disponibilidad` (solo docs, otra sesión) | spec/plan en paralelo; implementación bloqueada por HU17 (necesita asignaciones) |
-| HU18 (asistencia) | Harold | — | después de HU17 |
+| HU16 (disponibilidad) | Harold | `developer-a` (otra sesión; ver nota de integración) | spec/plan en paralelo; implementación bloqueada por HU17 (necesita asignaciones) |
+| HU18 (asistencia) | Harold | `developer-a` (ver nota de integración) | después de HU17 |
 | 025 Permisos de personal para ventas (el encargado de eventos solo ve el personal designado; `staff:manage` solo administrador; `staff_roster:read`) | César (autorizado por Harold para tocar `staff`, PR aparte) | `feat/permisos-ventas` (desde `feat/hu17-asignaciones`) | backend y frontend (`feat/asignaciones-personal`) listos para revisión; va después de HU17 |
 | Lote 6: reportes (HU31 completo, HU32–HU34) | César | `feat/reportes` | backend listo (T-01 a T-06); falta frontend (T-07) |
 | Lote 7: HU24, HU25, HU30 (backend y frontend) | César | `feat/materiales-menu` | backend listo (T-01 a T-05); falta frontend (T-06) |
 | 022 Asistente de IA (HU35–HU40) | César | `feat/asistente-ia` | backend listo (T-01 a T-05); falta frontend (T-06) |
 | 024 Asistente: cotizaciones, eventos con filtros, historial propio y valoración (HU36, HU40) | César | `feat/asistente-hu36-hu40` | backend y frontend en revisión |
+
+> **Nota de integración (27/11/2026):** HU16 (034-staff-availability) y HU18 se implementan **en la rama `developer-a`**. Al terminar HU18 se abre **un único PR grande de `developer-a` → `developer-b`**; no se hace un PR por feature. Durante esta tanda `developer-a` es la rama de integración (ver §5).
 
 ## 3. Archivos compartidos (conflictos frecuentes)
 Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunca solo una:
@@ -45,7 +47,9 @@ Cuando un punto pase a "listo", avisar al otro dueño para que lo conecte.
 
 ## 5. Migraciones (Alembic)
 - Head actual de `developer-b` tras unir HU17: **`8df99a56ff18`** (asignaciones de personal). Cadena: `6900ec1af5f8` → `ba34931b5de5` (lote 7: recetas, reservas y `expense_movement_id`) → `c3a9e5d7f1b2` (asistente, `assistant_queries`) → `dca5fe5821e8` (lote 024, `assistant_feedback`) → `8df99a56ff18` (HU17).
-- Antes de crear una migración: `git fetch origin developer-b`, unir `developer-b` en tu rama y `uv run alembic heads` = **un solo head**; la tuya va encadenada a ese.
+- Cadena para esta tanda (27/11/2026, rama `developer-a`): la migración de **HU16 cuelga de `8df99a56ff18`**; la de **HU18 cuelga de la de HU16** (no de `8df99a56ff18`). El head sigue siendo `8df99a56ff18` hasta que exista la migración de HU16.
+- **Regla vigente de creación de migración (27/11/2026):** se puede crear **sin esperar confirmación** solo si `git fetch origin` + `git merge origin/developer-a` (rama de integración de esta tanda, **no** `developer-b`) queda **sin conflictos** y `uv run alembic heads` muestra **un único head igual a `8df99a56ff18`**. Si hay dos heads o conflictos, **se para y se avisa** al usuario. Tras crearla: `uv run alembic heads` y tests de integración con PostgreSQL real.
+- Antes de crear una migración (regla general): `git fetch origin developer-b`, unir `developer-b` en tu rama y `uv run alembic heads` = **un solo head**; la tuya va encadenada a ese. *(Durante esta tanda la rama de integración es `developer-a`, según la regla vigente anterior; se conserva esta como referencia.)*
 - Si mientras tanto entró otra migración a `developer-b`: cambia el `down_revision` de **tu** migración (si nunca se unió) o agrega una migración de unión (`alembic merge`). **Nunca** se edita una migración ya unida (regla 8).
 
 ## 6. Reglas de PR

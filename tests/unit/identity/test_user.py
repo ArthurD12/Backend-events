@@ -3,7 +3,7 @@
 import pytest
 
 from local_eventos.modules.identity.domain.errors import UserValidationError
-from local_eventos.modules.identity.domain.permissions import Permission, Role
+from local_eventos.modules.identity.domain.permissions import Permission, Role, permissions_of
 from local_eventos.modules.identity.domain.user import User, check_password_policy
 
 
@@ -111,6 +111,21 @@ def test_r_id_3_permisos_segun_la_tabla_del_dominio() -> None:
     assert eventos.permissions & staff_permissions == {Permission.STAFF_ROSTER_READ}
     assert not compras.permissions & staff_permissions
     assert admin.is_active_admin and not eventos.is_active_admin
+
+
+def test_ca16_17_disponibilidad_de_personal_solo_para_administrador() -> None:
+    """HU16 (R-DIS-8): `staff:availability` solo lo tiene el administrador."""
+    assert Permission.STAFF_AVAILABILITY in permissions_of(Role.ADMIN)
+    assert Permission.STAFF_AVAILABILITY not in permissions_of(Role.EVENTS_MANAGER)
+    assert Permission.STAFF_AVAILABILITY not in permissions_of(Role.PURCHASING_MANAGER)
+    # R-STF-5/R-STF-16 y R-ASG-14: los permisos de staff no abren disponibilidad;
+    # son permisos distintos (la matriz 403 por ruta se verifica en la API).
+    otros_permisos_de_staff = {
+        Permission.STAFF_MANAGE.value,
+        Permission.STAFF_ROSTER_READ.value,
+        Permission.STAFF_ASSIGN.value,
+    }
+    assert Permission.STAFF_AVAILABILITY.value not in otros_permisos_de_staff
 
 
 def test_017_solo_admin_y_compras_gestionan_almacen_y_compras() -> None:

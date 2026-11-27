@@ -1,7 +1,10 @@
-"""Errores de la capa de aplicación del personal (HU15/HU17).
+"""Errores de la capa de aplicación del personal (HU15/HU16/HU17).
 
 `code` es estable para que el frontend y la API lo traduzcan (plan §2.4 y §4.4).
-Python puro: no importa FastAPI, SQLAlchemy ni Pydantic (AGENTS.md, regla 2).
+Los códigos de validación de HU16 ya viven en `domain.errors` (T-02): aquí se
+reexportan para que presentación tenga un único punto de mapeo, sin duplicar
+ningún string. Python puro: no importa FastAPI, SQLAlchemy ni Pydantic (AGENTS.md,
+regla 2).
 """
 
 from __future__ import annotations
@@ -9,7 +12,48 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, time
 
+from local_eventos.modules.staff.domain import errors as domain_errors
 from local_eventos.modules.staff.domain.document import Document
+
+# Códigos de validación de HU16 ya declarados en el dominio (T-02). Se referencian
+# desde aquí para que presentación tenga un único punto de mapeo, sin duplicar strings.
+AVAILABILITY_RANGE_TOO_LARGE = domain_errors.AVAILABILITY_RANGE_TOO_LARGE
+AVAILABILITY_WINDOW_INVALID = domain_errors.AVAILABILITY_WINDOW_INVALID
+UNAVAILABILITY_DESCRIPTION_NOT_ALLOWED = domain_errors.UNAVAILABILITY_DESCRIPTION_NOT_ALLOWED
+UNAVAILABILITY_DESCRIPTION_REQUIRED = domain_errors.UNAVAILABILITY_DESCRIPTION_REQUIRED
+UNAVAILABILITY_DESCRIPTION_TOO_LONG = domain_errors.UNAVAILABILITY_DESCRIPTION_TOO_LONG
+UNAVAILABILITY_KIND_REQUIRED = domain_errors.UNAVAILABILITY_KIND_REQUIRED
+UNAVAILABILITY_REASON_REQUIRED = domain_errors.UNAVAILABILITY_REASON_REQUIRED
+UNAVAILABILITY_SCHEDULE_INVALID = domain_errors.UNAVAILABILITY_SCHEDULE_INVALID
+
+UNAVAILABILITY_NOT_FOUND = "staff.unavailability_not_found"
+UNAVAILABILITY_CANCELLED = "staff.unavailability_cancelled"
+
+__all__ = [
+    "AVAILABILITY_RANGE_TOO_LARGE",
+    "AVAILABILITY_WINDOW_INVALID",
+    "UNAVAILABILITY_CANCELLED",
+    "UNAVAILABILITY_DESCRIPTION_NOT_ALLOWED",
+    "UNAVAILABILITY_DESCRIPTION_REQUIRED",
+    "UNAVAILABILITY_DESCRIPTION_TOO_LONG",
+    "UNAVAILABILITY_KIND_REQUIRED",
+    "UNAVAILABILITY_NOT_FOUND",
+    "UNAVAILABILITY_REASON_REQUIRED",
+    "UNAVAILABILITY_SCHEDULE_INVALID",
+    "AssignmentConflict",
+    "AssignmentImmutableError",
+    "AssignmentNotFoundError",
+    "AssignmentOverlapError",
+    "DuplicateDocumentError",
+    "EventNotAssignableError",
+    "EventNotFoundError",
+    "StaffApplicationError",
+    "UnavailabilityCancelledError",
+    "UnavailabilityNotFoundError",
+    "WorkerHasFutureAssignmentsError",
+    "WorkerInactiveError",
+    "WorkerNotFoundError",
+]
 
 
 class StaffApplicationError(Exception):
@@ -130,6 +174,27 @@ class AssignmentOverlapError(StaffApplicationError):
             _overlap_message(conflicts),
         )
         self.conflicts = conflicts
+
+
+class UnavailabilityNotFoundError(StaffApplicationError):
+    """No hay ninguna indisponibilidad con el identificador solicitado (HU16, plan §4.4)."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            UNAVAILABILITY_NOT_FOUND,
+            "No se encontró una indisponibilidad con ese identificador.",
+        )
+
+
+class UnavailabilityCancelledError(StaffApplicationError):
+    """La indisponibilidad está anulada y no admite edición (HU16, plan §3.3)."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            UNAVAILABILITY_CANCELLED,
+            "La indisponibilidad está anulada y ya no se puede editar; "
+            "registre una nueva si corresponde.",
+        )
 
 
 def _overlap_message(conflicts: tuple[AssignmentConflict, ...]) -> str:
