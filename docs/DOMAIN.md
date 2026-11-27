@@ -60,7 +60,7 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 
 - **R-STF-4** Solo se asignan trabajadores **activos y disponibles**; el rechazo al asignar lo aplica HU17.
 - **R-STF-5 / R-STF-16** Se autoriza por permiso `staff:manage`: **solo el administrador** lo tiene (decisión del 27/11/2026, §11). El **encargado de eventos** (ventas) y el de compras y almacén **no tienen acceso**, ni de lectura; el encargado de eventos solo ve quién está designado en un evento (`staff_roster:read`, R-ASG-14).
->>>>>>> origin/developer-a
+
 - **R-STF-6** Alta, edición, activación y desactivación guardan **usuario y fecha-hora**; el motivo es opcional.
 - **R-STF-7 / R-STF-8** La tarifa es **referencial**, por evento y en céntimos de `PEN`, y es opcional; si la ficha marca que **aplica hora extra**, el monto referencial por hora es mayor que cero y variable. El pago real se acuerda en cada asignación (RN13).
 - **R-STF-9** Dos trabajadores pueden repetir nombre; los distingue el documento.
@@ -136,12 +136,12 @@ Una **asignación** vincula un trabajador activo con un evento, con la función 
 | Clientes | ✔ | ✔ | – |
 | Cotizaciones y contratos | ✔ | ✔ | – |
 | Eventos | ✔ | ✔ | lectura |
-<<<<<<< HEAD
+
 | Asignaciones (personal del evento, con pago acordado) | ✔ | – | – |
 | Personal (trabajadores, tarifas y reporte de personal) | ✔ | – | – |
 | Disponibilidad de personal | ✔ | – | – |
 | Personal designado en un evento (nombre y función; `staff_roster:read`) | ✔ | ✔ | – |
->>>>>>> origin/developer-a
+
 | Observaciones del evento (bitácora) | ✔ | ✔ | ✔ (R-ACT-5) |
 | Pagos, ingresos y egresos | ✔ | ✔ | – |
 | Productos, almacén, requerimientos y compras | ✔ | lectura del almacén y materiales de sus eventos (`inventory:read`) | ✔ |
