@@ -50,14 +50,14 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 5. Dos servicios **pueden tener el mismo nombre** con precios distintos (p. ej., la misma temática en dos pisos).
 
 ## 5. Personal y asignaciones
-1. Solo se asignan trabajadores **activos y disponibles** (RN11).
+1. Solo se asignan trabajadores **activos** (RN11); la **disponibilidad planificada** (HU16) se registra y consulta solo el administrador y, en esta versión, **no bloquea** la asignación.
 2. Un trabajador **no puede tener dos asignaciones con horarios que se superpongan** (RN12). Se garantiza con una restricción de exclusión en PostgreSQL, no solo en el código.
 3. Toda asignación indica evento, función, horario y pago acordado (RN13).
 
 ### 5.1 Datos del personal (HU15)
 - **R-STF-1** Documento: `DNI` (8 dígitos) o `CE` (9 a 12 dígitos, solo dígitos), normalizado sin espacios ni guiones. Es único por **tipo + número**, también entre inactivos; un DNI y un CE con el mismo número sí coexisten.
 - **R-STF-2 / R-STF-3** Baja **lógica**: nunca se borra la ficha; se conservan sus datos y su historial de eventos.
-- **R-STF-4** Solo se asignan trabajadores **activos y disponibles**; el rechazo al asignar lo aplica HU17.
+- **R-STF-4** Solo se asignan trabajadores **activos**; la **disponibilidad planificada** (HU16) se registra y consulta solo el administrador y, en esta versión, **no bloquea** la asignación. El rechazo al asignar por inactividad y solape lo aplica HU17.
 - **R-STF-5 / R-STF-16** Se autoriza por permiso `staff:manage`: lo tienen administrador y encargado de eventos; el **encargado de compras y almacén no tiene acceso**, ni de lectura.
 - **R-STF-6** Alta, edición, activación y desactivación guardan **usuario y fecha-hora**; el motivo es opcional.
 - **R-STF-7 / R-STF-8** La tarifa es **referencial**, por evento y en céntimos de `PEN`, y es opcional; si la ficha marca que **aplica hora extra**, el monto referencial por hora es mayor que cero y variable. El pago real se acuerda en cada asignación (RN13).
@@ -136,6 +136,7 @@ Una **asignación** vincula un trabajador activo con un evento, con la función 
 | Eventos | ✔ | ✔ | lectura |
 | Asignaciones (personal del evento) | ✔ | lectura | – |
 | Personal (trabajadores) | ✔ | ✔ | – |
+| Disponibilidad del personal (registrar/consultar) | ✔ | – | – |
 | Observaciones del evento (bitácora) | ✔ | ✔ | ✔ (R-ACT-5) |
 | Pagos, ingresos y egresos | ✔ | ✔ | – |
 | Productos, almacén, requerimientos y compras | ✔ | lectura del almacén y materiales de sus eventos (`inventory:read`) | ✔ |
