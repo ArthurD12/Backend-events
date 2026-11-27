@@ -11,12 +11,13 @@ Python puro: este archivo no importa FastAPI, SQLAlchemy ni Pydantic (AGENTS.md,
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, time, timedelta, timezone
 from datetime import date as date_type
+from datetime import datetime, time, timedelta
 
 from local_eventos.modules.staff.domain.errors import AssignmentScheduleInvalidError
+from local_eventos.modules.staff.domain.lima import LIMA, local_to_utc
 
-LIMA = timezone(timedelta(hours=-5), "America/Lima")
+__all__ = ["LIMA", "AssignmentSchedule"]
 
 
 @dataclass(frozen=True)
@@ -45,8 +46,8 @@ class AssignmentSchedule:
             )
 
         end_date = self.date + timedelta(days=1) if self.end_time < self.start_time else self.date
-        start_at = datetime.combine(self.date, self.start_time, tzinfo=LIMA).astimezone(UTC)
-        end_at = datetime.combine(end_date, self.end_time, tzinfo=LIMA).astimezone(UTC)
+        start_at = local_to_utc(self.date, self.start_time)
+        end_at = local_to_utc(end_date, self.end_time)
         object.__setattr__(self, "start_at", start_at)
         object.__setattr__(self, "end_at", end_at)
 

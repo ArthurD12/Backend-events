@@ -1,4 +1,4 @@
-"""Tablas del personal en PostgreSQL (HU15). Prefijo `staff_` por ser de este módulo.
+"""Tablas del personal en PostgreSQL (HU15, HU16, HU17). Prefijo `staff_` por ser de este módulo.
 
 Estas clases describen las tablas, no son las entidades del dominio: `mappers.py`
 traduce entre `Worker`/`WorkerAudit` y sus filas. La auditoría es append-only y su
@@ -54,6 +54,20 @@ _ASSIGNMENT_AUDIT_REASON_VALID = (
     "reason IS NULL OR (action IN ('UPDATED', 'CANCELLED') AND btrim(reason) <> '')"
 )
 _ASSIGNMENT_AUDIT_SNAPSHOTS_VALID = (
+    "(action = 'UPDATED') = (previous_values IS NOT NULL AND new_values IS NOT NULL)"
+)
+
+
+_UNAVAILABILITY_DESCRIPTION_VALID = (
+    "(kind = 'OTHER' AND description IS NOT NULL AND btrim(description) <> '')"
+    " OR (kind IS DISTINCT FROM 'OTHER' AND description IS NULL)"
+)
+_UNAVAILABILITY_AUDIT_REASON_VALID = (
+    "(action = 'CREATED' AND reason IS NULL)"
+    " OR (action IN ('UPDATED', 'CANCELLED')"
+    " AND reason IS NOT NULL AND btrim(reason) <> '')"
+)
+_UNAVAILABILITY_AUDIT_SNAPSHOTS_VALID = (
     "(action = 'UPDATED') = (previous_values IS NOT NULL AND new_values IS NOT NULL)"
 )
 
@@ -222,4 +236,85 @@ Index(
     "ix_staff_assignment_audit_assignment_occurred",
     StaffAssignmentAuditRow.assignment_id,
     StaffAssignmentAuditRow.occurred_at,
+)
+
+
+class StaffUnavailabilityRow(Base):
+    """Ventana en la que un trabajador no puede trabajar (HU16, R-DIS-1..R-DIS-10).
+
+    `worker_id` apunta a `staff_workers` con `ON DELETE RESTRICT` porque nunca se
+    borra un trabajador. No hay FK ni UNIQUE adicional: las indisponibilidades
+    solapadas están permitidas (son informativas y no bloquean HU17). La anulación
+    es lógica (`status`) y no existe borrado físico.
+    """
+
+    __tablename__ = "staff_unavailabilities"
+    __table_args__ = (
+        CheckConstraint("end_at > start_at", name="window_valid"),
+        CheckConstraint(
+            "kind IN ('VACATION', 'LEAVE', 'REST', 'OTHER')",
+            name="kind_valid",
+        ),
+        CheckConstraint(
+            _UNAVAILABILITY_DESCRIPTION_VALID,
+            name="description_valid",
+        ),
+        CheckConstraint("status IN ('ACTIVE', 'CANCELLED')", name="status_valid"),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    worker_id: Mapped[UUID] = mapped_column(ForeignKey("staff_workers.id", ondelete="RESTRICT"))
+    kind: Mapped[str] = mapped_column(String(10))
+    description: Mapped[str | None] = mapped_column(Text)
+    start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(9))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+Index(
+    "ix_staff_unavailabilities_worker_start",
+    StaffUnavailabilityRow.worker_id,
+    StaffUnavailabilityRow.start_at,
+)
+Index(
+    "ix_staff_unavailabilities_start_end",
+    StaffUnavailabilityRow.start_at,
+    StaffUnavailabilityRow.end_at,
+)
+
+
+class StaffUnavailabilityAuditRow(Base):
+    """Una fila por alta, edición o anulación de una indisponibilidad. Solo se inserta.
+
+    Los snapshots de la edición se guardan como JSONB; la migración (T-09) crea el
+    trigger append-only que rechaza UPDATE y DELETE.
+    """
+
+    __tablename__ = "staff_unavailabilities_audit"
+    __table_args__ = (
+        CheckConstraint("action IN ('CREATED', 'UPDATED', 'CANCELLED')", name="action_valid"),
+        CheckConstraint(_UNAVAILABILITY_AUDIT_REASON_VALID, name="reason_valid"),
+        CheckConstraint(_UNAVAILABILITY_AUDIT_SNAPSHOTS_VALID, name="snapshots_valid"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    unavailability_id: Mapped[UUID] = mapped_column(
+        ForeignKey("staff_unavailabilities.id", ondelete="RESTRICT")
+    )
+    action: Mapped[str] = mapped_column(String(9))
+    reason: Mapped[str | None] = mapped_column(Text)
+    actor_id: Mapped[UUID]  # usuario de identity: sin FK entre módulos (regla 3)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    previous_values: Mapped[dict[str, object] | None] = mapped_column(JSONB(none_as_null=True))
+    new_values: Mapped[dict[str, object] | None] = mapped_column(JSONB(none_as_null=True))
+
+
+Index(
+    "ix_staff_unavailabilities_audit_unavailability_occurred",
+    StaffUnavailabilityAuditRow.unavailability_id,
+    StaffUnavailabilityAuditRow.occurred_at,
 )

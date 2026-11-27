@@ -35,6 +35,7 @@ class Permission(StrEnum):
     STAFF_ASSIGN = "staff:assign"  # 033-staff: escribir asignaciones (solo administrador)
     # 025: personal designado por evento, solo lectura (nombre y función; sin pago ni datos)
     STAFF_ROSTER_READ = "staff_roster:read"
+    STAFF_AVAILABILITY = "staff:availability"  # 034: disponibilidad personal; solo administrador
     ASSISTANT_LOG_READ = "assistant_log:read"  # 022: historial del asistente, solo administrador
 
 
