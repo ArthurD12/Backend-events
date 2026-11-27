@@ -8,9 +8,16 @@ Python puro: sin FastAPI, SQLAlchemy ni Pydantic (AGENTS.md, regla 2).
 
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
-from local_eventos.modules.staff.application.errors import WorkerNotFoundError
+from local_eventos.modules.staff.application.assignment_occupancy import (
+    AssignmentOccupancy,
+)
+from local_eventos.modules.staff.application.errors import (
+    WorkerHasFutureAssignmentsError,
+    WorkerNotFoundError,
+)
 from local_eventos.modules.staff.application.ports.clock import Clock
 from local_eventos.modules.staff.application.ports.worker_repository import (
     WorkerRepository,
@@ -31,6 +38,16 @@ class _ChangeWorkerStatus:
     def _apply(self, worker: Worker) -> bool:
         raise NotImplementedError
 
+    async def _before_apply(self, worker_id: UUID) -> datetime | None:
+        """Gancho previo al cambio de estado; por defecto no hace nada.
+
+        Se invoca después de bloquear la ficha y antes de `_apply`, de modo que
+        un bloqueo (por ejemplo, asignaciones futuras vigentes) no escriba
+        auditoría ni cambie el estado (CA-17.25). Puede devolver el instante que
+        ya tomó del reloj para que la auditoría use exactamente el mismo.
+        """
+        return None
+
     async def execute(self, worker_id: UUID, reason: str | None, actor_id: UUID) -> Worker:
         """Cambia el estado y devuelve la ficha.
 
@@ -41,6 +58,8 @@ class _ChangeWorkerStatus:
         if worker is None:
             raise WorkerNotFoundError()
 
+        now = await self._before_apply(worker_id)
+
         if not self._apply(worker):
             return worker
 
@@ -48,7 +67,7 @@ class _ChangeWorkerStatus:
             worker_id=worker.id,
             action=self._action,
             changed_by=actor_id,
-            changed_at=self._clock.now(),
+            changed_at=now if now is not None else self._clock.now(),
             reason=reason,
         )
         await self._workers.save(worker, audit)
@@ -56,9 +75,29 @@ class _ChangeWorkerStatus:
 
 
 class DeactivateWorker(_ChangeWorkerStatus):
-    """Da de baja lógica al trabajador, con motivo opcional."""
+    """Da de baja lógica al trabajador, con motivo opcional.
+
+    Antes de cambiar el estado libera las asignaciones de eventos cancelados y
+    rechaza la baja si quedan asignaciones futuras vigentes (CA-17.25, plan §3.5).
+    """
 
     _action = AuditAction.DEACTIVATED
+
+    def __init__(
+        self,
+        workers: WorkerRepository,
+        clock: Clock,
+        occupancy: AssignmentOccupancy,
+    ) -> None:
+        super().__init__(workers, clock)
+        self._occupancy = occupancy
+
+    async def _before_apply(self, worker_id: UUID) -> datetime:
+        now = self._clock.now()
+        await self._occupancy.release_cancelled(worker_id)
+        if await self._occupancy.has_future(worker_id, now):
+            raise WorkerHasFutureAssignmentsError()
+        return now
 
     def _apply(self, worker: Worker) -> bool:
         return worker.deactivate()

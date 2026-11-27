@@ -9,6 +9,7 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import (
+    CHAR,
     BigInteger,
     Boolean,
     CheckConstraint,
@@ -23,6 +24,7 @@ from sqlalchemy import (
     func,
     text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from local_eventos.shared.infrastructure.orm import Base
@@ -42,6 +44,17 @@ _OVERTIME_VALID = (
 )
 _AUDIT_REASON_VALID = (
     "reason IS NULL OR (action IN ('ACTIVATED', 'DEACTIVATED') AND btrim(reason) <> '')"
+)
+_ASSIGNMENT_FUNCTION_DESCRIPTION_VALID = (
+    "(worker_function = 'OTHER' AND function_description IS NOT NULL"
+    " AND btrim(function_description) <> '')"
+    " OR (worker_function IS DISTINCT FROM 'OTHER' AND function_description IS NULL)"
+)
+_ASSIGNMENT_AUDIT_REASON_VALID = (
+    "reason IS NULL OR (action IN ('UPDATED', 'CANCELLED') AND btrim(reason) <> '')"
+)
+_ASSIGNMENT_AUDIT_SNAPSHOTS_VALID = (
+    "(action = 'UPDATED') = (previous_values IS NOT NULL AND new_values IS NOT NULL)"
 )
 
 
@@ -121,4 +134,92 @@ Index(
     "ix_staff_worker_audit_worker_changed",
     StaffWorkerAuditRow.worker_id,
     StaffWorkerAuditRow.changed_at,
+)
+
+
+class StaffAssignmentRow(Base):
+    """Trabajador asignado a un evento (HU17, R-ASG-1..R-ASG-9).
+
+    El `event_id` es de `commercial` y no lleva FK (regla 3); `worker_id` sí apunta
+    a `staff_workers` con `ON DELETE RESTRICT` porque nunca se borra un trabajador.
+    La anulación es lógica (`status`) y la liberación de un evento cancelado se
+    expresa con `occupies=false` sin cambiar el estado (R-ASG-12).
+    """
+
+    __tablename__ = "staff_assignments"
+    __table_args__ = (
+        CheckConstraint("end_at > start_at", name="window_valid"),
+        CheckConstraint("pay_cents >= 0", name="pay_not_negative"),
+        CheckConstraint("currency = 'PEN'", name="currency_pen"),
+        CheckConstraint(
+            "worker_function IN"
+            " ('COOK', 'WAITER', 'BARTENDER', 'ASSISTANT', 'COORDINATOR', 'OTHER')",
+            name="function_valid",
+        ),
+        CheckConstraint(
+            _ASSIGNMENT_FUNCTION_DESCRIPTION_VALID,
+            name="function_description_valid",
+        ),
+        CheckConstraint("status IN ('ACTIVE', 'CANCELLED')", name="status_valid"),
+        CheckConstraint(
+            "(status = 'CANCELLED' AND NOT occupies) OR (status = 'ACTIVE')",
+            name="occupies_valid",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    event_id: Mapped[UUID]  # referencia a commercial: sin FK entre módulos (regla 3)
+    worker_id: Mapped[UUID] = mapped_column(ForeignKey("staff_workers.id", ondelete="RESTRICT"))
+    worker_function: Mapped[str] = mapped_column(String(15))
+    function_description: Mapped[str | None] = mapped_column(Text)
+    start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    pay_cents: Mapped[int] = mapped_column(Integer)
+    currency: Mapped[str] = mapped_column(CHAR(3))
+    status: Mapped[str] = mapped_column(String(9))
+    occupies: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+Index("ix_staff_assignments_event_start", StaffAssignmentRow.event_id, StaffAssignmentRow.start_at)
+Index(
+    "ix_staff_assignments_worker_start",
+    StaffAssignmentRow.worker_id,
+    StaffAssignmentRow.start_at,
+)
+
+
+class StaffAssignmentAuditRow(Base):
+    """Una fila por alta, edición o anulación de una asignación. Solo se inserta (R-ASG-9).
+
+    Los snapshots de la edición se guardan como JSONB; la migración (T-14) crea el
+    trigger append-only que rechaza UPDATE y DELETE.
+    """
+
+    __tablename__ = "staff_assignment_audit"
+    __table_args__ = (
+        CheckConstraint("action IN ('CREATED', 'UPDATED', 'CANCELLED')", name="action_valid"),
+        CheckConstraint(_ASSIGNMENT_AUDIT_REASON_VALID, name="reason_valid"),
+        CheckConstraint(_ASSIGNMENT_AUDIT_SNAPSHOTS_VALID, name="snapshots_valid"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
+    assignment_id: Mapped[UUID] = mapped_column(
+        ForeignKey("staff_assignments.id", ondelete="RESTRICT")
+    )
+    action: Mapped[str] = mapped_column(String(9))
+    reason: Mapped[str | None] = mapped_column(Text)
+    actor_id: Mapped[UUID]  # usuario de identity: sin FK entre módulos (regla 3)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    previous_values: Mapped[dict[str, object] | None] = mapped_column(JSONB(none_as_null=True))
+    new_values: Mapped[dict[str, object] | None] = mapped_column(JSONB(none_as_null=True))
+
+
+Index(
+    "ix_staff_assignment_audit_assignment_occurred",
+    StaffAssignmentAuditRow.assignment_id,
+    StaffAssignmentAuditRow.occurred_at,
 )

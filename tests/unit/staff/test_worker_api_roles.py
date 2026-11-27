@@ -22,6 +22,7 @@ from local_eventos.modules.identity.presentation.errors import (
 from local_eventos.modules.identity.public_api import get_current_user
 from local_eventos.modules.staff.domain.enums import WorkerStatus
 from local_eventos.modules.staff.presentation.dependencies import (
+    get_assignment_occupancy,
     get_clock,
     get_worker_repository,
 )
@@ -31,11 +32,14 @@ from tests.unit.current_user import signed_in_as
 from tests.unit.staff.test_worker_api import (
     ANA,
     BETO,
+    EmptyOccupancy,
     FixedClock,
     InMemoryWorkerRepository,
 )
 
-_ROLES_CON_ACCESO = [Role.ADMIN, Role.EVENTS_MANAGER]
+# 025: personal solo del administrador; el encargado de eventos (ventas) y compras no acceden.
+_ROLES_CON_ACCESO = [Role.ADMIN]
+_ROLES_SIN_ACCESO = [Role.EVENTS_MANAGER, Role.PURCHASING_MANAGER]
 
 
 @pytest.fixture
@@ -51,6 +55,7 @@ def api() -> Iterator[tuple[TestClient, InMemoryWorkerRepository]]:
     register_identity_errors(app)
     app.dependency_overrides[get_worker_repository] = in_memory
     app.dependency_overrides[get_clock] = FixedClock
+    app.dependency_overrides[get_assignment_occupancy] = EmptyOccupancy
     app.dependency_overrides[get_current_user] = signed_in_as(Role.ADMIN)
     with TestClient(app) as client:
         yield client, repository
@@ -68,7 +73,7 @@ def _register(client: TestClient, body: dict[str, Any]) -> dict[str, Any]:
 
 
 @pytest.mark.parametrize("role", _ROLES_CON_ACCESO)
-def test_admin_y_eventos_obtienen_2xx_en_las_seis_rutas(
+def test_admin_obtiene_2xx_en_las_seis_rutas(
     api: tuple[TestClient, InMemoryWorkerRepository], role: Role
 ) -> None:
     client, _ = api
@@ -98,12 +103,13 @@ def test_admin_y_eventos_obtienen_2xx_en_las_seis_rutas(
     assert activated.json()["status"] == "ACTIVE"
 
 
-def test_compras_y_almacen_sin_acceso_ni_lectura_en_las_seis_rutas(
-    api: tuple[TestClient, InMemoryWorkerRepository],
+@pytest.mark.parametrize("role", _ROLES_SIN_ACCESO)
+def test_eventos_y_compras_sin_acceso_ni_lectura_en_las_seis_rutas(
+    api: tuple[TestClient, InMemoryWorkerRepository], role: Role
 ) -> None:
     client, repository = api
     worker_id = UUID(str(_register(client, ANA)["id"]))
-    _sign_in(client, Role.PURCHASING_MANAGER)
+    _sign_in(client, role)
 
     register = client.post("/v1/staff", json=BETO)
     listed = client.get("/v1/staff")
@@ -119,7 +125,7 @@ def test_compras_y_almacen_sin_acceso_ni_lectura_en_las_seis_rutas(
     deactivated = client.post(f"/v1/staff/{worker_id}/deactivate")
     activated = client.post(f"/v1/staff/{worker_id}/activate")
 
-    # Se deniegan también las rutas de lectura (listado y ficha): compras no ve personal.
+    # Se deniegan también las rutas de lectura (listado y ficha): eventos y compras no ven personal.
     for response in (register, listed, fetched, updated, deactivated, activated):
         assert response.status_code == 403
         assert response.json()["code"] == "auth.forbidden"

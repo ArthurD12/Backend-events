@@ -25,6 +25,8 @@ Las versiones concretas las fijan `pyproject.toml` y `uv.lock`; este README no f
 
 Detalle, justificación y comandos de instalación de cada tecnología: `docs/architecture/STACK.md`.
 
+**Requisito de PostgreSQL:** el esquema de asignaciones de personal usa la extensión `btree_gist` (contrib) para garantizar que un trabajador no tenga horarios solapados. La migración la crea (`CREATE EXTENSION IF NOT EXISTS btree_gist`); `postgres:17-alpine` (local y CI) ya la incluye. En un PostgreSQL gestionado, pide al administrador que la habilite antes de migrar; no se degrada a validación solo en la aplicación (ADR 0006).
+
 ## Requisitos previos
 
 - `uv` (instala Python 3.12, el entorno, las dependencias y el lockfile)
