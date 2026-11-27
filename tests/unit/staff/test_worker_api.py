@@ -26,6 +26,7 @@ from local_eventos.modules.staff.domain.document import Document
 from local_eventos.modules.staff.domain.enums import WorkerFunction, WorkerStatus
 from local_eventos.modules.staff.domain.worker import Worker
 from local_eventos.modules.staff.presentation.dependencies import (
+    get_assignment_occupancy,
     get_clock,
     get_worker_repository,
 )
@@ -60,6 +61,16 @@ CARLA = {
 class FixedClock:
     def now(self) -> datetime:
         return NOW
+
+
+class EmptyOccupancy:
+    """Ocupación sin asignaciones para la API de personal (HU15)."""
+
+    async def release_cancelled(self, _worker_id: UUID) -> int:
+        return 0
+
+    async def has_future(self, _worker_id: UUID, _moment: datetime) -> bool:
+        return False
 
 
 class InMemoryWorkerRepository:
@@ -135,6 +146,7 @@ def api() -> Iterator[TestClient]:
     register_error_handlers(app)
     app.dependency_overrides[get_worker_repository] = in_memory
     app.dependency_overrides[get_clock] = FixedClock
+    app.dependency_overrides[get_assignment_occupancy] = EmptyOccupancy
     app.dependency_overrides[get_current_user] = signed_in_as(Role.EVENTS_MANAGER)
     with TestClient(app) as client:
         yield client

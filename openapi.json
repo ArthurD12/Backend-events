@@ -442,6 +442,401 @@
         "title": "AskOut",
         "type": "object"
       },
+      "AssignmentCancel": {
+        "description": "Cuerpo de `POST /v1/staff/assignments/{id}/cancel`.",
+        "properties": {
+          "reason": {
+            "description": "Motivo de la anulación",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "AssignmentCancel",
+        "type": "object"
+      },
+      "AssignmentConflictOut": {
+        "description": "Conflicto de horario incluido en el 409, sin datos personales del trabajador.",
+        "properties": {
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "event_code": {
+            "title": "Event Code",
+            "type": "string"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_code",
+          "event_date",
+          "start_time",
+          "end_time"
+        ],
+        "title": "AssignmentConflictOut",
+        "type": "object"
+      },
+      "AssignmentCreate": {
+        "description": "Cuerpo de `POST /v1/staff/assignments`: alta de una asignación.",
+        "properties": {
+          "date": {
+            "description": "Fecha local de America/Lima",
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "end_time": {
+            "description": "Hora local de fin; si es menor, termina al día siguiente",
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "function": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkerFunction"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Si se omite, se copia de la ficha del trabajador"
+          },
+          "function_description": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo con la función OTHER",
+            "title": "Function Description"
+          },
+          "pay_cents": {
+            "description": "Pago acordado en céntimos: S/ 45.00 = 4500",
+            "minimum": 0.0,
+            "title": "Pay Cents",
+            "type": "integer"
+          },
+          "start_time": {
+            "description": "Hora local de inicio",
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "worker_id": {
+            "format": "uuid",
+            "title": "Worker Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "worker_id",
+          "date",
+          "start_time",
+          "end_time",
+          "pay_cents"
+        ],
+        "title": "AssignmentCreate",
+        "type": "object"
+      },
+      "AssignmentListOut": {
+        "description": "Listado de asignaciones de un evento.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AssignmentOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "AssignmentListOut",
+        "type": "object"
+      },
+      "AssignmentOut": {
+        "description": "Asignación devuelta por la API: horario local, instantes UTC y pago.",
+        "properties": {
+          "currency": {
+            "const": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "end_at": {
+            "format": "date-time",
+            "title": "End At",
+            "type": "string"
+          },
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "event_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Code"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "function": {
+            "$ref": "#/components/schemas/WorkerFunction"
+          },
+          "function_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Function Description"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "pay_cents": {
+            "title": "Pay Cents",
+            "type": "integer"
+          },
+          "start_at": {
+            "format": "date-time",
+            "title": "Start At",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AssignmentStatus"
+          },
+          "worker_id": {
+            "format": "uuid",
+            "title": "Worker Id",
+            "type": "string"
+          },
+          "worker_name": {
+            "title": "Worker Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "event_id",
+          "event_code",
+          "event_status",
+          "worker_id",
+          "worker_name",
+          "function",
+          "function_description",
+          "date",
+          "start_time",
+          "end_time",
+          "start_at",
+          "end_at",
+          "pay_cents",
+          "currency",
+          "status"
+        ],
+        "title": "AssignmentOut",
+        "type": "object"
+      },
+      "AssignmentProblem": {
+        "description": "Problem Details de asignaciones; documenta la extensión `conflicts` del 409.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/AssignmentConflictOut"
+            },
+            "title": "Conflicts",
+            "type": "array"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "default": "about:blank",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "status",
+          "code",
+          "detail"
+        ],
+        "title": "AssignmentProblem",
+        "type": "object"
+      },
+      "AssignmentStatus": {
+        "description": "Estado de la asignación: se anula lógicamente, no se borra ni se reactiva (R-ASG-8).",
+        "enum": [
+          "ACTIVE",
+          "CANCELLED"
+        ],
+        "title": "AssignmentStatus",
+        "type": "string"
+      },
+      "AssignmentUpdate": {
+        "additionalProperties": false,
+        "description": "Cuerpo de `PUT /v1/staff/assignments/{id}`: reemplazo completo de los editables.",
+        "properties": {
+          "date": {
+            "description": "Fecha local de America/Lima",
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "end_time": {
+            "description": "Hora local de fin; si es menor, termina al día siguiente",
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Inmutable; enviarlo responde staff.assignment_immutable",
+            "title": "Event Id"
+          },
+          "function": {
+            "$ref": "#/components/schemas/WorkerFunction",
+            "description": "Función de la asignación"
+          },
+          "function_description": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo con la función OTHER",
+            "title": "Function Description"
+          },
+          "pay_cents": {
+            "description": "Pago acordado en céntimos: S/ 45.00 = 4500",
+            "minimum": 0.0,
+            "title": "Pay Cents",
+            "type": "integer"
+          },
+          "reason": {
+            "description": "Motivo del cambio",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "start_time": {
+            "description": "Hora local de inicio",
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "worker_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Inmutable; enviarlo responde staff.assignment_immutable",
+            "title": "Worker Id"
+          }
+        },
+        "required": [
+          "function",
+          "date",
+          "start_time",
+          "end_time",
+          "pay_cents",
+          "reason"
+        ],
+        "title": "AssignmentUpdate",
+        "type": "object"
+      },
       "CancelIn": {
         "properties": {
           "reason": {
@@ -3668,6 +4063,7 @@
           "event_notes:write",
           "event_notes:edit_any",
           "staff:manage",
+          "staff:assign",
           "assistant_log:read"
         ],
         "title": "Permission",
@@ -17430,6 +17826,447 @@
         "summary": "Register Worker",
         "tags": [
           "personal"
+        ]
+      }
+    },
+    "/v1/staff/assignments": {
+      "get": {
+        "description": "Lista las asignaciones vigentes de un evento, ordenadas por hora de inicio.",
+        "operationId": "staff_assignment_list",
+        "parameters": [
+          {
+            "description": "Evento cuyas asignaciones vigentes se listan",
+            "in": "query",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "description": "Evento cuyas asignaciones vigentes se listan",
+              "format": "uuid",
+              "title": "Event Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.assignment_not_found`, `staff.event_not_found`, `staff.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Event Assignments",
+        "tags": [
+          "staff"
+        ]
+      },
+      "post": {
+        "description": "Crea una asignación activa y devuelve la vista con el evento y el trabajador.",
+        "operationId": "staff_assignment_register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.assignment_not_found`, `staff.event_not_found`, `staff.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentProblem"
+                }
+              }
+            },
+            "description": "`staff.worker_inactive`, `staff.event_not_assignable`, `staff.assignment_overlap` (con `conflicts`), `staff.assignment_immutable`, `staff.worker_has_future_assignments`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validación: `staff.assignment_schedule_invalid`, `staff.assignment_date_invalid`, `staff.assignment_function_required`, `staff.assignment_pay_invalid`, `staff.assignment_reason_required`, etc."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Register Assignment",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/staff/assignments/{assignment_id}": {
+      "get": {
+        "description": "Detalle de una asignación, activa o anulada.",
+        "operationId": "staff_assignment_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assignment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.assignment_not_found`, `staff.event_not_found`, `staff.not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Assignment",
+        "tags": [
+          "staff"
+        ]
+      },
+      "put": {
+        "description": "Reemplazo completo de los campos editables; el motivo es obligatorio.",
+        "operationId": "staff_assignment_update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assignment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.assignment_not_found`, `staff.event_not_found`, `staff.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentProblem"
+                }
+              }
+            },
+            "description": "`staff.worker_inactive`, `staff.event_not_assignable`, `staff.assignment_overlap` (con `conflicts`), `staff.assignment_immutable`, `staff.worker_has_future_assignments`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validación: `staff.assignment_schedule_invalid`, `staff.assignment_date_invalid`, `staff.assignment_function_required`, `staff.assignment_pay_invalid`, `staff.assignment_reason_required`, etc."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Assignment",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/staff/assignments/{assignment_id}/cancel": {
+      "post": {
+        "description": "Anulación lógica con motivo; repetir la operación es idempotente.",
+        "operationId": "staff_assignment_cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assignment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignmentCancel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.assignment_not_found`, `staff.event_not_found`, `staff.not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentProblem"
+                }
+              }
+            },
+            "description": "`staff.worker_inactive`, `staff.event_not_assignable`, `staff.assignment_overlap` (con `conflicts`), `staff.assignment_immutable`, `staff.worker_has_future_assignments`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validación: `staff.assignment_schedule_invalid`, `staff.assignment_date_invalid`, `staff.assignment_function_required`, `staff.assignment_pay_invalid`, `staff.assignment_reason_required`, etc."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Assignment",
+        "tags": [
+          "staff"
         ]
       }
     },

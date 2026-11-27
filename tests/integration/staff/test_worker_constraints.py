@@ -25,6 +25,7 @@ from local_eventos.modules.staff.application.errors import DuplicateDocumentErro
 from local_eventos.modules.staff.application.use_cases.change_worker_status import (
     DeactivateWorker,
 )
+from local_eventos.modules.staff.composition import assignment_occupancy
 from local_eventos.modules.staff.domain.audit import AuditAction, WorkerAudit
 from local_eventos.modules.staff.domain.document import WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import WorkerFunction, WorkerStatus
@@ -99,7 +100,10 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
     async with engine.begin() as connection:
         # TRUNCATE no dispara el trigger de fila append-only; deja las tablas vacías.
         await connection.execute(
-            text("TRUNCATE staff_worker_audit, staff_workers RESTART IDENTITY")
+            text(
+                "TRUNCATE staff_assignment_audit, staff_assignments, "
+                "staff_worker_audit, staff_workers RESTART IDENTITY"
+            )
         )
     yield engine
     await engine.dispose()
@@ -274,7 +278,9 @@ async def test_hu15_dos_desactivaciones_simultaneas_auditan_una_sola_vez(
 
     async def deactivate(reason: str) -> WorkerStatus:
         async with sessions.begin() as session:
-            use_case = DeactivateWorker(SqlAlchemyWorkerRepository(session), clock)
+            use_case = DeactivateWorker(
+                SqlAlchemyWorkerRepository(session), clock, assignment_occupancy(session)
+            )
             result = await use_case.execute(worker.id, reason, _ACTOR)
             return result.status
 

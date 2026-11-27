@@ -51,6 +51,17 @@ def _lint_imports_with(tmp_path: Path, file: str, line: str) -> subprocess.Compl
             "from local_eventos.modules.catalog.domain import service  # noqa: F401",
             "Los modulos solo se usan entre si por su public_api BROKEN",
         ),
+        (
+            "modules/staff/domain/assignment.py",
+            "from local_eventos.modules.commercial.domain.events import event  # noqa: F401",
+            "Los modulos solo se usan entre si por su public_api BROKEN",
+        ),
+        (
+            "modules/staff/application/assignment_occupancy.py",
+            "from local_eventos.modules.commercial.domain.events.event import "
+            "EventStatus  # noqa: F401",
+            "Los modulos solo se usan entre si por su public_api BROKEN",
+        ),
     ],
 )
 def test_ca7_un_import_prohibido_rompe_la_arquitectura(
@@ -97,6 +108,16 @@ def test_ca7_usar_otro_modulo_por_su_public_api_esta_permitido(tmp_path: Path) -
         tmp_path,
         "modules/commercial/application/clients/errors.py",
         "from local_eventos.modules.catalog import public_api  # noqa: F401",
+    )
+
+    assert result.returncode == 0, result.stdout
+
+
+def test_staff_usa_commercial_solo_por_su_public_api(tmp_path: Path) -> None:
+    result = _lint_imports_with(
+        tmp_path,
+        "modules/staff/application/assignment_occupancy.py",
+        "from local_eventos.modules.commercial import public_api  # noqa: F401",
     )
 
     assert result.returncode == 0, result.stdout

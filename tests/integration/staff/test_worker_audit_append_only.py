@@ -30,6 +30,7 @@ from local_eventos.modules.staff.application.use_cases.update_worker import (
     UpdateWorker,
 )
 from local_eventos.modules.staff.application.use_cases.worker_data import WorkerData
+from local_eventos.modules.staff.composition import assignment_occupancy
 from local_eventos.modules.staff.domain.document import WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import WorkerFunction, WorkerType
 from local_eventos.modules.staff.domain.money import Money
@@ -76,7 +77,10 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
     async with engine.begin() as connection:
         # TRUNCATE no dispara el trigger de fila append-only; deja las tablas vacías.
         await connection.execute(
-            text("TRUNCATE staff_worker_audit, staff_workers RESTART IDENTITY")
+            text(
+                "TRUNCATE staff_assignment_audit, staff_assignments, "
+                "staff_worker_audit, staff_workers RESTART IDENTITY"
+            )
         )
     yield engine
     await engine.dispose()
@@ -157,9 +161,9 @@ async def test_hu15_las_cuatro_operaciones_escriben_su_fila_de_auditoria(
         )
 
     async with sessions.begin() as session:
-        await DeactivateWorker(SqlAlchemyWorkerRepository(session), clock).execute(
-            worker.id, "Renuncia", _CREATOR
-        )
+        await DeactivateWorker(
+            SqlAlchemyWorkerRepository(session), clock, assignment_occupancy(session)
+        ).execute(worker.id, "Renuncia", _CREATOR)
 
     async with sessions.begin() as session:
         await ActivateWorker(SqlAlchemyWorkerRepository(session), clock).execute(

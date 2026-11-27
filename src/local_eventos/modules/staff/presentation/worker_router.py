@@ -32,6 +32,7 @@ from local_eventos.modules.staff.domain.enums import WorkerFunction
 from local_eventos.modules.staff.domain.money import Money
 from local_eventos.modules.staff.presentation.dependencies import (
     Now,
+    Occupancy,
     StaffManager,
     Workers,
     require_staff_manage,
@@ -156,12 +157,13 @@ async def deactivate_worker(
     worker_id: UUID,
     workers: Workers,
     clock: Now,
+    occupancy: Occupancy,
     user: StaffManager,
     body: WorkerStatusChange | None = None,
 ) -> WorkerOut:
     """Baja lógica con motivo opcional. Repetir la operación no audita otra vez."""
     reason = None if body is None else body.reason
-    worker = await DeactivateWorker(workers, clock).execute(worker_id, reason, user.id)
+    worker = await DeactivateWorker(workers, clock, occupancy).execute(worker_id, reason, user.id)
     return WorkerOut.from_worker(worker)
 
 

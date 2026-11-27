@@ -12,11 +12,22 @@ from fastapi.responses import JSONResponse
 from starlette.responses import Response
 
 from local_eventos.modules.staff.application.errors import (
+    AssignmentImmutableError,
+    AssignmentNotFoundError,
+    AssignmentOverlapError,
     DuplicateDocumentError,
+    EventNotAssignableError,
+    EventNotFoundError,
     StaffApplicationError,
+    WorkerHasFutureAssignmentsError,
+    WorkerInactiveError,
     WorkerNotFoundError,
 )
 from local_eventos.modules.staff.domain.errors import StaffValidationError
+from local_eventos.modules.staff.presentation.assignment_schemas import (
+    AssignmentConflictOut,
+    AssignmentProblem,
+)
 from local_eventos.shared.presentation.problems import problem_response
 
 
@@ -61,10 +72,64 @@ async def _application_error(request: Request, error: Exception) -> JSONResponse
     )
 
 
+async def _assignment_not_found_error(request: Request, error: Exception) -> JSONResponse:
+    assert isinstance(error, AssignmentNotFoundError)
+    return problem_response(status=404, title="No encontrado", code=error.code, detail=str(error))
+
+
+async def _event_not_found_error(request: Request, error: Exception) -> JSONResponse:
+    assert isinstance(error, EventNotFoundError)
+    return problem_response(status=404, title="No encontrado", code=error.code, detail=str(error))
+
+
+async def _assignment_conflict_error(request: Request, error: Exception) -> JSONResponse:
+    assert isinstance(
+        error,
+        WorkerInactiveError
+        | EventNotAssignableError
+        | AssignmentImmutableError
+        | WorkerHasFutureAssignmentsError,
+    )
+    return problem_response(
+        status=409, title="Operación no permitida", code=error.code, detail=str(error)
+    )
+
+
+async def _assignment_overlap_error(request: Request, error: Exception) -> JSONResponse:
+    assert isinstance(error, AssignmentOverlapError)
+    problem = AssignmentProblem(
+        title="Conflicto de horario",
+        status=409,
+        code=error.code,
+        detail=str(error),
+        conflicts=[
+            AssignmentConflictOut(
+                event_code=conflict.event_code,
+                event_date=conflict.event_date,
+                start_time=conflict.start_time,
+                end_time=conflict.end_time,
+            )
+            for conflict in error.conflicts
+        ],
+    )
+    return JSONResponse(
+        status_code=409,
+        content=problem.model_dump(mode="json"),
+        media_type="application/problem+json",
+    )
+
+
 def register_error_handlers(app: FastAPI) -> None:
     """Registra los manejadores de personal en la aplicación FastAPI."""
     app.add_exception_handler(StaffValidationError, _validation_error)
     app.add_exception_handler(RequestValidationError, _request_validation_error)
     app.add_exception_handler(DuplicateDocumentError, _duplicate_document_error)
     app.add_exception_handler(WorkerNotFoundError, _not_found_error)
+    app.add_exception_handler(AssignmentNotFoundError, _assignment_not_found_error)
+    app.add_exception_handler(EventNotFoundError, _event_not_found_error)
+    app.add_exception_handler(WorkerInactiveError, _assignment_conflict_error)
+    app.add_exception_handler(EventNotAssignableError, _assignment_conflict_error)
+    app.add_exception_handler(AssignmentImmutableError, _assignment_conflict_error)
+    app.add_exception_handler(WorkerHasFutureAssignmentsError, _assignment_conflict_error)
+    app.add_exception_handler(AssignmentOverlapError, _assignment_overlap_error)
     app.add_exception_handler(StaffApplicationError, _application_error)
