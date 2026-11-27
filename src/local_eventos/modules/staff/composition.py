@@ -50,6 +50,9 @@ from local_eventos.modules.staff.application.use_cases.change_worker_status impo
     DeactivateWorker,
 )
 from local_eventos.modules.staff.application.use_cases.get_assignment import GetAssignment
+from local_eventos.modules.staff.application.use_cases.get_staff_availability import (
+    GetStaffAvailability,
+)
 from local_eventos.modules.staff.application.use_cases.get_worker import GetWorker
 from local_eventos.modules.staff.application.use_cases.get_worker_ref import GetWorkerRef
 from local_eventos.modules.staff.application.use_cases.list_event_assignments import (
@@ -106,6 +109,17 @@ def assignment_occupancy(session: AsyncSession) -> AssignmentOccupancy:
 def unavailabilities(session: AsyncSession) -> UnavailabilityRepository:
     """Repositorio de indisponibilidades sobre la sesión de la petición (HU16)."""
     return SqlAlchemyUnavailabilityRepository(session)
+
+
+def get_staff_availability(session: AsyncSession) -> GetStaffAvailability:
+    """Consulta de disponibilidad de solo lectura con los puertos de HU16/HU17 (HU16)."""
+    return GetStaffAvailability(
+        worker_repository(session),
+        unavailabilities(session),
+        assignment_repository(session),
+        event_lookup(session),
+        assignment_conflicts(session),
+    )
 
 
 def assignment_conflicts(session: AsyncSession) -> AssignmentConflictLookup:
@@ -228,6 +242,7 @@ __all__ = [
     "deactivate_worker",
     "event_assignments",
     "get_assignment",
+    "get_staff_availability",
     "get_worker",
     "list_event_assignments",
     "register_assignment",

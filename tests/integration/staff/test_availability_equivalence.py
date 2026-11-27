@@ -14,16 +14,14 @@ que HU16 no escribe (R-DIS-1). Los eventos se resuelven con el doble en memoria 
 `commercial.public_api` que ya usan los tests de asignaciones; este módulo nunca lee
 tablas de `commercial`.
 
-`GetStaffAvailability` llega en T-11: el test se deja en `xfail(strict=False)` con
-import perezoso para que el archivo se colecte hoy. Necesita Docker/PostgreSQL.
+`GetStaffAvailability` se cablea con los puertos reales y el doble en memoria de
+eventos de `commercial.public_api` (T-11). Necesita Docker/PostgreSQL.
 """
 
 from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
-from importlib import import_module
 from pathlib import Path
-from typing import Any
 from uuid import UUID
 
 import pytest
@@ -36,6 +34,10 @@ from testcontainers.community.postgres import PostgresContainer
 from local_eventos.modules.commercial.public_api import EventInfo, EventStatus
 from local_eventos.modules.staff.application.assignment_occupancy import AssignmentOccupancy
 from local_eventos.modules.staff.application.errors import AssignmentOverlapError
+from local_eventos.modules.staff.application.use_cases.get_staff_availability import (
+    AvailabilityReport,
+    GetStaffAvailability,
+)
 from local_eventos.modules.staff.application.use_cases.register_assignment import (
     RegisterAssignment,
 )
@@ -310,15 +312,9 @@ async def _snapshot(sessions: async_sessionmaker[AsyncSession]) -> _Snapshot:
     return stored, int(audits or 0)
 
 
-def _build_availability(session: AsyncSession, events: FakeEventLookup) -> Any:
+def _build_availability(session: AsyncSession, events: FakeEventLookup) -> GetStaffAvailability:
     """Cablea `GetStaffAvailability` (T-11) con los puertos reales y el doble de eventos."""
-    # Import perezoso: el caso de uso llega en T-11. Hasta entonces el test queda xfail.
-    module = import_module(
-        "local_eventos.modules.staff.application.use_cases.get_staff_availability"
-    )
-    get_staff_availability = vars(module)["GetStaffAvailability"]
-
-    return get_staff_availability(
+    return GetStaffAvailability(
         SqlAlchemyWorkerRepository(session),
         SqlAlchemyUnavailabilityRepository(session),
         SqlAlchemyAssignmentRepository(session),
@@ -347,12 +343,9 @@ def _query(window: _Window) -> AvailabilityQuery:
     )
 
 
-def _busy_workers(report: Any) -> set[UUID]:
+def _busy_workers(report: AvailabilityReport) -> set[UUID]:
     """Extrae el conjunto de trabajadores en `BUSY` del reporte de disponibilidad."""
-    items = getattr(report, "items", report)
-    return {
-        item.worker_id for item in items if getattr(item, "state", None) == AvailabilityState.BUSY
-    }
+    return {item.worker_id for item in report.items if item.state is AvailabilityState.BUSY}
 
 
 def _expected_busy(window: _Window) -> set[UUID]:
@@ -389,7 +382,7 @@ async def _blocked_workers(
     return blocked
 
 
-@pytest.mark.xfail(strict=False, reason="pendiente T-11: GetStaffAvailability")
+@pytest.mark.integration
 async def test_ca16_21_equivalencia_hu16_hu17(
     sessions: async_sessionmaker[AsyncSession],
 ) -> None:
