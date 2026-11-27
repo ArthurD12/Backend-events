@@ -19,6 +19,8 @@ from local_eventos.modules.staff.application.errors import (
     EventNotAssignableError,
     EventNotFoundError,
     StaffApplicationError,
+    UnavailabilityCancelledError,
+    UnavailabilityNotFoundError,
     WorkerHasFutureAssignmentsError,
     WorkerInactiveError,
     WorkerNotFoundError,
@@ -82,6 +84,18 @@ async def _event_not_found_error(request: Request, error: Exception) -> JSONResp
     return problem_response(status=404, title="No encontrado", code=error.code, detail=str(error))
 
 
+async def _unavailability_not_found_error(request: Request, error: Exception) -> JSONResponse:
+    assert isinstance(error, UnavailabilityNotFoundError)
+    return problem_response(status=404, title="No encontrado", code=error.code, detail=str(error))
+
+
+async def _unavailability_cancelled_error(request: Request, error: Exception) -> JSONResponse:
+    assert isinstance(error, UnavailabilityCancelledError)
+    return problem_response(
+        status=409, title="Operación no permitida", code=error.code, detail=str(error)
+    )
+
+
 async def _assignment_conflict_error(request: Request, error: Exception) -> JSONResponse:
     assert isinstance(
         error,
@@ -127,6 +141,8 @@ def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(WorkerNotFoundError, _not_found_error)
     app.add_exception_handler(AssignmentNotFoundError, _assignment_not_found_error)
     app.add_exception_handler(EventNotFoundError, _event_not_found_error)
+    app.add_exception_handler(UnavailabilityNotFoundError, _unavailability_not_found_error)
+    app.add_exception_handler(UnavailabilityCancelledError, _unavailability_cancelled_error)
     app.add_exception_handler(WorkerInactiveError, _assignment_conflict_error)
     app.add_exception_handler(EventNotAssignableError, _assignment_conflict_error)
     app.add_exception_handler(AssignmentImmutableError, _assignment_conflict_error)

@@ -837,6 +837,168 @@
         "title": "AssignmentUpdate",
         "type": "object"
       },
+      "AvailabilityConflict": {
+        "additionalProperties": false,
+        "description": "Asignación que ocupa parte de la ventana, sin datos sensibles (R-DIS-9).\n\nSolo código y fecha del evento, horario local de la asignación y su función.\nNunca pago, tarifa, documento ni teléfono (CA-16.8).",
+        "properties": {
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "event_code": {
+            "title": "Event Code",
+            "type": "string"
+          },
+          "event_date": {
+            "format": "date",
+            "title": "Event Date",
+            "type": "string"
+          },
+          "function": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkerFunction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "function_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Function Description"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_code",
+          "event_date",
+          "start_time",
+          "end_time",
+          "function",
+          "function_description"
+        ],
+        "title": "AvailabilityConflict",
+        "type": "object"
+      },
+      "AvailabilityItem": {
+        "additionalProperties": false,
+        "description": "Disponibilidad de un trabajador en la ventana consultada.",
+        "properties": {
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/AvailabilityConflict"
+            },
+            "title": "Conflicts",
+            "type": "array"
+          },
+          "function": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WorkerFunction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "function_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Function Description"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/AvailabilityState"
+          },
+          "unavailabilities": {
+            "items": {
+              "$ref": "#/components/schemas/UnavailabilityDetail"
+            },
+            "title": "Unavailabilities",
+            "type": "array"
+          },
+          "worker_id": {
+            "format": "uuid",
+            "title": "Worker Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "worker_id",
+          "name",
+          "function",
+          "function_description",
+          "state",
+          "conflicts",
+          "unavailabilities"
+        ],
+        "title": "AvailabilityItem",
+        "type": "object"
+      },
+      "AvailabilityOut": {
+        "additionalProperties": false,
+        "description": "Respuesta de `GET /v1/staff/availability`: ventana UTC y lista plana.",
+        "properties": {
+          "from": {
+            "description": "Inicio UTC de la ventana (exclusivo)",
+            "format": "date-time",
+            "title": "From",
+            "type": "string"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AvailabilityItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "to": {
+            "description": "Fin UTC de la ventana (exclusivo)",
+            "format": "date-time",
+            "title": "To",
+            "type": "string"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "items"
+        ],
+        "title": "AvailabilityOut",
+        "type": "object"
+      },
+      "AvailabilityState": {
+        "description": "Disponibilidad de un trabajador en una ventana, por precedencia UNAVAILABLE > BUSY > FREE.\n\nHU16: `UNAVAILABLE` (indisponibilidad registrada) prevalece sobre `BUSY` (asignación).",
+        "enum": [
+          "FREE",
+          "BUSY",
+          "UNAVAILABLE"
+        ],
+        "title": "AvailabilityState",
+        "type": "string"
+      },
       "CancelIn": {
         "properties": {
           "reason": {
@@ -6778,6 +6940,302 @@
           "error"
         ],
         "title": "ToolUseOut",
+        "type": "object"
+      },
+      "UnavailabilityCancel": {
+        "additionalProperties": false,
+        "description": "Cuerpo de `POST /v1/staff/unavailability/{id}/cancel`.",
+        "properties": {
+          "reason": {
+            "description": "Motivo de la anulación",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "UnavailabilityCancel",
+        "type": "object"
+      },
+      "UnavailabilityCreate": {
+        "additionalProperties": false,
+        "description": "Cuerpo de `POST /v1/staff/unavailability`: alta con fecha y horas locales.",
+        "properties": {
+          "date": {
+            "description": "Fecha local de America/Lima",
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Obligatoria solo con el tipo OTHER",
+            "title": "Description"
+          },
+          "end_time": {
+            "description": "Hora local de fin; si es menor, termina al día siguiente",
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/UnavailabilityKind"
+          },
+          "start_time": {
+            "description": "Hora local de inicio",
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "worker_id": {
+            "format": "uuid",
+            "title": "Worker Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "worker_id",
+          "date",
+          "start_time",
+          "end_time",
+          "kind"
+        ],
+        "title": "UnavailabilityCreate",
+        "type": "object"
+      },
+      "UnavailabilityDetail": {
+        "additionalProperties": false,
+        "description": "Indisponibilidad activa que explica un estado `UNAVAILABLE` (CA-16.9).",
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "end_at": {
+            "format": "date-time",
+            "title": "End At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/UnavailabilityKind"
+          },
+          "start_at": {
+            "format": "date-time",
+            "title": "Start At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "description",
+          "start_at",
+          "end_at"
+        ],
+        "title": "UnavailabilityDetail",
+        "type": "object"
+      },
+      "UnavailabilityKind": {
+        "description": "Motivo de la indisponibilidad: `OTHER` exige descripción (HU16, R-DIS-1).",
+        "enum": [
+          "VACATION",
+          "LEAVE",
+          "REST",
+          "OTHER"
+        ],
+        "title": "UnavailabilityKind",
+        "type": "string"
+      },
+      "UnavailabilityListOut": {
+        "additionalProperties": false,
+        "description": "Listado de indisponibilidades (incluye las anuladas).",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/UnavailabilityOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "UnavailabilityListOut",
+        "type": "object"
+      },
+      "UnavailabilityOut": {
+        "additionalProperties": false,
+        "description": "Indisponibilidad devuelta por la API: fecha/horas locales e instantes UTC.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "end_at": {
+            "format": "date-time",
+            "title": "End At",
+            "type": "string"
+          },
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/UnavailabilityKind"
+          },
+          "start_at": {
+            "format": "date-time",
+            "title": "Start At",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/UnavailabilityStatus"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "worker_id": {
+            "format": "uuid",
+            "title": "Worker Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "worker_id",
+          "kind",
+          "description",
+          "date",
+          "start_time",
+          "end_time",
+          "start_at",
+          "end_at",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "UnavailabilityOut",
+        "type": "object"
+      },
+      "UnavailabilityStatus": {
+        "description": "Estado de la indisponibilidad: se anula lógicamente, nunca se borra ni reactiva (HU16).",
+        "enum": [
+          "ACTIVE",
+          "CANCELLED"
+        ],
+        "title": "UnavailabilityStatus",
+        "type": "string"
+      },
+      "UnavailabilityUpdate": {
+        "additionalProperties": false,
+        "description": "Cuerpo de `PUT /v1/staff/unavailability/{id}`: reemplazo de los editables.",
+        "properties": {
+          "date": {
+            "description": "Fecha local de America/Lima",
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Obligatoria solo con el tipo OTHER",
+            "title": "Description"
+          },
+          "end_time": {
+            "description": "Hora local de fin; si es menor, termina al día siguiente",
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/UnavailabilityKind"
+          },
+          "reason": {
+            "description": "Motivo del cambio",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "start_time": {
+            "description": "Hora local de inicio",
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "date",
+          "start_time",
+          "end_time",
+          "reason"
+        ],
+        "title": "UnavailabilityUpdate",
         "type": "object"
       },
       "Unit": {
@@ -18284,6 +18742,552 @@
           }
         ],
         "summary": "Cancel Assignment",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/staff/availability": {
+      "get": {
+        "description": "Consulta de solo lectura la disponibilidad en una ventana de hasta 31 días.",
+        "operationId": "staff_availability_get",
+        "parameters": [
+          {
+            "description": "Primer día local (America/Lima)",
+            "in": "query",
+            "name": "from_date",
+            "required": true,
+            "schema": {
+              "description": "Primer día local (America/Lima)",
+              "format": "date",
+              "title": "From Date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Último día local (America/Lima)",
+            "in": "query",
+            "name": "to_date",
+            "required": true,
+            "schema": {
+              "description": "Último día local (America/Lima)",
+              "format": "date",
+              "title": "To Date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Hora local de inicio",
+            "in": "query",
+            "name": "start_time",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Hora local de inicio",
+              "title": "Start Time"
+            }
+          },
+          {
+            "description": "Hora local de fin",
+            "in": "query",
+            "name": "end_time",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Hora local de fin",
+              "title": "End Time"
+            }
+          },
+          {
+            "description": "Filtro por función",
+            "in": "query",
+            "name": "function",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/WorkerFunction"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro por función",
+              "title": "Function"
+            }
+          },
+          {
+            "description": "Filtro por estado",
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AvailabilityState"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro por estado",
+              "title": "State"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validación: `staff.availability_window_invalid`, `staff.availability_range_too_large`, `staff.unavailability_schedule_invalid`, `staff.unavailability_kind_required`, `staff.unavailability_description_required/not_allowed`, `staff.unavailability_reason_required`, etc."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Staff Availability",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/staff/unavailability": {
+      "get": {
+        "description": "Lista indisponibilidades, incluidas las anuladas, sin escribir nada.",
+        "operationId": "staff_unavailability_list",
+        "parameters": [
+          {
+            "description": "Filtro por trabajador",
+            "in": "query",
+            "name": "worker_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filtro por trabajador",
+              "title": "Worker Id"
+            }
+          },
+          {
+            "description": "Primer día local",
+            "in": "query",
+            "name": "from_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Primer día local",
+              "title": "From Date"
+            }
+          },
+          {
+            "description": "Último día local",
+            "in": "query",
+            "name": "to_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Último día local",
+              "title": "To Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnavailabilityListOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validación: `staff.availability_window_invalid`, `staff.availability_range_too_large`, `staff.unavailability_schedule_invalid`, `staff.unavailability_kind_required`, `staff.unavailability_description_required/not_allowed`, `staff.unavailability_reason_required`, etc."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Unavailability",
+        "tags": [
+          "staff"
+        ]
+      },
+      "post": {
+        "description": "Registra una indisponibilidad activa y audita el alta con el usuario.",
+        "operationId": "staff_unavailability_register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnavailabilityCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnavailabilityOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.not_found`, `staff.unavailability_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.worker_inactive`, `staff.unavailability_cancelled`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validación: `staff.availability_window_invalid`, `staff.availability_range_too_large`, `staff.unavailability_schedule_invalid`, `staff.unavailability_kind_required`, `staff.unavailability_description_required/not_allowed`, `staff.unavailability_reason_required`, etc."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Register Unavailability",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/staff/unavailability/{unavailability_id}": {
+      "put": {
+        "description": "Reemplazo completo de los campos editables; el motivo es obligatorio.",
+        "operationId": "staff_unavailability_update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "unavailability_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Unavailability Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnavailabilityUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnavailabilityOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.not_found`, `staff.unavailability_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.worker_inactive`, `staff.unavailability_cancelled`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validación: `staff.availability_window_invalid`, `staff.availability_range_too_large`, `staff.unavailability_schedule_invalid`, `staff.unavailability_kind_required`, `staff.unavailability_description_required/not_allowed`, `staff.unavailability_reason_required`, etc."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Unavailability",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/staff/unavailability/{unavailability_id}/cancel": {
+      "post": {
+        "description": "Anulación lógica con motivo; repetir la operación es idempotente.",
+        "operationId": "staff_unavailability_cancel",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "unavailability_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Unavailability Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnavailabilityCancel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnavailabilityOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.not_found`, `staff.unavailability_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validación: `staff.availability_window_invalid`, `staff.availability_range_too_large`, `staff.unavailability_schedule_invalid`, `staff.unavailability_kind_required`, `staff.unavailability_description_required/not_allowed`, `staff.unavailability_reason_required`, etc."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Unavailability",
         "tags": [
           "staff"
         ]

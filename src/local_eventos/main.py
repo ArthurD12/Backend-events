@@ -65,7 +65,11 @@ from local_eventos.modules.reporting.presentation import (
 from local_eventos.modules.reporting.presentation.errors import (
     register_error_handlers as register_reporting_errors,
 )
-from local_eventos.modules.staff.presentation import assignment_router, worker_router
+from local_eventos.modules.staff.presentation import (
+    assignment_router,
+    availability_router,
+    worker_router,
+)
 from local_eventos.modules.staff.presentation.errors import (
     register_error_handlers as register_staff_errors,
 )
@@ -134,6 +138,9 @@ def create_app(readiness_check: ReadinessCheck | None = None) -> FastAPI:
     app.include_router(purchase_router.router)
     # Primero las asignaciones: `/v1/staff/assignments` no debe caer en `/v1/staff/{worker_id}`.
     app.include_router(assignment_router.router)
+    # Colisión: `/v1/staff/availability` y `/v1/staff/unavailability` son literales y
+    # deben registrarse antes de `/v1/staff/{worker_id}` (UUID) para no devolver 422.
+    app.include_router(availability_router.router)
     app.include_router(worker_router.router)
     app.include_router(assistant_router.router)
     register_identity_errors(app)

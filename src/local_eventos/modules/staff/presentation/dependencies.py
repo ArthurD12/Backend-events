@@ -23,6 +23,9 @@ from local_eventos.modules.staff.application.ports.assignment_repository import 
     AssignmentRepository,
 )
 from local_eventos.modules.staff.application.ports.clock import Clock
+from local_eventos.modules.staff.application.ports.unavailability_repository import (
+    UnavailabilityRepository,
+)
 from local_eventos.modules.staff.application.ports.worker_repository import (
     WorkerLookup,
     WorkerRepository,
@@ -30,15 +33,30 @@ from local_eventos.modules.staff.application.ports.worker_repository import (
 from local_eventos.modules.staff.application.use_cases.cancel_assignment import (
     CancelAssignment,
 )
+from local_eventos.modules.staff.application.use_cases.cancel_unavailability import (
+    CancelUnavailability,
+)
 from local_eventos.modules.staff.application.use_cases.get_assignment import GetAssignment
+from local_eventos.modules.staff.application.use_cases.get_staff_availability import (
+    GetStaffAvailability,
+)
 from local_eventos.modules.staff.application.use_cases.list_event_assignments import (
     ListEventAssignments,
+)
+from local_eventos.modules.staff.application.use_cases.list_unavailability import (
+    ListUnavailability,
 )
 from local_eventos.modules.staff.application.use_cases.register_assignment import (
     RegisterAssignment,
 )
+from local_eventos.modules.staff.application.use_cases.register_unavailability import (
+    RegisterUnavailability,
+)
 from local_eventos.modules.staff.application.use_cases.update_assignment import (
     UpdateAssignment,
+)
+from local_eventos.modules.staff.application.use_cases.update_unavailability import (
+    UpdateUnavailability,
 )
 from local_eventos.shared.presentation.database import get_session
 
@@ -46,6 +64,10 @@ __all__ = [
     "AssignmentGetter",
     "AssignmentRepository",
     "Assignments",
+    "AvailabilityGetter",
+    "AvailabilityLister",
+    "AvailabilityRegistrar",
+    "AvailabilityUpdater",
     "Canceller",
     "Clock",
     "CurrentUser",
@@ -57,7 +79,10 @@ __all__ = [
     "Permission",
     "Registrar",
     "StaffAssign",
+    "StaffAvailability",
     "StaffManager",
+    "UnavailabilityCanceller",
+    "Unavailabilities",
     "Updater",
     "Workers",
     "WorkersLookup",
@@ -65,15 +90,22 @@ __all__ = [
     "get_assignment_repository",
     "get_assignment_use_case",
     "get_cancel_assignment",
+    "get_cancel_unavailability",
     "get_clock",
     "get_event_lookup",
     "get_list_event_assignments",
+    "get_list_unavailability",
     "get_register_assignment",
+    "get_register_unavailability",
+    "get_staff_availability_use_case",
+    "get_unavailability_repository",
     "get_update_assignment",
+    "get_update_unavailability",
     "get_worker_lookup",
     "get_worker_repository",
     "require_permission",
     "require_staff_assign",
+    "require_staff_availability",
     "require_staff_manage",
 ]
 
@@ -112,6 +144,10 @@ StaffManager = Annotated[CurrentUser, Depends(require_staff_manage)]
 require_staff_assign = require_permission(Permission.STAFF_ASSIGN)
 
 StaffAssign = Annotated[CurrentUser, Depends(require_staff_assign)]
+
+require_staff_availability = require_permission(Permission.STAFF_AVAILABILITY)
+
+StaffAvailability = Annotated[CurrentUser, Depends(require_staff_availability)]
 
 
 async def get_assignment_repository(
@@ -192,3 +228,67 @@ async def get_assignment_use_case(
 
 
 AssignmentGetter = Annotated[GetAssignment, Depends(get_assignment_use_case)]
+
+
+async def get_unavailability_repository(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> UnavailabilityRepository:
+    """Repositorio de indisponibilidades sobre la sesión de la petición (HU16)."""
+    return composition.unavailabilities(session)
+
+
+Unavailabilities = Annotated[UnavailabilityRepository, Depends(get_unavailability_repository)]
+
+
+async def get_staff_availability_use_case(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> GetStaffAvailability:
+    """Consulta de disponibilidad de solo lectura (HU16)."""
+    return composition.get_staff_availability(session)
+
+
+AvailabilityGetter = Annotated[GetStaffAvailability, Depends(get_staff_availability_use_case)]
+
+
+async def get_register_unavailability(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> RegisterUnavailability:
+    """Caso de uso de alta de indisponibilidad (HU16)."""
+    return RegisterUnavailability(
+        composition.worker_lookup(session),
+        composition.unavailabilities(session),
+        composition.clock(),
+    )
+
+
+AvailabilityRegistrar = Annotated[RegisterUnavailability, Depends(get_register_unavailability)]
+
+
+async def get_list_unavailability(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ListUnavailability:
+    """Caso de uso de listado de indisponibilidades (HU16)."""
+    return ListUnavailability(composition.unavailabilities(session))
+
+
+AvailabilityLister = Annotated[ListUnavailability, Depends(get_list_unavailability)]
+
+
+async def get_update_unavailability(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> UpdateUnavailability:
+    """Caso de uso de edición de indisponibilidad (HU16)."""
+    return UpdateUnavailability(composition.unavailabilities(session), composition.clock())
+
+
+AvailabilityUpdater = Annotated[UpdateUnavailability, Depends(get_update_unavailability)]
+
+
+async def get_cancel_unavailability(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> CancelUnavailability:
+    """Caso de uso de anulación de indisponibilidad (HU16)."""
+    return CancelUnavailability(composition.unavailabilities(session), composition.clock())
+
+
+UnavailabilityCanceller = Annotated[CancelUnavailability, Depends(get_cancel_unavailability)]
