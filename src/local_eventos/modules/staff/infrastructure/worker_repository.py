@@ -138,6 +138,37 @@ class SqlAlchemyWorkerRepository:
             status=WorkerStatus(row.status),
         )
 
+    async def list_active(
+        self, function: WorkerFunction | None = None
+    ) -> list[WorkerRef]:
+        query = select(
+            StaffWorkerRow.id,
+            StaffWorkerRow.name,
+            StaffWorkerRow.worker_function,
+            StaffWorkerRow.function_description,
+            StaffWorkerRow.status,
+        ).where(StaffWorkerRow.status == WorkerStatus.ACTIVE.value)
+        if function is not None:
+            query = query.where(StaffWorkerRow.worker_function == function.value)
+        query = query.order_by(
+            func.lower(StaffWorkerRow.name), StaffWorkerRow.name, StaffWorkerRow.id
+        )
+        rows = await self._session.execute(query)
+        return [
+            WorkerRef(
+                id=row.id,
+                name=row.name,
+                function=(
+                    None
+                    if row.worker_function is None
+                    else WorkerFunction(row.worker_function)
+                ),
+                function_description=row.function_description,
+                status=WorkerStatus(row.status),
+            )
+            for row in rows
+        ]
+
     async def _flush(self, document: Document) -> None:
         """Envía los cambios a PostgreSQL. Si el documento ya existe, error de negocio.
 
