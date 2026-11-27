@@ -419,6 +419,12 @@
             "title": "Answer",
             "type": "string"
           },
+          "query_id": {
+            "description": "Id de la consulta; sirve para valorar la respuesta",
+            "format": "uuid",
+            "title": "Query Id",
+            "type": "string"
+          },
           "tools": {
             "description": "Funciones consultadas (transparencia)",
             "items": {
@@ -429,6 +435,7 @@
           }
         },
         "required": [
+          "query_id",
           "answer",
           "tools"
         ],
@@ -3239,6 +3246,71 @@
         "title": "ExpensesOut",
         "type": "object"
       },
+      "FeedbackIn": {
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 300,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "value": {
+            "description": "Correcta o incorrecta",
+            "enum": [
+              "correct",
+              "incorrect"
+            ],
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "title": "FeedbackIn",
+        "type": "object"
+      },
+      "FeedbackOut": {
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "value": {
+            "enum": [
+              "correct",
+              "incorrect"
+            ],
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "comment",
+          "created_at"
+        ],
+        "title": "FeedbackOut",
+        "type": "object"
+      },
       "FieldChangeOut": {
         "properties": {
           "after": {
@@ -3596,6 +3668,97 @@
           "voided_at"
         ],
         "title": "MovementVoidOut",
+        "type": "object"
+      },
+      "MyQueriesPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MyQueryOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "MyQueriesPageOut",
+        "type": "object"
+      },
+      "MyQueryOut": {
+        "description": "Una consulta propia: pregunta, respuesta, funciones y su última valoración.",
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FeedbackOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "error",
+              "refused"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tools": {
+            "items": {
+              "$ref": "#/components/schemas/ToolUseOut"
+            },
+            "title": "Tools",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "created_at",
+          "question",
+          "answer",
+          "tools",
+          "status",
+          "feedback"
+        ],
+        "title": "MyQueryOut",
         "type": "object"
       },
       "NoteIn": {
@@ -4514,6 +4677,17 @@
             "title": "Duration Ms",
             "type": "integer"
           },
+          "feedback": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FeedbackOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Última valoración del autor, si la hay"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -4575,7 +4749,8 @@
           "input_tokens",
           "output_tokens",
           "duration_ms",
-          "status"
+          "status",
+          "feedback"
         ],
         "title": "QueryLogEntryOut",
         "type": "object"
@@ -8207,7 +8382,7 @@
     },
     "/v1/assistant/log": {
       "get": {
-        "description": "Historial de consultas al asistente, de la más reciente a la más antigua (solo lectura).",
+        "description": "Historial de consultas al asistente, de la más reciente a la más antigua, con la última\nvaloración de cada una (solo lectura).",
         "operationId": "assistant_log_list",
         "parameters": [
           {
@@ -8337,6 +8512,177 @@
           }
         ],
         "summary": "List Log",
+        "tags": [
+          "asistente"
+        ]
+      }
+    },
+    "/v1/assistant/my-queries": {
+      "get": {
+        "description": "Mis conversaciones anteriores (solo las del usuario), de la más reciente a la más antigua,\ncon mi última valoración de cada respuesta.",
+        "operationId": "assistant_my_queries",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyQueriesPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "My Queries",
+        "tags": [
+          "asistente"
+        ]
+      }
+    },
+    "/v1/assistant/queries/{query_id}/feedback": {
+      "post": {
+        "description": "Marca una respuesta propia como correcta o incorrecta. Valorar de nuevo reemplaza la\nanterior (vale la última); no se edita ni borra nada. Solo el autor de la consulta.",
+        "operationId": "assistant_feedback_create",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "query_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Query Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeedbackOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`assistant.query_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rate Query",
         "tags": [
           "asistente"
         ]

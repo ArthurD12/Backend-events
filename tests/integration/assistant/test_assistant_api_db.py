@@ -116,3 +116,96 @@ def test_purchasing_manager_cannot_read_money_tools(api: TestClient) -> None:
         {"name": "stock_alerts", "input": {}, "error": False},
     ]
     assert api.get("/v1/assistant/log", headers=purchasing).status_code == 403
+
+
+def test_search_events_and_quotes_read_real_data_and_respect_permissions(api: TestClient) -> None:
+    existing = api.get("/v1/events").json()["items"]  # otra prueba del módulo ya creó uno
+    code = (
+        existing[0]["code"] if existing else api.get(f"/v1/events/{_event(api)[0]}").json()["code"]
+    )
+    model = FakeLanguageModel(
+        [
+            calls(
+                ToolCall("a", "search_events", {"client": "Ramírez", "event_type": "WEDDING"}),
+                ToolCall("b", "search_events", {"status": "CANCELLED"}),
+                ToolCall("c", "search_quotes", {"status": "ACCEPTED", "client": "ramirez"}),
+                ToolCall("d", "search_quotes", {"status": "EXPIRED"}),
+            ),
+            says("Listo"),
+        ]
+    )
+    _use(api, model)
+
+    response = api.post("/v1/assistant/ask", json={"question": "eventos y cotizaciones"})
+
+    assert response.status_code == 200, response.text
+    results = {r.call_id: json.loads(r.content) for r in model.calls[1][-1].tool_results}
+    assert code in [e["codigo"] for e in results["a"]["eventos"]]
+    assert results["b"]["total"] == 0
+    accepted = results["c"]["cotizaciones"]
+    assert (
+        accepted and accepted[0]["estado"] == "aceptada" and accepted[0]["total"].startswith("S/ ")
+    )
+    assert results["d"]["total"] == 0
+
+    purchasing = _as_new_user(api, "compras-q@darze.pe", "PURCHASING_MANAGER")
+    model = FakeLanguageModel(
+        [calls(ToolCall("a", "search_quotes", {}), ToolCall("b", "search_events", {})), says("ok")]
+    )
+    _use(api, model)
+    denied = api.post("/v1/assistant/ask", json={"question": "x"}, headers=purchasing)
+    assert [t["error"] for t in denied.json()["tools"]] == [
+        True,
+        False,
+    ]  # cotizaciones: no; eventos: sí
+
+
+def _as_new_user(api: TestClient, email: str, role: str) -> dict[str, str]:
+    api.post(
+        "/v1/users",
+        json={
+            "name": f"Usuario {email}",
+            "email": email,
+            "password": "clave-segura-123",
+            "role": role,
+        },
+    )
+    return auth_headers(api, email, "clave-segura-123")
+
+
+def test_my_queries_and_feedback_only_for_the_author(api: TestClient) -> None:
+    ana = _as_new_user(api, "ana-fb@darze.pe", "EVENTS_MANAGER")
+    luis = _as_new_user(api, "luis-fb@darze.pe", "PURCHASING_MANAGER")
+    _use(api, FakeLanguageModel([says("Respuesta de Ana"), says("Respuesta de Luis")]))
+    ask_ana = api.post("/v1/assistant/ask", json={"question": "pregunta de Ana"}, headers=ana)
+    ask_luis = api.post("/v1/assistant/ask", json={"question": "pregunta de Luis"}, headers=luis)
+    ana_query, luis_query = ask_ana.json()["query_id"], ask_luis.json()["query_id"]
+
+    # solo el autor valora; el administrador y otro usuario reciben 404
+    for headers in (luis, {}):
+        denied = api.post(
+            f"/v1/assistant/queries/{ana_query}/feedback",
+            json={"value": "correct"},
+            headers=headers,
+        )
+        assert denied.status_code == 404 and denied.json()["code"] == "assistant.query_not_found"
+    url = f"/v1/assistant/queries/{ana_query}/feedback"
+    assert (
+        api.post(
+            url, json={"value": "incorrect", "comment": "Faltó el saldo"}, headers=ana
+        ).status_code
+        == 201
+    )
+    assert api.post(url, json={"value": "correct"}, headers=ana).status_code == 201
+
+    mine = api.get("/v1/assistant/my-queries", headers=ana).json()
+    assert mine["total"] == 1 and mine["items"][0]["question"] == "pregunta de Ana"
+    assert (
+        mine["items"][0]["id"] == ana_query and mine["items"][0]["feedback"]["value"] == "correct"
+    )
+    theirs = api.get("/v1/assistant/my-queries", headers=luis).json()
+    assert [i["question"] for i in theirs["items"]] == ["pregunta de Luis"]
+    assert theirs["items"][0]["feedback"] is None
+
+    log = {i["id"]: i for i in api.get("/v1/assistant/log").json()["items"]}
+    assert log[ana_query]["feedback"]["value"] == "correct" and log[luis_query]["feedback"] is None

@@ -7,7 +7,7 @@ que requiere la extensión `btree_gist` (ADR 0006). El `downgrade` no elimina la
 extensión porque puede usarla otro esquema o una migración posterior.
 
 Revision ID: 8df99a56ff18
-Revises: c3a9e5d7f1b2
+Revises: dca5fe5821e8
 Create Date: 2026-11-26 10:11:55.893933
 """
 
@@ -18,7 +18,7 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision: str = "8df99a56ff18"
-down_revision: str | None = "c3a9e5d7f1b2"
+down_revision: str | None = "dca5fe5821e8"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

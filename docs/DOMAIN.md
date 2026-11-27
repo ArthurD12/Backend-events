@@ -141,7 +141,7 @@ Una **asignación** vincula un trabajador activo con un evento, con la función 
 | Productos, almacén, requerimientos y compras | ✔ | lectura del almacén y materiales de sus eventos (`inventory:read`) | ✔ |
 | Reportes financieros (caja, flujo de caja, resultado por evento) | ✔ | – | – |
 | Reportes de eventos (montos solo con `payments:record`), almacén y compras (020) | ✔ | eventos (con montos) y almacén | eventos (sin montos), almacén y compras |
-| Agente de IA (cada función exige además el permiso de su dato; R-IA-5) | ✔ | ✔ | ✔ |
+| Agente de IA (cada función exige además el permiso de su dato; R-IA-5, R-IA-7) | ✔ | ✔ | ✔ |
 | Historial del asistente (`assistant_log:read`) | ✔ | – | – |
 
 Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. ej. `quotes:create`), no por nombre de rol. Los registros con operaciones relacionadas no se eliminan: se desactivan (RN02). Correcciones y anulaciones guardan usuario, fecha, hora y motivo (RN03).
@@ -234,3 +234,7 @@ Sobre las **asignaciones** (§5.2, R-ASG-14): crear, editar y anular exige `staf
 | 26/11/2026 | Conversación del asistente (022, R-IA-3) | Vive en el chat: el frontend envía hasta 10 turnos previos; el backend no guarda contexto entre días. La auditoría sí se guarda y es de solo inserción | Equipo **(provisional)** |
 | 26/11/2026 | Formato de respuestas (022, R-IA-4) | Español; las funciones entregan montos en soles y fechas día/mes/año de Lima, y el modelo los copia tal cual | Equipo **(provisional)** |
 | 26/11/2026 | Permisos del asistente (022, R-IA-5) | Cada función exige el permiso de su dato: eventos `events:read`; cuentas, cobros e historial del cliente `payments:record`; almacén `inventory:read`; compras `purchasing:manage`; caja `finance:read`; clientes `clients:manage`. Historial: `assistant_log:read` (solo administrador). Sin permiso, el asistente lo dice. Falta la herramienta de personal hasta que `staff` publique la consulta | Equipo **(provisional)** |
+| 26/11/2026 | Consulta de eventos del asistente (024, R-IA-6) | `search_events` filtra por fechas del evento, cliente (texto), tipo y estado; sin filtros, eventos desde hoy; 15 filas y el total. Permiso `events:read`. Aprobado por el Product Owner (HU36) | Equipo **(provisional)** |
+| 26/11/2026 | Consulta de cotizaciones del asistente (024, R-IA-7) | `search_quotes` por estado, cliente y fechas del evento. "Vencida" = borrador o enviada con vigencia terminada (CA-08.3); "pendiente de respuesta" = enviada y vigente. Permiso `quotes:manage` (administrador y encargado de eventos) | Equipo **(provisional)** |
+| 26/11/2026 | Valoración de respuestas (024, R-IA-8) | El autor de la consulta la marca correcta o incorrecta, con comentario opcional de hasta 300 caracteres; vale la última; solo inserción (nada se edita ni borra). Otro usuario recibe 404 | Equipo **(provisional)** |
+| 26/11/2026 | Historial propio del asistente (024, R-IA-9) | Cualquier usuario autenticado ve, paginado, solo sus consultas con su última valoración; el administrador ve la valoración en el historial general (HU40) | Equipo **(provisional)** |

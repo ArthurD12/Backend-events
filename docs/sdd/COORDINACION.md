@@ -22,6 +22,7 @@ Un agente **no modifica** un módulo de otro dueño. Si necesita algo de él, lo
 | Lote 6: reportes (HU31 completo, HU32–HU34) | César | `feat/reportes` | backend listo (T-01 a T-06); falta frontend (T-07) |
 | Lote 7: HU24, HU25, HU30 (backend y frontend) | César | `feat/materiales-menu` | backend listo (T-01 a T-05); falta frontend (T-06) |
 | 022 Asistente de IA (HU35–HU40) | César | `feat/asistente-ia` | backend listo (T-01 a T-05); falta frontend (T-06) |
+| 024 Asistente: cotizaciones, eventos con filtros, historial propio y valoración (HU36, HU40) | César | `feat/asistente-hu36-hu40` | backend y frontend en revisión |
 
 ## 3. Archivos compartidos (conflictos frecuentes)
 Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunca solo una:
@@ -42,7 +43,7 @@ Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunc
 Cuando un punto pase a "listo", avisar al otro dueño para que lo conecte.
 
 ## 5. Migraciones (Alembic)
-- Head actual tras unir `developer-b` en `feat/hu17-asignaciones`: **`8df99a56ff18`**, encadenado a **`c3a9e5d7f1b2`** (cadena: `6900ec1af5f8` → `ba34931b5de5` → `c3a9e5d7f1b2` → `8df99a56ff18`).
+- Head actual de `developer-b` tras unir HU17: **`8df99a56ff18`** (asignaciones de personal). Cadena: `6900ec1af5f8` → `ba34931b5de5` (lote 7: recetas, reservas y `expense_movement_id`) → `c3a9e5d7f1b2` (asistente, `assistant_queries`) → `dca5fe5821e8` (lote 024, `assistant_feedback`) → `8df99a56ff18` (HU17).
 - Antes de crear una migración: `git fetch origin developer-b`, unir `developer-b` en tu rama y `uv run alembic heads` = **un solo head**; la tuya va encadenada a ese.
 - Si mientras tanto entró otra migración a `developer-b`: cambia el `down_revision` de **tu** migración (si nunca se unió) o agrega una migración de unión (`alembic merge`). **Nunca** se edita una migración ya unida (regla 8).
 

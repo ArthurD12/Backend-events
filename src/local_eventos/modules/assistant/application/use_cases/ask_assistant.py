@@ -53,6 +53,7 @@ class HistoryTurn:
 
 @dataclass(frozen=True)
 class AskResult:
+    query_id: UUID
     answer: str
     tools: tuple[ToolUse, ...]
     status: QueryStatus
@@ -121,10 +122,11 @@ class AskAssistant:
         except AssistantProviderError as error:
             failure, answer = error, str(error)
 
+        query_id = uuid4()
         finished = self._clock.now()
         await self._log.add(
             QueryRecord(
-                id=uuid4(),
+                id=query_id,
                 user_id=asker.id,
                 created_at=started,
                 question=question,
@@ -138,7 +140,7 @@ class AskAssistant:
         )
         if failure is not None:
             raise failure
-        return AskResult(answer=answer, tools=tuple(used), status=status)
+        return AskResult(query_id=query_id, answer=answer, tools=tuple(used), status=status)
 
 
 def _rounds(messages: Sequence[ChatMessage]) -> int:

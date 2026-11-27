@@ -4,6 +4,7 @@ from functools import cache
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from local_eventos.modules.assistant.application.ports.feedback_log import FeedbackLog
 from local_eventos.modules.assistant.application.ports.language_model import LanguageModel
 from local_eventos.modules.assistant.application.ports.query_log import Clock, QueryLog
 from local_eventos.modules.assistant.application.tool_catalog import Lookups, build_tools
@@ -12,13 +13,16 @@ from local_eventos.modules.assistant.infrastructure.anthropic_language_model imp
     AnthropicLanguageModel,
 )
 from local_eventos.modules.assistant.infrastructure.clock import SystemClock
+from local_eventos.modules.assistant.infrastructure.feedback_log import SqlAlchemyFeedbackLog
 from local_eventos.modules.assistant.infrastructure.query_log import SqlAlchemyQueryLog
 from local_eventos.modules.commercial.public_api import (
     clients_search,
     event_account,
     event_detail,
+    events_find,
     events_report,
     events_search,
+    quotes_search,
     upcoming_events,
 )
 from local_eventos.modules.identity.public_api import user_names
@@ -43,6 +47,10 @@ def query_log(session: AsyncSession) -> QueryLog:
     return SqlAlchemyQueryLog(session)
 
 
+def feedback_log(session: AsyncSession) -> FeedbackLog:
+    return SqlAlchemyFeedbackLog(session)
+
+
 def clock() -> Clock:
     return SystemClock()
 
@@ -55,6 +63,8 @@ def tools(session: AsyncSession) -> ToolRegistry:
             upcoming_events=upcoming_events(session),
             events_report=events_report(session),
             events_search=events_search(session),
+            events_find=events_find(session),
+            quotes_search=quotes_search(session),
             event_detail=event_detail(session),
             event_account=event_account(session),
             stock_report=stock_report(session),
