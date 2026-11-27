@@ -41,6 +41,7 @@ class SqlAlchemyUnavailabilityRepository:
         self._session = session
 
     async def save(self, unavailability: Unavailability, audit: UnavailabilityAudit) -> None:
+        """Inserta o actualiza la indisponibilidad y añade su auditoría en la misma sesión."""
         row = await self._session.get(StaffUnavailabilityRow, unavailability.id)
         if row is None:
             self._session.add(unavailability_to_row(unavailability))
@@ -58,10 +59,12 @@ class SqlAlchemyUnavailabilityRepository:
         await self._session.flush()
 
     async def get(self, unavailability_id: UUID) -> Unavailability | None:
+        """Devuelve la indisponibilidad por id, o `None` si no existe."""
         row = await self._session.get(StaffUnavailabilityRow, unavailability_id)
         return row_to_unavailability(row) if row is not None else None
 
     async def get_for_update(self, unavailability_id: UUID) -> Unavailability | None:
+        """Lectura con `FOR UPDATE` para editar o anular sin carreras."""
         row = await self._session.scalar(
             select(StaffUnavailabilityRow)
             .where(StaffUnavailabilityRow.id == unavailability_id)
@@ -75,6 +78,7 @@ class SqlAlchemyUnavailabilityRepository:
         end_at: datetime,
         worker_ids: Sequence[UUID],
     ) -> list[Unavailability]:
+        """Indisponibilidades `ACTIVE` que se cruzan con la ventana, por trabajador."""
         if not worker_ids:
             return []
         rows = await self._session.scalars(
@@ -95,6 +99,7 @@ class SqlAlchemyUnavailabilityRepository:
         start_at: datetime | None = None,
         end_at: datetime | None = None,
     ) -> list[Unavailability]:
+        """Indisponibilidades de un trabajador, incluidas las anuladas."""
         query = select(StaffUnavailabilityRow).where(StaffUnavailabilityRow.worker_id == worker_id)
         query = query.where(*_overlap_filters(start_at, end_at))
         query = query.order_by(StaffUnavailabilityRow.start_at)
@@ -107,6 +112,7 @@ class SqlAlchemyUnavailabilityRepository:
         start_at: datetime | None = None,
         end_at: datetime | None = None,
     ) -> list[Unavailability]:
+        """Indisponibilidades de todos los trabajadores, filtrables por ventana."""
         query = select(StaffUnavailabilityRow).where(*_overlap_filters(start_at, end_at))
         query = query.order_by(StaffUnavailabilityRow.start_at)
         rows = await self._session.scalars(query)

@@ -11,7 +11,7 @@ estado en la ventana pedida reutilizando el criterio de HU17:
 4. Los eventos se resuelven con `commercial.public_api.event_lookup`, cacheando
    por `event_id` dentro de la petición. Un evento `CANCELLED` se descarta sin
    llamar a `release_cancelled`; uno inexistente omite el conflicto con un
-   warning. La consulta nunca escribe.
+   warning de `logging` estándar (no structlog). La consulta nunca escribe.
 5. La función de cada asignación en conflicto se lee con **una sola** llamada a
    `AssignmentConflictLookup.by_ids(...)`, nunca desde `AssignmentView`.
 6. Precedencia: `UNAVAILABLE` > `BUSY` > `FREE`; se aplican los filtros `state`

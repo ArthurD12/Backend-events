@@ -254,11 +254,7 @@ async def get_register_unavailability(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> RegisterUnavailability:
     """Caso de uso de alta de indisponibilidad (HU16)."""
-    return RegisterUnavailability(
-        composition.worker_lookup(session),
-        composition.unavailabilities(session),
-        composition.clock(),
-    )
+    return composition.register_unavailability(session)
 
 
 AvailabilityRegistrar = Annotated[RegisterUnavailability, Depends(get_register_unavailability)]
@@ -268,7 +264,7 @@ async def get_list_unavailability(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ListUnavailability:
     """Caso de uso de listado de indisponibilidades (HU16)."""
-    return ListUnavailability(composition.unavailabilities(session))
+    return composition.list_unavailability(session)
 
 
 AvailabilityLister = Annotated[ListUnavailability, Depends(get_list_unavailability)]
@@ -278,7 +274,7 @@ async def get_update_unavailability(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> UpdateUnavailability:
     """Caso de uso de edición de indisponibilidad (HU16)."""
-    return UpdateUnavailability(composition.unavailabilities(session), composition.clock())
+    return composition.update_unavailability(session)
 
 
 AvailabilityUpdater = Annotated[UpdateUnavailability, Depends(get_update_unavailability)]
@@ -288,7 +284,7 @@ async def get_cancel_unavailability(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> CancelUnavailability:
     """Caso de uso de anulación de indisponibilidad (HU16)."""
-    return CancelUnavailability(composition.unavailabilities(session), composition.clock())
+    return composition.cancel_unavailability(session)
 
 
 UnavailabilityCanceller = Annotated[CancelUnavailability, Depends(get_cancel_unavailability)]

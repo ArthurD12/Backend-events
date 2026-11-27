@@ -10,8 +10,11 @@ casos de uso: personal (`RegisterWorker`, `UpdateWorker`, `GetWorker`,
 aquí. El evento se obtiene por `commercial.public_api.event_lookup` y la ocupación
 (`AssignmentOccupancy`) libera los eventos cancelados de forma perezosa.
 
-HU16 añade los repositorios de indisponibilidades y la lectura de la función de las
-asignaciones en conflicto, ambos de solo lectura salvo `save` de indisponibilidad.
+HU16 añade las fábricas de disponibilidad: `unavailabilities` (repositorio de
+indisponibilidades), `assignment_conflicts` (lectura de la función de las
+asignaciones en conflicto), `get_staff_availability` (consulta de solo lectura) y
+`register_unavailability`/`list_unavailability`/`update_unavailability`/
+`cancel_unavailability` (escritura y listado), todas con los puertos de HU16/HU17.
 
 `worker_lookup` y `event_assignments` son las fábricas de los puertos públicos que
 usarán otros módulos: la primera expone estado y función del trabajador; la segunda,
@@ -45,6 +48,9 @@ from local_eventos.modules.staff.application.ports.worker_repository import (
 from local_eventos.modules.staff.application.use_cases.cancel_assignment import (
     CancelAssignment,
 )
+from local_eventos.modules.staff.application.use_cases.cancel_unavailability import (
+    CancelUnavailability,
+)
 from local_eventos.modules.staff.application.use_cases.change_worker_status import (
     ActivateWorker,
     DeactivateWorker,
@@ -61,8 +67,14 @@ from local_eventos.modules.staff.application.use_cases.list_event_assignments im
 from local_eventos.modules.staff.application.use_cases.list_event_assignments_for_sheet import (
     ListEventAssignmentsForSheet,
 )
+from local_eventos.modules.staff.application.use_cases.list_unavailability import (
+    ListUnavailability,
+)
 from local_eventos.modules.staff.application.use_cases.register_assignment import (
     RegisterAssignment,
+)
+from local_eventos.modules.staff.application.use_cases.register_unavailability import (
+    RegisterUnavailability,
 )
 from local_eventos.modules.staff.application.use_cases.register_worker import (
     RegisterWorker,
@@ -72,6 +84,9 @@ from local_eventos.modules.staff.application.use_cases.search_workers import (
 )
 from local_eventos.modules.staff.application.use_cases.update_assignment import (
     UpdateAssignment,
+)
+from local_eventos.modules.staff.application.use_cases.update_unavailability import (
+    UpdateUnavailability,
 )
 from local_eventos.modules.staff.application.use_cases.update_worker import (
     UpdateWorker,
@@ -125,6 +140,26 @@ def get_staff_availability(session: AsyncSession) -> GetStaffAvailability:
 def assignment_conflicts(session: AsyncSession) -> AssignmentConflictLookup:
     """Lectura de la función de asignaciones por id, sin pago ni solape (HU16)."""
     return SqlAlchemyAssignmentConflictLookup(session)
+
+
+def register_unavailability(session: AsyncSession) -> RegisterUnavailability:
+    """Alta de indisponibilidad con validación de trabajador activo y reloj (HU16)."""
+    return RegisterUnavailability(worker_lookup(session), unavailabilities(session), clock())
+
+
+def list_unavailability(session: AsyncSession) -> ListUnavailability:
+    """Listado de indisponibilidades, incluidas las anuladas, de solo lectura (HU16)."""
+    return ListUnavailability(unavailabilities(session))
+
+
+def update_unavailability(session: AsyncSession) -> UpdateUnavailability:
+    """Edición de indisponibilidad con motivo obligatorio y auditoría (HU16)."""
+    return UpdateUnavailability(unavailabilities(session), clock())
+
+
+def cancel_unavailability(session: AsyncSession) -> CancelUnavailability:
+    """Anulación lógica idempotente de una indisponibilidad (HU16)."""
+    return CancelUnavailability(unavailabilities(session), clock())
 
 
 def clock() -> Clock:
@@ -238,6 +273,7 @@ __all__ = [
     "assignment_occupancy",
     "assignment_repository",
     "cancel_assignment",
+    "cancel_unavailability",
     "clock",
     "deactivate_worker",
     "event_assignments",
@@ -245,11 +281,14 @@ __all__ = [
     "get_staff_availability",
     "get_worker",
     "list_event_assignments",
+    "list_unavailability",
     "register_assignment",
+    "register_unavailability",
     "register_worker",
     "search_workers",
     "unavailabilities",
     "update_assignment",
+    "update_unavailability",
     "update_worker",
     "worker_lookup",
     "worker_repository",
