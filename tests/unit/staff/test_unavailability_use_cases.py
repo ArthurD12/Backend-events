@@ -1,8 +1,10 @@
-"""Pruebas de los casos de uso de alta y listado de indisponibilidad (HU16, T-05).
+"""Pruebas de los casos de uso de indisponibilidad (HU16, T-05 y T-06).
 
 Cubre CA-16.1 (alta guardada y auditada con usuario y fecha-hora), CA-16.2
-(trabajador inexistente/inactivo y validaciones de horario, tipo y descripción) y
-el listado de solo lectura con filtros. Sin base de datos: fakes en memoria.
+(trabajador inexistente/inactivo y validaciones de horario, tipo y descripción),
+el listado de solo lectura con filtros y CA-16.18 en aplicación (edición con
+motivo y snapshots, no-op sin auditoría, anulada → 409, anulación idempotente y
+motivo obligatorio). Sin base de datos: fakes en memoria.
 """
 
 from __future__ import annotations
@@ -13,15 +15,23 @@ from uuid import UUID
 import pytest
 
 from local_eventos.modules.staff.application.errors import (
+    UnavailabilityCancelledError,
+    UnavailabilityNotFoundError,
     WorkerInactiveError,
     WorkerNotFoundError,
 )
 from local_eventos.modules.staff.application.ports.worker_repository import WorkerRef
+from local_eventos.modules.staff.application.use_cases.cancel_unavailability import (
+    CancelUnavailability,
+)
 from local_eventos.modules.staff.application.use_cases.list_unavailability import (
     ListUnavailability,
 )
 from local_eventos.modules.staff.application.use_cases.register_unavailability import (
     RegisterUnavailability,
+)
+from local_eventos.modules.staff.application.use_cases.update_unavailability import (
+    UpdateUnavailability,
 )
 from local_eventos.modules.staff.domain.enums import (
     UnavailabilityKind,
@@ -34,6 +44,7 @@ from local_eventos.modules.staff.domain.errors import (
     AvailabilityWindowInvalidError,
     StaffValidationError,
     UnavailabilityKindRequiredError,
+    UnavailabilityReasonRequiredError,
     UnavailabilityScheduleInvalidError,
 )
 from local_eventos.modules.staff.domain.unavailability import Unavailability
@@ -384,3 +395,219 @@ async def test_listado_una_sola_fecha_es_invalida() -> None:
         await use_case.execute(from_date=DATE)
 
     assert exc_info.value.code == "staff.availability_window_invalid"
+
+
+# --- CA-16.18 (aplicación): edición y anulación -----------------------------
+
+
+def _active_item() -> Unavailability:
+    return _item(
+        worker_id=WORKER_ID,
+        start_at=datetime(2026, 12, 1, 14, 0, tzinfo=UTC),
+        end_at=datetime(2026, 12, 1, 22, 0, tzinfo=UTC),
+    )
+
+
+async def _update(
+    use_case: UpdateUnavailability,
+    unavailability_id: UUID,
+    **overrides: object,
+) -> Unavailability:
+    data: dict[str, object] = {
+        "unavailability_id": unavailability_id,
+        "date": DATE,
+        "start_time": time(18, 0),
+        "end_time": time(23, 0),
+        "kind": UnavailabilityKind.VACATION,
+        "description": None,
+        "reason": "Corrección solicitada por el trabajador",
+        "actor_id": ACTOR_ID,
+    }
+    data.update(overrides)
+    return await use_case.execute(**data)  # type: ignore[arg-type]
+
+
+async def test_ca16_18_edicion_auditada_con_snapshots() -> None:
+    item = _active_item()
+    repository = _seed(item)
+    use_case = UpdateUnavailability(repository, FakeClock())
+
+    updated = await _update(
+        use_case,
+        item.id,
+        kind=UnavailabilityKind.OTHER,
+        description="Trámite personal",
+        start_time=time(22, 0),
+        end_time=time(2, 0),
+    )
+
+    assert updated.id == item.id
+    assert updated.worker_id == WORKER_ID
+    assert updated.kind is UnavailabilityKind.OTHER
+    assert updated.description == "Trámite personal"
+    assert updated.start_at == datetime(2026, 12, 2, 3, 0, tzinfo=UTC)
+    assert updated.end_at == datetime(2026, 12, 2, 7, 0, tzinfo=UTC)
+
+    assert repository.saves == 1
+    (audit,) = repository.audits
+    assert audit.action is UnavailabilityAction.UPDATED
+    assert audit.actor_id == ACTOR_ID
+    assert audit.occurred_at == NOW
+    assert audit.reason == "Corrección solicitada por el trabajador"
+    assert audit.previous_values is not None
+    assert audit.new_values is not None
+    assert audit.previous_values.kind is UnavailabilityKind.REST
+    assert audit.previous_values.start_at == datetime(2026, 12, 1, 14, 0, tzinfo=UTC)
+    assert audit.new_values.kind is UnavailabilityKind.OTHER
+    assert audit.new_values.description == "Trámite personal"
+    assert audit.new_values.start_at == datetime(2026, 12, 2, 3, 0, tzinfo=UTC)
+
+
+async def test_ca16_18_edicion_sin_cambios_no_audita() -> None:
+    repository = FakeUnavailabilityRepository()
+    item = Unavailability.register(
+        worker_id=WORKER_ID,
+        kind=UnavailabilityKind.VACATION,
+        start_at=datetime(2026, 12, 1, 23, 0, tzinfo=UTC),
+        end_at=datetime(2026, 12, 2, 4, 0, tzinfo=UTC),
+    )
+    repository.unavailabilities[item.id] = item
+    use_case = UpdateUnavailability(repository, FakeClock())
+
+    updated = await _update(use_case, item.id)
+
+    assert updated is item
+    assert repository.saves == 0
+    assert repository.audits == []
+
+
+async def test_ca16_18_editar_anulada_devuelve_conflicto() -> None:
+    item = _active_item()
+    item.cancel()
+    repository = _seed(item)
+    use_case = UpdateUnavailability(repository, FakeClock())
+
+    with pytest.raises(UnavailabilityCancelledError) as exc_info:
+        await _update(use_case, item.id)
+
+    assert exc_info.value.code == "staff.unavailability_cancelled"
+    assert repository.saves == 0
+    assert repository.audits == []
+
+
+async def test_ca16_18_editar_inexistente() -> None:
+    repository = FakeUnavailabilityRepository()
+    use_case = UpdateUnavailability(repository, FakeClock())
+
+    with pytest.raises(UnavailabilityNotFoundError) as exc_info:
+        await _update(use_case, UUID("33333333-3333-3333-3333-333333333333"))
+
+    assert exc_info.value.code == "staff.unavailability_not_found"
+    assert repository.saves == 0
+
+
+@pytest.mark.parametrize("reason", ["", "   "])
+async def test_ca16_18_edicion_exige_motivo(reason: str) -> None:
+    item = _active_item()
+    repository = _seed(item)
+    use_case = UpdateUnavailability(repository, FakeClock())
+
+    with pytest.raises(UnavailabilityReasonRequiredError) as exc_info:
+        await _update(
+            use_case,
+            item.id,
+            kind=UnavailabilityKind.OTHER,
+            description="Cambio",
+            reason=reason,
+        )
+
+    assert exc_info.value.code == "staff.unavailability_reason_required"
+    assert repository.saves == 0
+    assert repository.audits == []
+
+
+async def test_ca16_18_edicion_valida_el_nuevo_horario() -> None:
+    item = _active_item()
+    repository = _seed(item)
+    use_case = UpdateUnavailability(repository, FakeClock())
+
+    with pytest.raises(UnavailabilityScheduleInvalidError) as exc_info:
+        await _update(use_case, item.id, start_time=time(10, 0), end_time=time(10, 0))
+
+    assert exc_info.value.code == "staff.unavailability_schedule_invalid"
+    assert repository.saves == 0
+    assert item.start_at == datetime(2026, 12, 1, 14, 0, tzinfo=UTC)
+
+
+async def test_ca16_18_anulacion_auditada_sin_borrado() -> None:
+    item = _active_item()
+    repository = _seed(item)
+    use_case = CancelUnavailability(repository, FakeClock())
+
+    cancelled = await use_case.execute(
+        unavailability_id=item.id,
+        reason="  El trabajador ya no la necesita  ",
+        actor_id=ACTOR_ID,
+    )
+
+    assert cancelled.status is UnavailabilityStatus.CANCELLED
+    assert cancelled in repository.unavailabilities.values()
+    assert repository.saves == 1
+    (audit,) = repository.audits
+    assert audit.action is UnavailabilityAction.CANCELLED
+    assert audit.actor_id == ACTOR_ID
+    assert audit.occurred_at == NOW
+    assert audit.reason == "El trabajador ya no la necesita"
+    assert audit.previous_values is None
+    assert audit.new_values is None
+
+
+async def test_ca16_18_anulacion_idempotente_sin_auditar() -> None:
+    item = _active_item()
+    item.cancel()
+    repository = _seed(item)
+    use_case = CancelUnavailability(repository, FakeClock())
+
+    cancelled = await use_case.execute(
+        unavailability_id=item.id,
+        reason="Segunda anulación",
+        actor_id=ACTOR_ID,
+    )
+
+    assert cancelled is item
+    assert cancelled.status is UnavailabilityStatus.CANCELLED
+    assert repository.saves == 0
+    assert repository.audits == []
+
+
+async def test_ca16_18_anular_exige_motivo() -> None:
+    item = _active_item()
+    repository = _seed(item)
+    use_case = CancelUnavailability(repository, FakeClock())
+
+    with pytest.raises(UnavailabilityReasonRequiredError) as exc_info:
+        await use_case.execute(
+            unavailability_id=item.id,
+            reason="   ",
+            actor_id=ACTOR_ID,
+        )
+
+    assert exc_info.value.code == "staff.unavailability_reason_required"
+    assert item.status is UnavailabilityStatus.ACTIVE
+    assert repository.saves == 0
+    assert repository.audits == []
+
+
+async def test_ca16_18_anular_inexistente() -> None:
+    repository = FakeUnavailabilityRepository()
+    use_case = CancelUnavailability(repository, FakeClock())
+
+    with pytest.raises(UnavailabilityNotFoundError) as exc_info:
+        await use_case.execute(
+            unavailability_id=UUID("44444444-4444-4444-4444-444444444444"),
+            reason="No existe",
+            actor_id=ACTOR_ID,
+        )
+
+    assert exc_info.value.code == "staff.unavailability_not_found"
+    assert repository.saves == 0
