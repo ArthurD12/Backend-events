@@ -10,6 +10,8 @@ from local_eventos.modules.staff.domain.assignment_audit import (
     AssignmentAudit,
     AssignmentSnapshot,
 )
+from local_eventos.modules.staff.domain.attendance import Attendance, AttendanceStatus
+from local_eventos.modules.staff.domain.attendance_audit import AttendanceAction, AttendanceAudit
 from local_eventos.modules.staff.domain.audit import AuditAction, WorkerAudit
 from local_eventos.modules.staff.domain.document import Document, WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import (
@@ -28,6 +30,17 @@ from local_eventos.modules.staff.domain.unavailability_audit import (
     UnavailabilitySnapshot,
 )
 from local_eventos.modules.staff.domain.worker import Worker
+from local_eventos.modules.staff.infrastructure.attendance_mappers import (
+    apply_attendance_to_row,
+    attendance_audit_to_row,
+    attendance_to_row,
+    row_to_attendance,
+    row_to_attendance_audit,
+)
+from local_eventos.modules.staff.infrastructure.attendance_orm_models import (
+    StaffAttendanceAuditRow,
+    StaffAttendanceRow,
+)
 from local_eventos.modules.staff.infrastructure.mappers import (
     assignment_audit_to_row,
     assignment_to_row,
@@ -460,3 +473,117 @@ def test_roundtrip_auditoria_anulacion_sin_snapshots() -> None:
     rebuilt = row_to_unavailability_audit(row)
     assert rebuilt.action is UnavailabilityAction.CANCELLED
     assert rebuilt == audit
+
+
+_STAFF_ATTENDANCE_COLUMNS = {"assignment_id", "status", "recorded_by", "recorded_at"}
+_STAFF_ATTENDANCE_AUDIT_COLUMNS = {
+    "id",
+    "assignment_id",
+    "action",
+    "previous_status",
+    "new_status",
+    "reason",
+    "actor_id",
+    "occurred_at",
+}
+
+
+def test_las_tablas_de_asistencia_no_exponen_campos_de_mas() -> None:
+    assert set(StaffAttendanceRow.__table__.columns.keys()) == _STAFF_ATTENDANCE_COLUMNS
+    assert set(StaffAttendanceAuditRow.__table__.columns.keys()) == _STAFF_ATTENDANCE_AUDIT_COLUMNS
+
+
+def test_tablas_de_asistencia_y_sus_constraints() -> None:
+    assert StaffAttendanceRow.__tablename__ == "staff_attendance"
+    assert StaffAttendanceAuditRow.__tablename__ == "staff_attendance_audit"
+    assert StaffAttendanceAuditRow.__table__.primary_key.columns.keys() == ["id"]
+
+    attendance_checks = {constraint.name for constraint in StaffAttendanceRow.__table__.constraints}
+    audit_checks = {constraint.name for constraint in StaffAttendanceAuditRow.__table__.constraints}
+    assert "ck_staff_attendance_status_valid" in attendance_checks
+    assert {
+        "ck_staff_attendance_audit_action_valid",
+        "ck_staff_attendance_audit_previous_status_valid",
+        "ck_staff_attendance_audit_new_status_valid",
+        "ck_staff_attendance_audit_reason_and_status_valid",
+    }.issubset(audit_checks)
+    audit_indexes = {index.name for index in StaffAttendanceAuditRow.__table__.indexes}
+    assert "ix_staff_attendance_audit_assignment_occurred" in audit_indexes
+
+
+def test_roundtrip_asistencia() -> None:
+    attendance, _ = Attendance.record(
+        assignment_id=ASSIGNMENT_ID,
+        status=AttendanceStatus.ATTENDED,
+        actor_id=ACTOR_ID,
+        recorded_at=CHANGED_AT,
+    )
+
+    row = attendance_to_row(attendance)
+
+    assert row.assignment_id == ASSIGNMENT_ID
+    assert row.status == "ATTENDED"
+    assert row.recorded_by == ACTOR_ID
+    assert row.recorded_at == CHANGED_AT
+    assert row_to_attendance(row) == attendance
+
+
+def test_roundtrip_asistencia_actualizada() -> None:
+    attendance, _ = Attendance.record(
+        assignment_id=ASSIGNMENT_ID,
+        status=AttendanceStatus.ATTENDED,
+        actor_id=ACTOR_ID,
+        recorded_at=CHANGED_AT,
+    )
+    row = attendance_to_row(attendance)
+    attendance.correct(
+        new_status=AttendanceStatus.NOT_ATTENDED,
+        reason="No se presentó",
+        actor_id=WORKER_ID,
+        occurred_at=END_AT,
+    )
+
+    apply_attendance_to_row(attendance, row)
+
+    assert row.status == "NOT_ATTENDED"
+    assert row.recorded_by == WORKER_ID
+    assert row.recorded_at == END_AT
+
+
+def test_roundtrip_auditoria_registro() -> None:
+    _, audit = Attendance.record(
+        assignment_id=ASSIGNMENT_ID,
+        status=AttendanceStatus.ATTENDED,
+        actor_id=ACTOR_ID,
+        recorded_at=CHANGED_AT,
+    )
+
+    row = attendance_audit_to_row(audit)
+
+    assert row.action == "RECORDED"
+    assert row.previous_status is None
+    assert row.new_status == "ATTENDED"
+    assert row.reason is None
+    assert row.actor_id == ACTOR_ID
+    assert row.occurred_at == CHANGED_AT
+    assert row_to_attendance_audit(row) == audit
+
+
+def test_roundtrip_auditoria_correccion() -> None:
+    audit = AttendanceAudit.corrected(
+        assignment_id=ASSIGNMENT_ID,
+        previous_status=AttendanceStatus.ATTENDED,
+        new_status=AttendanceStatus.NOT_ATTENDED,
+        reason="No se presentó",
+        actor_id=ACTOR_ID,
+        occurred_at=CHANGED_AT,
+    )
+
+    row = attendance_audit_to_row(audit)
+
+    assert row.action == "CORRECTED"
+    assert row.previous_status == "ATTENDED"
+    assert row.new_status == "NOT_ATTENDED"
+    assert row.reason == "No se presentó"
+    assert row_to_attendance_audit(row) == audit
+    assert row_to_attendance_audit(row).action is AttendanceAction.CORRECTED

@@ -1,12 +1,12 @@
 # Coordinación del equipo (backend)
 
 > Lo leen las personas y sus agentes antes de empezar una tarea. Actualizar al tomar o terminar trabajo.
-> Última actualización: 27/11/2026.
+> Última actualización: 28/11/2026.
 
 ## 1. Dueños por módulo
 | Módulo / área | Dueño | Historias |
 |---|---|---|
-| `staff` (personal, disponibilidad, asignaciones, asistencia) | **Harold** | HU15 ✓, HU16, HU17, HU18 |
+| `staff` (personal, disponibilidad, asignaciones, asistencia) | **Harold** | HU15 ✓, HU16, HU17, HU18 ✓ |
 | `commercial`, `ledger`, `inventory`, `purchasing`, `reporting` | **César** | HU11, HU13, HU14, HU19–HU30, HU31–HU34 |
 | Frontend (repo `Frontend-events`), todas las pantallas | **César** | — |
 | `assistant` (IA) | **César** | HU35–HU40 |
@@ -18,7 +18,7 @@ Un agente **no modifica** un módulo de otro dueño. Si necesita algo de él, lo
 |---|---|---|---|
 | HU17 (asignaciones) | Harold | `feat/hu17-asignaciones` (desde `developer-b`) | T-01..T-27 completadas; pendiente PR/merge y confirmar `btree_gist` en staging/producción |
 | HU16 (disponibilidad) | Harold | `developer-a` (otra sesión; ver nota de integración) | spec/plan en paralelo; implementación bloqueada por HU17 (necesita asignaciones) |
-| HU18 (asistencia) | Harold | `developer-a` (ver nota de integración) | después de HU17 |
+| HU18 (asistencia) | Harold | `feat/hu18-asistencia` | **implementada** (T-00..T-14); pendiente revisión/verificación final y merge |
 | 025 Permisos de personal para ventas (el encargado de eventos solo ve el personal designado; `staff:manage` solo administrador; `staff_roster:read`) | César (autorizado por Harold para tocar `staff`, PR aparte) | `feat/permisos-ventas` (desde `feat/hu17-asignaciones`) | backend y frontend (`feat/asignaciones-personal`) listos para revisión; va después de HU17 |
 | Lote 6: reportes (HU31 completo, HU32–HU34) | César | `feat/reportes` | backend listo (T-01 a T-06); falta frontend (T-07) |
 | Lote 7: HU24, HU25, HU30 (backend y frontend) | César | `feat/materiales-menu` | backend listo (T-01 a T-05); falta frontend (T-06) |
@@ -46,6 +46,7 @@ Al resolver un conflicto en estos archivos **se conservan las dos partes**, nunc
 Cuando un punto pase a "listo", avisar al otro dueño para que lo conecte.
 
 ## 5. Migraciones (Alembic)
+- **Head actual de `feat/hu18-asistencia` (28/11/2026): `7c1f2a9d4e60`** (tablas `staff_attendance` y `staff_attendance_audit` de HU18), encadenado desde **`b959d55b8430`**. Un solo head; antes de unir con `developer-b`/`developer-a` se verifica de nuevo con `uv run alembic heads`.
 - Head actual de `developer-b` tras unir HU17: **`8df99a56ff18`** (asignaciones de personal). Cadena: `6900ec1af5f8` → `ba34931b5de5` (lote 7: recetas, reservas y `expense_movement_id`) → `c3a9e5d7f1b2` (asistente, `assistant_queries`) → `dca5fe5821e8` (lote 024, `assistant_feedback`) → `8df99a56ff18` (HU17).
 - Cadena para esta tanda (27/11/2026, rama `developer-a`): la migración de **HU16 cuelga de `8df99a56ff18`**; la de **HU18 cuelga de la de HU16** (no de `8df99a56ff18`). El head sigue siendo `8df99a56ff18` hasta que exista la migración de HU16.
 - **Regla vigente de creación de migración (27/11/2026):** se puede crear **sin esperar confirmación** solo si `git fetch origin` + `git merge origin/developer-a` (rama de integración de esta tanda, **no** `developer-b`) queda **sin conflictos** y `uv run alembic heads` muestra **un único head igual a `8df99a56ff18`**. Si hay dos heads o conflictos, **se para y se avisa** al usuario. Tras crearla: `uv run alembic heads` y tests de integración con PostgreSQL real.
