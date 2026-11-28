@@ -108,6 +108,17 @@ Una **indisponibilidad** es una marca de planificación sobre un trabajador y un
 - **R-DIS-9** *(Q9)*: el resultado **nunca** expone pago acordado, tarifa, documento ni teléfono; como máximo, nombre, función y estado y, si está ocupado, el código, fecha, horario y función del evento en conflicto.
 - **R-DIS-10** *(Q10)*: una indisponibilidad **pasada** no desaparece por el paso del tiempo ni por desactivar al trabajador; se conserva para la consulta y el historial.
 
+### 5.4 Asistencia (HU18)
+La **asistencia** dice si el trabajador **cumplió o no** una asignación concreta de HU17, una vez terminada. Es un dato de **evaluación del personal**: no paga, no genera movimientos contables y no cambia la asignación ni la disponibilidad. Fuente completa: `docs/sdd/features/035-staff-attendance/spec.md`.
+
+- **R-ATT-1/2/3**: se registra **un estado por asignación** (`ATTENDED` cumplió / `NOT_ATTENDED` no cumplió); no hay tercer estado ni estado inicial. Una asignación **sin registrar** aparece como `null` ("sin registrar") y **no equivale a falta**.
+- **R-ATT-4/5/8**: solo se registra sobre asignaciones **`ACTIVE`** y cuando su `end_at` (UTC) **ya pasó** (se permite en el instante exacto de fin); una asignación **anulada** se rechaza y una aún no terminada también. El estado del evento no decide: un evento cancelado cuyas asignaciones activas ya terminaron sí admite registro.
+- **R-ATT-6/7/22**: la asistencia se **corrige en cualquier momento posterior** y la corrección **exige motivo** (recortado, 1..500 caracteres; si falta o es solo espacios → `422 staff.attendance_reason_required`). La **auditoría es append-only**: guarda actor, fecha-hora UTC, valor anterior, valor nuevo y motivo; la base rechaza `UPDATE`/`DELETE`. El primer registro y reintentar el mismo estado (idempotente) no exigen motivo.
+- **R-ATT-9/10/11/21**: el **historial** es **una fila por asignación** del trabajador (activas y anuladas; las anuladas con asistencia `null`), de la más reciente a la más antigua, con fecha y código `EVT-AAAA-NNNN` del evento, función, horario local/UTC, pago acordado en céntimos de `PEN` y estado de asistencia; admite filtros opcionales por rango de fechas del evento y por evento.
+- **R-ATT-14**: registrar o corregir exige `staff:attendance` y consultar el historial (con pago) exige `staff:manage`; **ambos son solo del administrador**. El encargado de eventos y el de compras y almacén reciben 403, también de lectura.
+- **R-ATT-15/19**: la asistencia **no modifica** la asignación (función, horario, pago, estado), **no altera** la disponibilidad/ocupación de HU16 ni **genera** movimientos en el ledger; una asignación o un trabajador inexistente responde 404.
+- **R-ATT-23**: si `commercial.public_api.event_lookup` no resuelve el evento (evento huérfano), la fila se devuelve igualmente con `event_code`, `event_date` y `event_status` en **`null`**, sin 404 y sin inventar datos; esas filas quedan fuera de los filtros por rango de fechas y dentro de la consulta sin filtro de fecha o filtrada por evento.
+
 ## 6. Dinero (pagos y flujo de caja)
 - Moneda `PEN`, enteros en céntimos. Sin pasarela: los cobros se **registran** (efectivo, transferencia, tarjeta, Yape/Plin) con referencia y usuario.
 - El importe de un pago es mayor que cero y no supera el saldo pendiente (RN14). **Saldo = total contratado − pagos + anulaciones** (RN15).
@@ -154,6 +165,7 @@ Una **indisponibilidad** es una marca de planificación sobre un trabajador y un
 | Asignaciones (personal del evento, con pago acordado) | ✔ | – | – |
 | Personal (trabajadores, tarifas y reporte de personal) | ✔ | – | – |
 | Disponibilidad de personal (`staff:availability`) | ✔ | – | – |
+| Asistencia del personal (`staff:attendance`; historial con pago con `staff:manage`) | ✔ | – | – |
 | Personal designado en un evento (nombre y función; `staff_roster:read`) | ✔ | ✔ | – |
 
 | Observaciones del evento (bitácora) | ✔ | ✔ | ✔ (R-ACT-5) |

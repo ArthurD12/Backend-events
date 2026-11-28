@@ -837,6 +837,255 @@
         "title": "AssignmentUpdate",
         "type": "object"
       },
+      "AttendanceHistoryPage": {
+        "description": "Página del historial de asistencia de un trabajador.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AttendanceOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "AttendanceHistoryPage",
+        "type": "object"
+      },
+      "AttendanceOut": {
+        "description": "Asignación con su asistencia vigente y el evento ya resuelto.",
+        "properties": {
+          "assignment_id": {
+            "format": "uuid",
+            "title": "Assignment Id",
+            "type": "string"
+          },
+          "assignment_status": {
+            "$ref": "#/components/schemas/AssignmentStatus"
+          },
+          "attendance_recorded_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance Recorded At"
+          },
+          "attendance_recorded_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance Recorded By"
+          },
+          "attendance_recorded_by_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attendance Recorded By Id"
+          },
+          "attendance_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttendanceStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "currency": {
+            "const": "PEN",
+            "title": "Currency",
+            "type": "string"
+          },
+          "end_at": {
+            "format": "date-time",
+            "title": "End At",
+            "type": "string"
+          },
+          "end_time": {
+            "format": "time",
+            "title": "End Time",
+            "type": "string"
+          },
+          "event_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Code"
+          },
+          "event_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Date"
+          },
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "event_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EventStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "function": {
+            "$ref": "#/components/schemas/WorkerFunction"
+          },
+          "function_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Function Description"
+          },
+          "pay_cents": {
+            "title": "Pay Cents",
+            "type": "integer"
+          },
+          "start_at": {
+            "format": "date-time",
+            "title": "Start At",
+            "type": "string"
+          },
+          "start_time": {
+            "format": "time",
+            "title": "Start Time",
+            "type": "string"
+          },
+          "worker_id": {
+            "format": "uuid",
+            "title": "Worker Id",
+            "type": "string"
+          },
+          "worker_name": {
+            "title": "Worker Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assignment_id",
+          "worker_id",
+          "worker_name",
+          "event_id",
+          "event_code",
+          "event_status",
+          "function",
+          "function_description",
+          "event_date",
+          "start_time",
+          "end_time",
+          "start_at",
+          "end_at",
+          "pay_cents",
+          "currency",
+          "assignment_status",
+          "attendance_status",
+          "attendance_recorded_at",
+          "attendance_recorded_by",
+          "attendance_recorded_by_id"
+        ],
+        "title": "AttendanceOut",
+        "type": "object"
+      },
+      "AttendanceStatus": {
+        "description": "Estado de asistencia: solo `ATTENDED`/`NOT_ATTENDED` (R-ATT-2).",
+        "enum": [
+          "ATTENDED",
+          "NOT_ATTENDED"
+        ],
+        "title": "AttendanceStatus",
+        "type": "string"
+      },
+      "AttendanceUpdate": {
+        "additionalProperties": false,
+        "description": "Cuerpo de `PATCH /v1/staff/assignments/{id}/attendance`.\n\n`status` es semánticamente obligatorio pero se declara opcional para que el\ncaso de uso devuelva `staff.attendance_status_invalid` con su `code`.\n`reason` solo se exige cuando es una corrección; primer registro y mismo\nestado lo ignoran.",
+        "properties": {
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Motivo de la corrección; obligatorio solo al cambiar el estado (1..500 tras recortar). Se ignora en el primer registro y al repetir.",
+            "title": "Reason"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "ATTENDED o NOT_ATTENDED; la validación la hace el caso de uso",
+            "enum": [
+              "ATTENDED",
+              "NOT_ATTENDED"
+            ],
+            "title": "Status"
+          }
+        },
+        "title": "AttendanceUpdate",
+        "type": "object"
+      },
       "AvailabilityConflict": {
         "additionalProperties": false,
         "description": "Asignación que ocupa parte de la ventana, sin datos sensibles (R-DIS-9).\n\nSolo código y fecha del evento, horario local de la asignación y su función.\nNunca pago, tarifa, documento ni teléfono (CA-16.8). `event_code` y\n`event_date` son `None` cuando la asignación ocupa pero su evento no existe;\nlas horas siempre están presentes porque salen de la asignación.",
@@ -4242,6 +4491,7 @@
           "staff:assign",
           "staff_roster:read",
           "staff:availability",
+          "staff:attendance",
           "assistant_log:read"
         ],
         "title": "Permission",
@@ -18650,6 +18900,105 @@
         ]
       }
     },
+    "/v1/staff/assignments/{assignment_id}/attendance": {
+      "patch": {
+        "description": "Registra el primer estado o corrige el vigente, auditando la corrección.",
+        "operationId": "staff_attendance_update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assignment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendanceUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.assignment_not_found`"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.attendance_not_due`, `staff.attendance_assignment_cancelled`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validación: `staff.attendance_status_invalid`, `staff.attendance_reason_required`"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Attendance",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
     "/v1/staff/assignments/{assignment_id}/cancel": {
       "post": {
         "description": "Anulación lógica con motivo; repetir la operación es idempotente.",
@@ -19290,6 +19639,166 @@
           }
         ],
         "summary": "Cancel Unavailability",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/v1/staff/workers/{worker_id}/attendance": {
+      "get": {
+        "description": "Historial del trabajador, incluidos anulados, con eventos anulables.",
+        "operationId": "staff_attendance_history",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "worker_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Worker Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Fecha mínima del evento (America/Lima), inclusiva",
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fecha mínima del evento (America/Lima), inclusiva",
+              "title": "From"
+            }
+          },
+          {
+            "description": "Fecha máxima del evento (America/Lima), inclusiva",
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Fecha máxima del evento (America/Lima), inclusiva",
+              "title": "To"
+            }
+          },
+          {
+            "description": "Solo asignaciones de ese evento",
+            "in": "query",
+            "name": "event_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Solo asignaciones de ese evento",
+              "title": "Event Id"
+            }
+          },
+          {
+            "description": "Número de página, desde 1",
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "description": "Número de página, desde 1",
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Tamaño de página, 1..100",
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "description": "Tamaño de página, 1..100",
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceHistoryPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.not_authenticated`, `auth.session_expired`"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`auth.forbidden`"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "`staff.worker_not_found`"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Validación: `staff.attendance_date_range_invalid` (rango de fechas o paginación)"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Attendance History",
         "tags": [
           "staff"
         ]
