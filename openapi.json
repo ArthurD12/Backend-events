@@ -18965,7 +18965,7 @@
                 }
               }
             },
-            "description": "`staff.assignment_not_found`, `staff.worker_not_found`"
+            "description": "`staff.assignment_not_found`"
           },
           "409": {
             "content": {
@@ -18985,7 +18985,7 @@
                 }
               }
             },
-            "description": "Validación: `staff.attendance_status_invalid`, `staff.attendance_reason_required`, `staff.attendance_date_range_invalid`"
+            "description": "Validación: `staff.attendance_status_invalid`, `staff.attendance_reason_required`"
           }
         },
         "security": [
@@ -19780,7 +19780,7 @@
                 }
               }
             },
-            "description": "`staff.assignment_not_found`, `staff.worker_not_found`"
+            "description": "`staff.worker_not_found`"
           },
           "422": {
             "content": {
@@ -19790,7 +19790,7 @@
                 }
               }
             },
-            "description": "Validación: `staff.attendance_status_invalid`, `staff.attendance_reason_required`, `staff.attendance_date_range_invalid`"
+            "description": "Validación: `staff.attendance_date_range_invalid` (rango de fechas o paginación)"
           }
         },
         "security": [

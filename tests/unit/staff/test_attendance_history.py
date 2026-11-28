@@ -84,18 +84,23 @@ def _row(
     recorded_at: datetime | None = None,
     recorded_by: UUID | None = None,
     worker_id: UUID = WORKER_ID,
+    worker_name: str = "Ana Pérez",
+    function: WorkerFunction = WorkerFunction.WAITER,
+    function_description: str | None = None,
+    pay_cents: int = 15000,
+    currency: str = "PEN",
 ) -> AttendanceHistoryRow:
     return AttendanceHistoryRow(
         assignment_id=UUID(int=(event_id.int ^ int(start_at.timestamp())) & ((1 << 128) - 1)),
         event_id=event_id,
         worker_id=worker_id,
-        worker_name="Ana Pérez",
-        function=WorkerFunction.WAITER,
-        function_description=None,
+        worker_name=worker_name,
+        function=function,
+        function_description=function_description,
         start_at=start_at,
         end_at=start_at + timedelta(hours=4),
-        pay_cents=15000,
-        currency="PEN",
+        pay_cents=pay_cents,
+        currency=currency,
         assignment_status=status,
         attendance_status=attendance_status,
         recorded_at=recorded_at,
@@ -243,6 +248,47 @@ async def test_cancelled_and_unrecorded_row_has_null_attendance() -> None:
     assert item.row.attendance_status is None
     assert item.row.recorded_at is None
     assert item.row.recorded_by is None
+
+
+async def test_same_event_assignments_keep_their_own_data() -> None:
+    """CA-18.18: dos asignaciones del mismo evento son filas separadas y propias."""
+    montaje = _row(
+        event_id=EVENT_A,
+        start_at=NOW - timedelta(hours=6),
+        function=WorkerFunction.COOK,
+        pay_cents=9000,
+        attendance_status=AttendanceStatus.ATTENDED,
+        recorded_at=NOW - timedelta(hours=5),
+        recorded_by=ACTOR_ID,
+    )
+    servicio = _row(
+        event_id=EVENT_A,
+        start_at=NOW,
+        function=WorkerFunction.WAITER,
+        pay_cents=15000,
+        attendance_status=AttendanceStatus.NOT_ATTENDED,
+    )
+    use_case, _, _ = _case(
+        [servicio, montaje],
+        events=FakeEventLookup({EVENT_A: _event(EVENT_A, event_date=date(2026, 11, 28))}),
+    )
+
+    page = await use_case.execute(worker_id=WORKER_ID)
+
+    assert page.total == 2
+    assert len(page.items) == 2
+    by_id = {item.row.assignment_id: item.row for item in page.items}
+    assert len(by_id) == 2
+    stored_montaje = by_id[montaje.assignment_id]
+    stored_servicio = by_id[servicio.assignment_id]
+    assert stored_montaje.function is WorkerFunction.COOK
+    assert stored_montaje.pay_cents == 9000
+    assert stored_montaje.attendance_status is AttendanceStatus.ATTENDED
+    assert stored_montaje.recorded_by == ACTOR_ID
+    assert stored_servicio.function is WorkerFunction.WAITER
+    assert stored_servicio.pay_cents == 15000
+    assert stored_servicio.attendance_status is AttendanceStatus.NOT_ATTENDED
+    assert stored_servicio.recorded_by is None
 
 
 async def test_event_lookup_is_deduplicated_by_event_id() -> None:

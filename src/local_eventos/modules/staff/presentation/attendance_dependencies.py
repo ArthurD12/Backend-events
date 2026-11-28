@@ -21,9 +21,6 @@ from local_eventos.modules.identity.public_api import (
     require_permission,
 )
 from local_eventos.modules.staff import attendance_composition
-from local_eventos.modules.staff.application.ports.attendance_repository import (
-    AttendanceRepository,
-)
 from local_eventos.modules.staff.application.use_cases.get_attendance_history import (
     GetAttendanceHistory,
 )
@@ -38,31 +35,18 @@ from local_eventos.shared.presentation.database import get_session
 
 __all__ = [
     "AttendanceGetter",
-    "AttendanceRepository",
     "AttendanceUpdater",
-    "Attendances",
     "CurrentUser",
     "Permission",
     "StaffAttendance",
     "StaffManager",
     "UserNames",
     "get_attendance_history",
-    "get_attendance_repository",
     "get_update_attendance",
     "get_user_names",
     "require_staff_attendance",
     "require_staff_manage",
 ]
-
-
-async def get_attendance_repository(
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> AttendanceRepository:
-    """Repositorio de asistencia sobre la sesión transaccional de la petición."""
-    return attendance_composition.attendance_repository(session)
-
-
-Attendances = Annotated[AttendanceRepository, Depends(get_attendance_repository)]
 
 
 async def get_update_attendance(

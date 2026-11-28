@@ -26,6 +26,7 @@ from local_eventos.modules.staff.application.ports.attendance_repository import 
 )
 from local_eventos.modules.staff.domain.attendance import Attendance
 from local_eventos.modules.staff.domain.attendance_audit import AttendanceAudit
+from local_eventos.modules.staff.domain.enums import AssignmentStatus
 from local_eventos.modules.staff.infrastructure.attendance_mappers import (
     apply_attendance_to_row,
     attendance_audit_to_row,
@@ -98,7 +99,7 @@ class SqlAlchemyAttendanceRepository:
                 StaffAttendanceRow.assignment_id == StaffAssignmentRow.id,
             )
             .where(StaffAssignmentRow.worker_id == worker_id)
-            .order_by(StaffAssignmentRow.start_at.desc())
+            .order_by(StaffAssignmentRow.start_at.desc(), StaffAssignmentRow.id.asc())
         )
         if event_id is not None:
             query = query.where(StaffAssignmentRow.event_id == event_id)
@@ -134,7 +135,13 @@ def _history_row(
     attendance_row: StaffAttendanceRow | None,
 ) -> AttendanceHistoryRow:
     assignment = row_to_assignment(assignment_row)
-    attendance = None if attendance_row is None else row_to_attendance(attendance_row)
+    # Una asignación anulada no admite asistencia: aunque se hubiera registrado
+    # antes de anularse, el historial muestra `null` (R-ATT-21/CA-18.21).
+    attendance = (
+        None
+        if attendance_row is None or assignment.status is AssignmentStatus.CANCELLED
+        else row_to_attendance(attendance_row)
+    )
     return AttendanceHistoryRow(
         assignment_id=assignment.id,
         event_id=assignment.event_id,

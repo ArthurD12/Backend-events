@@ -138,7 +138,8 @@ class UpdateAttendance:
             occurred_at=now,
         )
         # `correct` solo devuelve `None` si el estado no cambia, ya descartado arriba.
-        assert correction is not None
+        if correction is None:  # pragma: no cover - invariante del agregado
+            raise RuntimeError("La corrección de asistencia debía generar una auditoría.")
         await self._attendance.save(corrected, correction)
         return AttendanceUpdateResult(
             assignment=assignment,

@@ -66,7 +66,7 @@ class AttendanceAssignmentCancelledError(StaffApplicationError):
 
 
 class AttendanceDateRangeInvalidError(StaffApplicationError):
-    """El rango de fechas o la paginación del historial están fuera de rango (R-ATT-12)."""
+    """El rango de fechas o la paginación del historial están fuera de rango (R-ATT-10)."""
 
     def __init__(self, message: str | None = None) -> None:
         super().__init__(

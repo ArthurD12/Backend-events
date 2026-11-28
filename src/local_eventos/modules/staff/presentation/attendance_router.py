@@ -50,24 +50,37 @@ router = APIRouter(
 
 _Responses = dict[int | str, dict[str, Any]]
 
-_NOT_FOUND: _Responses = {
+_PATCH_NOT_FOUND: _Responses = {
     404: {
         "model": Problem,
-        "description": "`staff.assignment_not_found`, `staff.worker_not_found`",
+        "description": "`staff.assignment_not_found`",
     }
 }
-_CONFLICT: _Responses = {
+_PATCH_CONFLICT: _Responses = {
     409: {
         "model": Problem,
         "description": "`staff.attendance_not_due`, `staff.attendance_assignment_cancelled`",
     }
 }
-_INVALID: _Responses = {
+_PATCH_INVALID: _Responses = {
     422: {
         "model": Problem,
         "description": (
-            "Validación: `staff.attendance_status_invalid`, "
-            "`staff.attendance_reason_required`, `staff.attendance_date_range_invalid`"
+            "Validación: `staff.attendance_status_invalid`, `staff.attendance_reason_required`"
+        ),
+    }
+}
+_GET_NOT_FOUND: _Responses = {
+    404: {
+        "model": Problem,
+        "description": "`staff.worker_not_found`",
+    }
+}
+_GET_INVALID: _Responses = {
+    422: {
+        "model": Problem,
+        "description": (
+            "Validación: `staff.attendance_date_range_invalid` (rango de fechas o paginación)"
         ),
     }
 }
@@ -89,7 +102,7 @@ _PAGE_SIZE = Annotated[int, Query(description="Tamaño de página, 1..100")]
     "/assignments/{assignment_id}/attendance",
     operation_id="staff_attendance_update",
     response_model=AttendanceOut,
-    responses={**_NOT_FOUND, **_CONFLICT, **_INVALID},
+    responses={**_PATCH_NOT_FOUND, **_PATCH_CONFLICT, **_PATCH_INVALID},
 )
 async def update_attendance(
     assignment_id: UUID,
@@ -121,7 +134,7 @@ async def update_attendance(
     "/workers/{worker_id}/attendance",
     operation_id="staff_attendance_history",
     response_model=AttendanceHistoryPage,
-    responses={**_NOT_FOUND, **_INVALID},
+    responses={**_GET_NOT_FOUND, **_GET_INVALID},
 )
 async def get_attendance_history(
     worker_id: UUID,

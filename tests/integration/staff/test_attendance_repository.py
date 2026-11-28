@@ -41,7 +41,10 @@ from local_eventos.modules.staff.infrastructure.attendance_repository import (
     SqlAlchemyAttendanceRepository,
 )
 from local_eventos.modules.staff.infrastructure.mappers import worker_to_row
-from local_eventos.modules.staff.infrastructure.orm_models import StaffAssignmentRow
+from local_eventos.modules.staff.infrastructure.orm_models import (
+    StaffAssignmentRow,
+    StaffUnavailabilityRow,
+)
 from local_eventos.shared.infrastructure.db import create_engine
 
 pytestmark = pytest.mark.integration
@@ -219,6 +222,9 @@ async def test_roundtrip_estado_y_auditoria_record_y_correct(
             )
         ).all()
         assignment_row = await session.get(StaffAssignmentRow, _ASSIGNMENT_ID)
+        unavailability_count = await session.scalar(
+            select(func.count()).select_from(StaffUnavailabilityRow)
+        )
 
     assert stored is not None
     assert stored.status is AttendanceStatus.NOT_ATTENDED
@@ -247,6 +253,11 @@ async def test_roundtrip_estado_y_auditoria_record_y_correct(
     assert assignment_row.pay_cents == 4500
     assert assignment_row.currency == "PEN"
     assert assignment_row.status == AssignmentStatus.ACTIVE.value
+    # CA-18.19: la asistencia no mueve la ocupación ni crea indisponibilidades.
+    assert assignment_row.occupies is True
+    assert unavailability_count == 0
+    # El ledger vive en otro módulo y no se consulta desde staff (frontera de módulo):
+    # la asistencia no tiene puerto ni escritura hacia `ledger` (R-ATT-15/R-ATT-19).
 
 
 async def test_historial_activas_y_anuladas_orden_y_pago_en_centimos(
@@ -299,6 +310,46 @@ async def test_historial_activas_y_anuladas_orden_y_pago_en_centimos(
     # CA-18.13: pago acordado entero en céntimos de PEN, sin recalcular.
     assert all(row.pay_cents == 4500 for row in rows)
     assert all(row.currency == "PEN" for row in rows)
+
+
+async def test_historial_anulada_oculta_la_asistencia_previa(
+    sessions: async_sessionmaker[AsyncSession],
+) -> None:
+    """CA-18.21: atendida y luego anulada → `CANCELLED` con asistencia `null`."""
+    async with sessions.begin() as session:
+        await _add_worker(session)
+        await _add_assignment(session, assignment_id=_ASSIGNMENT_ID)
+        await _record_attendance(session)
+
+    async with sessions.begin() as session:
+        assignments = SqlAlchemyAssignmentRepository(session)
+        assignment = await assignments.get(_ASSIGNMENT_ID)
+        assert assignment is not None
+        assert assignment.cancel()
+        await assignments.save(
+            assignment,
+            AssignmentAudit.cancelled(
+                assignment_id=assignment.id,
+                actor_id=_OTHER_ACTOR,
+                occurred_at=_LATER,
+                reason="El cliente canceló el servicio",
+            ),
+        )
+
+    async with sessions() as session:
+        repository = SqlAlchemyAttendanceRepository(session)
+        rows = await repository.list_history(_WORKER_ID)
+        stored = await repository.get(_ASSIGNMENT_ID)
+
+    assert len(rows) == 1
+    row = rows[0]
+    assert row.assignment_status is AssignmentStatus.CANCELLED
+    assert row.attendance_status is None
+    assert row.recorded_at is None
+    assert row.recorded_by is None
+    # La fila de asistencia previa se conserva (append-only); solo se oculta.
+    assert stored is not None
+    assert stored.status is AttendanceStatus.ATTENDED
 
 
 async def test_historial_incluye_trabajador_inactivo(

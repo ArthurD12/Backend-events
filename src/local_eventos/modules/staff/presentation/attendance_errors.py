@@ -1,7 +1,7 @@
 """Traduce los errores de asistencia a respuestas HTTP con `code` estable (HU18, plan §4.3).
 
-- 404: asignación o trabajador inexistente (`staff.assignment_not_found`,
-  `staff.worker_not_found`).
+- 404: trabajador inexistente (`staff.worker_not_found`). El 404 de asignación
+  (`staff.assignment_not_found`) lo registra `staff.presentation.errors` (HU17).
 - 409: asignación anulada o aún no terminada (`staff.attendance_not_due`,
   `staff.attendance_assignment_cancelled`).
 - 422: rango/paginación inválidos (`staff.attendance_date_range_invalid`) y los
@@ -20,7 +20,6 @@ from local_eventos.modules.staff.application.attendance_errors import (
     AttendanceNotDueError,
     AttendanceWorkerNotFoundError,
 )
-from local_eventos.modules.staff.application.errors import AssignmentNotFoundError
 from local_eventos.modules.staff.domain.attendance_errors import (
     AttendanceReasonRequiredError,
     AttendanceStatusInvalidError,
@@ -31,7 +30,7 @@ __all__ = ["register_error_handlers"]
 
 
 def _not_found_error(request: Request, error: Exception) -> JSONResponse:
-    assert isinstance(error, AssignmentNotFoundError | AttendanceWorkerNotFoundError)
+    assert isinstance(error, AttendanceWorkerNotFoundError)
     return problem_response(status=404, title="No encontrado", code=error.code, detail=str(error))
 
 
@@ -54,7 +53,6 @@ def _invalid_error(request: Request, error: Exception) -> JSONResponse:
 
 def register_error_handlers(app: FastAPI) -> None:
     """Registra los manejadores de asistencia en la aplicación FastAPI."""
-    app.add_exception_handler(AssignmentNotFoundError, _not_found_error)
     app.add_exception_handler(AttendanceWorkerNotFoundError, _not_found_error)
     app.add_exception_handler(AttendanceNotDueError, _conflict_error)
     app.add_exception_handler(AttendanceAssignmentCancelledError, _conflict_error)

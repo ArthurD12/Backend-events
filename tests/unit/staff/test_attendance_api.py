@@ -55,6 +55,9 @@ from local_eventos.modules.staff.presentation.attendance_errors import (
     register_error_handlers,
 )
 from local_eventos.modules.staff.presentation.attendance_router import router
+from local_eventos.modules.staff.presentation.errors import (
+    register_error_handlers as register_staff_errors,
+)
 from tests.unit.current_user import signed_in_as
 from tests.unit.staff.test_attendance_history import (
     EVENT_A,
@@ -217,6 +220,7 @@ def _build(
 
     app = FastAPI()
     app.include_router(router)
+    register_staff_errors(app)
     register_error_handlers(app)
     register_identity_errors(app)
     app.dependency_overrides[get_update_attendance] = lambda: UpdateAttendance(
