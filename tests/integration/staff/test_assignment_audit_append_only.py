@@ -67,7 +67,8 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
         # TRUNCATE no dispara los triggers de fila append-only; deja todo vacío.
         await connection.execute(
             text(
-                "TRUNCATE staff_assignment_audit, staff_assignments, "
+                "TRUNCATE staff_unavailabilities_audit, staff_unavailabilities, "
+                "staff_assignment_audit, staff_assignments, "
                 "staff_worker_audit, staff_workers RESTART IDENTITY"
             )
         )

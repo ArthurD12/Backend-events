@@ -14,11 +14,19 @@ from local_eventos.modules.staff.domain.audit import AuditAction, WorkerAudit
 from local_eventos.modules.staff.domain.document import Document, WorkerDocumentType
 from local_eventos.modules.staff.domain.enums import (
     AssignmentStatus,
+    UnavailabilityKind,
+    UnavailabilityStatus,
     WorkerFunction,
     WorkerStatus,
     WorkerType,
 )
 from local_eventos.modules.staff.domain.money import Money
+from local_eventos.modules.staff.domain.unavailability import Unavailability
+from local_eventos.modules.staff.domain.unavailability_audit import (
+    UnavailabilityAction,
+    UnavailabilityAudit,
+    UnavailabilitySnapshot,
+)
 from local_eventos.modules.staff.domain.worker import Worker
 from local_eventos.modules.staff.infrastructure.mappers import (
     assignment_audit_to_row,
@@ -27,12 +35,18 @@ from local_eventos.modules.staff.infrastructure.mappers import (
     audit_to_row,
     row_to_assignment,
     row_to_assignment_audit,
+    row_to_unavailability,
+    row_to_unavailability_audit,
+    unavailability_audit_to_row,
+    unavailability_to_row,
     worker_from_row,
     worker_to_row,
 )
 from local_eventos.modules.staff.infrastructure.orm_models import (
     StaffAssignmentAuditRow,
     StaffAssignmentRow,
+    StaffUnavailabilityAuditRow,
+    StaffUnavailabilityRow,
     StaffWorkerAuditRow,
     StaffWorkerRow,
 )
@@ -42,6 +56,7 @@ ACTOR_ID = UUID("22222222-2222-2222-2222-222222222222")
 CHANGED_AT = datetime(2026, 11, 24, 15, 30, tzinfo=UTC)
 EVENT_ID = UUID("33333333-3333-3333-3333-333333333333")
 ASSIGNMENT_ID = UUID("44444444-4444-4444-4444-444444444444")
+UNAVAILABILITY_ID = UUID("55555555-5555-5555-5555-555555555555")
 START_AT = datetime(2026, 12, 5, 15, 0, tzinfo=UTC)
 END_AT = datetime(2026, 12, 5, 23, 0, tzinfo=UTC)
 
@@ -87,6 +102,29 @@ _STAFF_ASSIGNMENT_COLUMNS = {
 _STAFF_ASSIGNMENT_AUDIT_COLUMNS = {
     "id",
     "assignment_id",
+    "action",
+    "reason",
+    "actor_id",
+    "occurred_at",
+    "previous_values",
+    "new_values",
+}
+
+
+_STAFF_UNAVAILABILITY_COLUMNS = {
+    "id",
+    "worker_id",
+    "kind",
+    "description",
+    "start_at",
+    "end_at",
+    "status",
+    "created_at",
+    "updated_at",
+}
+_STAFF_UNAVAILABILITY_AUDIT_COLUMNS = {
+    "id",
+    "unavailability_id",
     "action",
     "reason",
     "actor_id",
@@ -294,3 +332,131 @@ def test_roundtrip_auditoria_actualizacion_con_snapshots() -> None:
     assert row.previous_values == previous.to_dict()
     assert row.new_values == new.to_dict()
     assert row_to_assignment_audit(row) == audit
+
+
+def test_las_tablas_de_disponibilidad_no_exponen_campos_de_mas() -> None:
+    assert set(StaffUnavailabilityRow.__table__.columns.keys()) == _STAFF_UNAVAILABILITY_COLUMNS
+    assert (
+        set(StaffUnavailabilityAuditRow.__table__.columns.keys())
+        == _STAFF_UNAVAILABILITY_AUDIT_COLUMNS
+    )
+
+
+def test_roundtrip_indisponibilidad_other_con_descripcion() -> None:
+    unavailability = Unavailability.register(
+        unavailability_id=UNAVAILABILITY_ID,
+        worker_id=WORKER_ID,
+        kind=UnavailabilityKind.OTHER,
+        description="Trámite personal",
+        start_at=START_AT,
+        end_at=END_AT,
+    )
+
+    row = unavailability_to_row(unavailability)
+
+    assert row.id == UNAVAILABILITY_ID
+    assert row.worker_id == WORKER_ID
+    assert row.kind == "OTHER"
+    assert row.description == "Trámite personal"
+    assert row.start_at == START_AT
+    assert row.end_at == END_AT
+    assert row.status == "ACTIVE"
+    assert row_to_unavailability(row) == unavailability
+
+
+def test_roundtrip_indisponibilidad_sin_descripcion_y_nulos() -> None:
+    unavailability = Unavailability.register(
+        unavailability_id=UNAVAILABILITY_ID,
+        worker_id=WORKER_ID,
+        kind=UnavailabilityKind.VACATION,
+        start_at=START_AT,
+        end_at=END_AT,
+    )
+
+    row = unavailability_to_row(unavailability)
+
+    assert row.description is None
+    assert row_to_unavailability(row) == unavailability
+
+
+def test_mapeo_indisponibilidad_cancelada() -> None:
+    unavailability = Unavailability.register(
+        unavailability_id=UNAVAILABILITY_ID,
+        worker_id=WORKER_ID,
+        kind=UnavailabilityKind.REST,
+        start_at=START_AT,
+        end_at=END_AT,
+    )
+    unavailability.cancel()
+
+    row = unavailability_to_row(unavailability)
+
+    assert row.status == "CANCELLED"
+    rebuilt = row_to_unavailability(row)
+    assert rebuilt.status is UnavailabilityStatus.CANCELLED
+
+
+def test_roundtrip_auditoria_alta_sin_motivo_ni_snapshots() -> None:
+    audit = UnavailabilityAudit.created(
+        unavailability_id=UNAVAILABILITY_ID,
+        actor_id=ACTOR_ID,
+        occurred_at=CHANGED_AT,
+    )
+
+    row = unavailability_audit_to_row(audit)
+
+    assert row.action == "CREATED"
+    assert row.reason is None
+    assert row.previous_values is None
+    assert row.new_values is None
+    assert row_to_unavailability_audit(row) == audit
+
+
+def test_roundtrip_auditoria_actualizacion_con_snapshots_jsonb() -> None:
+    previous = UnavailabilitySnapshot(
+        kind=UnavailabilityKind.VACATION,
+        description=None,
+        start_at=START_AT,
+        end_at=END_AT,
+    )
+    new = UnavailabilitySnapshot(
+        kind=UnavailabilityKind.OTHER,
+        description="Viaje",
+        start_at=START_AT,
+        end_at=END_AT,
+    )
+    audit = UnavailabilityAudit.updated(
+        unavailability_id=UNAVAILABILITY_ID,
+        actor_id=ACTOR_ID,
+        occurred_at=CHANGED_AT,
+        reason="Corrección del tipo",
+        previous_values=previous,
+        new_values=new,
+    )
+
+    row = unavailability_audit_to_row(audit)
+
+    assert row.action == "UPDATED"
+    assert row.reason == "Corrección del tipo"
+    assert row.previous_values == previous.to_dict()
+    assert row.new_values == new.to_dict()
+    assert row_to_unavailability_audit(row) == audit
+
+
+def test_roundtrip_auditoria_anulacion_sin_snapshots() -> None:
+    audit = UnavailabilityAudit.cancelled(
+        unavailability_id=UNAVAILABILITY_ID,
+        actor_id=ACTOR_ID,
+        occurred_at=CHANGED_AT,
+        reason="Se reprogramó",
+    )
+
+    row = unavailability_audit_to_row(audit)
+
+    assert row.action == "CANCELLED"
+    assert row.reason == "Se reprogramó"
+    assert row.previous_values is None
+    assert row.new_values is None
+    rebuilt = row_to_unavailability_audit(row)
+    assert rebuilt.action is UnavailabilityAction.CANCELLED
+    assert rebuilt == audit

@@ -50,15 +50,17 @@ Darze es una empresa de **catering y organización de eventos** ubicada en San J
 5. Dos servicios **pueden tener el mismo nombre** con precios distintos (p. ej., la misma temática en dos pisos).
 
 ## 5. Personal y asignaciones
-1. Solo se asignan trabajadores **activos y disponibles** (RN11).
+1. Solo se asignan trabajadores **activos** (RN11); la **disponibilidad planificada** (HU16) se registra y consulta solo el administrador y, en esta versión, **no bloquea** la asignación.
 2. Un trabajador **no puede tener dos asignaciones con horarios que se superpongan** (RN12). Se garantiza con una restricción de exclusión en PostgreSQL, no solo en el código.
 3. Toda asignación indica evento, función, horario y pago acordado (RN13).
 
 ### 5.1 Datos del personal (HU15)
 - **R-STF-1** Documento: `DNI` (8 dígitos) o `CE` (9 a 12 dígitos, solo dígitos), normalizado sin espacios ni guiones. Es único por **tipo + número**, también entre inactivos; un DNI y un CE con el mismo número sí coexisten.
 - **R-STF-2 / R-STF-3** Baja **lógica**: nunca se borra la ficha; se conservan sus datos y su historial de eventos.
+
 - **R-STF-4** Solo se asignan trabajadores **activos y disponibles**; el rechazo al asignar lo aplica HU17.
 - **R-STF-5 / R-STF-16** Se autoriza por permiso `staff:manage`: **solo el administrador** lo tiene (decisión del 27/11/2026, §11). El **encargado de eventos** (ventas) y el de compras y almacén **no tienen acceso**, ni de lectura; el encargado de eventos solo ve quién está designado en un evento (`staff_roster:read`, R-ASG-14).
+
 - **R-STF-6** Alta, edición, activación y desactivación guardan **usuario y fecha-hora**; el motivo es opcional.
 - **R-STF-7 / R-STF-8** La tarifa es **referencial**, por evento y en céntimos de `PEN`, y es opcional; si la ficha marca que **aplica hora extra**, el monto referencial por hora es mayor que cero y variable. El pago real se acuerda en cada asignación (RN13).
 - **R-STF-9** Dos trabajadores pueden repetir nombre; los distingue el documento.
@@ -91,6 +93,20 @@ Una **asignación** vincula un trabajador activo con un evento, con la función 
 - **R-ASG-16** *(R-STF-15, Q7)*: no se puede **desactivar** a un trabajador con asignaciones **futuras vigentes**; primero hay que anularlas o reasignarlas. Las pasadas o anuladas no bloquean la baja.
 - **R-ASG-17** *(R-STF-13, Q6)*: si la ficha no tiene función, la asignación **exige elegirla** en ese momento y **no modifica la ficha** del trabajador.
 - **R-ASG-18** *(Q3)*: pago y horario se pueden **corregir** mientras el evento está `programado`, `confirmado` o `en ejecución`, siempre con motivo y auditoría; cuando el evento pasa a `finalizado`, la asignación queda de **solo lectura**. Una corrección posterior se resuelve fuera de la asignación (ledger), no reescribiendo el acuerdo.
+
+### 5.3 Disponibilidad e indisponibilidad (HU16)
+Una **indisponibilidad** es una marca de planificación sobre un trabajador y un intervalo, con motivo o tipo; no es una asignación ni genera pago. La **consulta de disponibilidad** informa, para una fecha y horario o un día completo, si cada trabajador activo está **libre**, **ocupado** o **no disponible**. Fuente completa: `docs/sdd/features/034-staff-availability/spec.md`.
+
+- **R-DIS-1** La consulta de disponibilidad es de **solo lectura**: informa, no asigna ni modifica asignaciones. Toda escritura de asignaciones es de HU17 (R-ASG-*).
+- **R-DIS-2** *(RN11, R-STF-4)*: solo se muestran **trabajadores activos**. La baja lógica y el historial siguen R-STF-2/R-STF-3; al reactivar, el trabajador vuelve a la consulta (R-STF-15).
+- **R-DIS-3** El resultado expresa **un estado por trabajador y por intervalo consultado**: libre, ocupado o no disponible. Se muestran los detalles de ambos conflictos (Q5), pero el estado principal es uno solo.
+- **R-DIS-4** *(R-ASG-3, R-ASG-4, R-ASG-12; Q6)*: se considera **ocupado** al trabajador con una asignación `ACTIVE` con `occupies=true` de un evento **no cancelado** que comparte algún instante con el intervalo consultado. El horario es **semiabierto** y admite cruce de medianoche; las asignaciones anuladas y las de eventos cancelados no ocupan, y las de eventos **finalizados sí ocupan**, igual que en HU17. HU16 **no redefine** estas reglas: **reutiliza el mismo criterio de solape de HU17** (`list_active_overlaps` y la liberación de eventos cancelados) a través de `staff`, sin reimplementarlo; al ser de solo lectura, aplica el mismo criterio efectivo sin escribir ni disparar la liberación. La equivalencia se prueba con CA-16.21.
+- **R-DIS-5** Una **indisponibilidad** es una marca de planificación sobre un trabajador y un intervalo (fecha y horario), con un motivo o tipo. No es una asignación, no genera pago, no modifica la ficha del trabajador y **no anula ni mueve** asignaciones existentes; solo se refleja en la consulta. En esta entrega es **solo informativa** y **no bloquea** la asignación en HU17 (Q3); el bloqueo queda como evolución explícita en un PR aparte, junto con R-STF-4.
+- **R-DIS-6** La disponibilidad registrada es **planificación**, no **asistencia**; si el trabajador se presentó o faltó a un evento es HU18 y queda fuera de esta feature.
+- **R-DIS-7** *(R-COT-1)*: las fechas y horas se interpretan en **`America/Lima`** y se guardan en UTC; la presentación vuelve a `America/Lima`. El intervalo es semiabierto `[inicio, fin)`.
+- **R-DIS-8** *(R-STF-5/R-STF-16, R-ASG-14; Q1/Q8)*: la autorización es por **permiso**. Consultar, registrar, editar y anular disponibilidad exigen el permiso `staff:availability`, que **solo tiene el administrador**. `staff:manage` **no da acceso** a disponibilidad y hoy **solo lo tiene el administrador**; el encargado de eventos conserva únicamente `staff_roster:read`, que no abre ninguna operación de disponibilidad, incluida la lectura, y el encargado de compras y almacén queda sin acceso.
+- **R-DIS-9** *(Q9)*: el resultado **nunca** expone pago acordado, tarifa, documento ni teléfono; como máximo, nombre, función y estado y, si está ocupado, el código, fecha, horario y función del evento en conflicto.
+- **R-DIS-10** *(Q10)*: una indisponibilidad **pasada** no desaparece por el paso del tiempo ni por desactivar al trabajador; se conserva para la consulta y el historial.
 
 ## 6. Dinero (pagos y flujo de caja)
 - Moneda `PEN`, enteros en céntimos. Sin pasarela: los cobros se **registran** (efectivo, transferencia, tarjeta, Yape/Plin) con referencia y usuario.
@@ -134,10 +150,12 @@ Una **asignación** vincula un trabajador activo con un evento, con la función 
 | Clientes | ✔ | ✔ | – |
 | Cotizaciones y contratos | ✔ | ✔ | – |
 | Eventos | ✔ | ✔ | lectura |
+
 | Asignaciones (personal del evento, con pago acordado) | ✔ | – | – |
 | Personal (trabajadores, tarifas y reporte de personal) | ✔ | – | – |
-| Disponibilidad de personal | ✔ | – | – |
+| Disponibilidad de personal (`staff:availability`) | ✔ | – | – |
 | Personal designado en un evento (nombre y función; `staff_roster:read`) | ✔ | ✔ | – |
+
 | Observaciones del evento (bitácora) | ✔ | ✔ | ✔ (R-ACT-5) |
 | Pagos, ingresos y egresos | ✔ | ✔ | – |
 | Productos, almacén, requerimientos y compras | ✔ | lectura del almacén y materiales de sus eventos (`inventory:read`) | ✔ |
@@ -151,6 +169,8 @@ Cada usuario tiene una cuenta personal (RN01). Se autoriza por **permiso** (p. e
 La gestión del **personal (trabajadores)** exige el permiso `staff:manage`, que **solo tiene el administrador**: el encargado de eventos y el de compras y almacén no lo tienen, ni siquiera de lectura (decisión del 27/11/2026, §5 R-STF-5/R-STF-16). En el negocio, **"vendedor"** designa al encargado de eventos: es el mismo rol, no uno nuevo.
 
 Sobre las **asignaciones** (§5.2, R-ASG-14): crear, editar, anular y leer (con el pago acordado) son solo del administrador (`staff:assign` y `staff:manage`). El **encargado de eventos no ve datos de trabajadores ni pagos**: solo quién está designado en un evento y con qué función, con `staff_roster:read`, que tienen administrador y encargado de eventos y **no** compras. La ficha consolidada del evento (HU14) muestra ese bloque de personal solo con `staff_roster:read` (compras la ve sin él) y nunca incluye pago.
+
+Sobre la **disponibilidad** (§5 R-DIS-8, HU16): consultar, registrar, editar y anular exigen el permiso `staff:availability`, que **solo tiene el administrador**. `staff:manage`, `staff:roster:read` y `staff:assign` **no abren** ninguna operación de disponibilidad, ni de lectura (R-STF-5/R-STF-16, R-ASG-14): el encargado de eventos y el de compras y almacén reciben 403 en todas las rutas.
 
 ## 10. Preguntas abiertas para el negocio
 1. ~~Política de cancelación y devolución del adelanto.~~ Resuelta: sin reglas automáticas (§11).
@@ -241,3 +261,13 @@ Sobre las **asignaciones** (§5.2, R-ASG-14): crear, editar, anular y leer (con 
 | 26/11/2026 | Valoración de respuestas (024, R-IA-8) | El autor de la consulta la marca correcta o incorrecta, con comentario opcional de hasta 300 caracteres; vale la última; solo inserción (nada se edita ni borra). Otro usuario recibe 404 | Equipo **(provisional)** |
 | 26/11/2026 | Historial propio del asistente (024, R-IA-9) | Cualquier usuario autenticado ve, paginado, solo sus consultas con su última valoración; el administrador ve la valoración en el historial general (HU40) | Equipo **(provisional)** |
 | 27/11/2026 | Personal y asignaciones para el encargado de eventos (ventas) | El encargado de eventos no ve datos de trabajadores ni lo que se les paga: solo quién está designado en un evento y su función. Personal, asignaciones (con pago) y disponibilidad son solo del administrador (`staff:manage`, `staff:assign`); nuevo permiso `staff_roster:read` para administrador y encargado de eventos (feature 025). Reemplaza la lectura con pago del encargado de eventos decidida el 25/11/2026 (HU17) y su `staff:manage` (HU15) | Product Owner (César Suclupe), a partir de la aclaración del cliente |
+| 27/11/2026 | Permiso de disponibilidad (HU16, Q1) | Nuevo permiso `staff:availability`, usado para consultar y escribir (registrar, editar, anular), solo para el administrador; el encargado de eventos no accede a nada de disponibilidad, ni de lectura (R-DIS-8) | Product Owner |
+| 27/11/2026 | Granularidad de la indisponibilidad (HU16, Q2) | Intervalo con fecha y hora de inicio/fin, varios intervalos por día, cruce de medianoche como R-ASG-4 y motivo/tipo obligatorio (vacaciones, permiso, descanso, otro con descripción) (R-DIS-5) | Product Owner |
+| 27/11/2026 | ¿La indisponibilidad bloquea HU17? (HU16, Q3) | Solo informativa: no bloquea la asignación; el bloqueo queda como evolución explícita en otro PR, junto con R-STF-4 (R-DIS-5) | Product Owner |
+| 27/11/2026 | Edición y anulación de indisponibilidades (HU16, Q4) | Se editan y anulan con motivo obligatorio, usuario y fecha-hora, sin borrado físico; el historial es de solo inserción (`CREATED`, `UPDATED`, `CANCELLED`) (R-DIS-5) | Product Owner |
+| 27/11/2026 | Estado con indisponibilidad y asignación simultáneas (HU16, Q5) | Prevalece **no disponible** y se muestran ambos detalles (indisponibilidad y evento en conflicto) (R-DIS-3, R-DIS-9) | Product Owner |
+| 27/11/2026 | Definición de "ocupado" en disponibilidad (HU16, Q6) | Asignaciones `ACTIVE` con `occupies=true` de evento no cancelado que se solapan con el intervalo, incluidos los eventos finalizados; los cancelados no cuentan. Mismo criterio de HU17 reutilizado a través de `staff`, sin reimplementarlo ni escribir (R-DIS-4) | Product Owner |
+| 27/11/2026 | Consulta sin horario y rango máximo (HU16, Q7) | Sin hora = día completo en `America/Lima`; rango máximo de 31 días corridos por consulta (R-DIS-7) | Product Owner |
+| 27/11/2026 | Acceso a la consulta de disponibilidad (HU16, Q8) | Exige `staff:availability`, solo administrador; el encargado de eventos tampoco consulta y el encargado de compras y almacén queda sin acceso, ni de lectura (R-DIS-8) | Product Owner |
+| 27/11/2026 | Datos del resultado de disponibilidad (HU16, Q9) | Nombre, función y estado; si está ocupado, código, fecha, horario y función del evento en conflicto; nunca pago, tarifa, documento ni teléfono (R-DIS-9) | Product Owner |
+| 27/11/2026 | Indisponibilidad pasada y baja del trabajador (HU16, Q10) | Se conserva siempre, también al desactivar al trabajador; este solo deja de aparecer en consultas futuras por estar inactivo, sin borrar el historial (R-DIS-2, R-DIS-10) | Product Owner |

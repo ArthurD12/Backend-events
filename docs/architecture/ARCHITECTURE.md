@@ -29,7 +29,7 @@ Un solo despliegue (API FastAPI + PostgreSQL), dividido en **módulos de negocio
 │     ├─ identity/           # usuarios, roles, permisos, auth, historial de accesos
 │     ├─ commercial/         # clientes, cotizaciones, contratos y eventos (ADR 0003)
 │     ├─ catalog/            # catálogo de servicios y precios referenciales
-│     ├─ staff/              # trabajadores (HU15) y asignaciones sin cruces (HU17)
+│     ├─ staff/              # trabajadores (HU15), asignaciones sin cruces (HU17) y disponibilidad (HU16: staff_unavailabilities, staff_unavailabilities_audit)
 │     ├─ ledger/             # pagos, ingresos, egresos, saldos (append-only)
 │     ├─ inventory/          # productos, lotes, movimientos, requerimientos por evento
 │     ├─ purchasing/         # proveedores, solicitudes de compra, recepción
@@ -115,7 +115,7 @@ modules =
 - **Concurrencia:** restricción de exclusión para asignaciones de personal (sin cruces de horario) y bloqueo de filas (`FOR UPDATE`) al descontar lotes de inventario. En `staff`, la restricción `staff_assignments_no_overlap` usa `EXCLUDE USING gist (worker_id WITH =, tstzrange(start_at, end_at, '[)') WITH &&) WHERE (occupies)` y requiere la extensión `btree_gist` (ADR 0006); la aplicación valida el solape solo para devolver un 409 con el evento en conflicto.
 - **Idempotencia:** `Idempotency-Key` al registrar pagos y movimientos, y al convertir un contrato en evento.
 - **Auditoría:** cada cambio sensible guarda quién, cuándo, qué y el motivo (ledger, contratos, anulaciones, ajustes de inventario, consultas al agente).
-- **Tablas append-only:** los historiales que no se corrigen se escriben en tablas de solo inserción protegidas con trigger `BEFORE UPDATE OR DELETE` en PostgreSQL. Ejemplos: `identity_access_log`, `ledger_payments`, `staff_worker_audit` (alta, edición, activación y desactivación de un trabajador con actor y fecha-hora; plan §4 de `032-staff`) y `staff_assignment_audit` (alta, edición y anulación de una asignación con actor, fecha-hora, motivo y, en la edición, valores anteriores y nuevos; HU17).
+- **Tablas append-only:** los historiales que no se corrigen se escriben en tablas de solo inserción protegidas con trigger `BEFORE UPDATE OR DELETE` en PostgreSQL. Ejemplos: `identity_access_log`, `ledger_payments`, `staff_worker_audit` (alta, edición, activación y desactivación de un trabajador con actor y fecha-hora; plan §4 de `032-staff`) y `staff_assignment_audit` (alta, edición y anulación de una asignación con actor, fecha-hora, motivo y, en la edición, valores anteriores y nuevos; HU17), y `staff_unavailabilities_audit` (alta, edición y anulación de una indisponibilidad con actor, fecha-hora, motivo y, en la edición, valores anteriores y nuevos; la entidad vive en `staff_unavailabilities`, HU16).
 - **Observabilidad:** logs JSON con `request_id` (structlog), errores a Sentry, `/health` y `/ready`.
 - **Seguridad:** authn/authz en `presentation` por permiso; reglas de negocio de autorización en `application`.
 
