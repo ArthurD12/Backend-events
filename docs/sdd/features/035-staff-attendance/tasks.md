@@ -149,7 +149,7 @@ Formato: `- [ ] T-NN [capa] objetivo — archivos — CA/reglas — comando — 
 
 ## T-14 · Verificación final
 
-- [ ] **T-14 [verificación]** Comprobar que toda la feature queda en verde.
+- [x] **T-14 [verificación]** Comprobar que toda la feature queda en verde.
   - **Archivos**: sin cambios de código (solo correcciones puntuales si la verificación falla).
   - **Comandos**:
     ```bash
