@@ -4242,6 +4242,7 @@
           "staff:assign",
           "staff_roster:read",
           "staff:availability",
+          "staff:attendance",
           "assistant_log:read"
         ],
         "title": "Permission",
