@@ -128,6 +128,13 @@ def test_ca16_17_disponibilidad_de_personal_solo_para_administrador() -> None:
     assert Permission.STAFF_AVAILABILITY.value not in otros_permisos_de_staff
 
 
+def test_ca18_9_asistencia_de_personal_solo_para_administrador() -> None:
+    """HU18 (R-ATT-14, CA-18.9): `staff:attendance` solo lo tiene el administrador."""
+    assert Permission.STAFF_ATTENDANCE in permissions_of(Role.ADMIN)
+    assert Permission.STAFF_ATTENDANCE not in permissions_of(Role.EVENTS_MANAGER)
+    assert Permission.STAFF_ATTENDANCE not in permissions_of(Role.PURCHASING_MANAGER)
+
+
 def test_017_solo_admin_y_compras_gestionan_almacen_y_compras() -> None:
     eventos = _user(role=Role.EVENTS_MANAGER)
     compras = _user(role=Role.PURCHASING_MANAGER)

@@ -67,6 +67,7 @@ async def engine(database_url: str) -> AsyncIterator[AsyncEngine]:
         await connection.execute(
             text(
                 "TRUNCATE staff_unavailabilities_audit, staff_unavailabilities, "
+                "staff_attendance_audit, staff_attendance, "
                 "staff_assignment_audit, staff_assignments, "
                 "staff_worker_audit, staff_workers RESTART IDENTITY CASCADE"
             )
